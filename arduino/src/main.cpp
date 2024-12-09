@@ -23,6 +23,12 @@ void setup() {
     // pathfinder.plan();
 }
 
+void flush_serial(){
+    while(Serial.available() > 0){
+        String data = Serial.readStringUntil('\n');
+    }
+}
+
 void getData(){
     if(Serial.available() <= 0){
         return;
