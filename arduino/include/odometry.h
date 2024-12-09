@@ -1,7 +1,8 @@
+#ifndef ODOMETRY_H
+#define ODOMETRY_H
+
 #include <math.h>
 #include <Arduino.h>
-#ifndef MYHEADER_H
-#define MYHEADER_H
 
 
 #define ENC_LEFT_A_PHASE 2

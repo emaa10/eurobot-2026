@@ -1,12 +1,14 @@
 #include <Arduino.h>
 #include "odometry.h"
-// #include "pathfinder.h"
 
-// Position start(1500, 500);
-// Position target(500, 1500);
+// left dc motor pins
+#define LEFT_LPWM 10 //44
+#define LEFT_RPWM 11 //45
 
-int pwm_left[2] = {0, 0};
-int pwm_right[2] = {0, 0};
+// right dc motor pins
+#define RIGHT_LPWM 9//41
+#define RIGHT_RPWM 8//40
+
 
 void setup() {
     Serial.begin(115200);
@@ -29,7 +31,17 @@ void flush_serial(){
     }
 }
 
+void write_pwm(int pwm_left[2], int pwm_right[2]){
+    analogWrite(LEFT_LPWM, pwm_left[0]);
+    analogWrite(LEFT_RPWM, pwm_left[1]);
+    analogWrite(RIGHT_LPWM, pwm_right[0]);
+    analogWrite(RIGHT_RPWM, pwm_right[1]);
+}
+
 void getData(){
+    int pwm_left[2] = {0, 0};
+    int pwm_right[2] = {0, 0};
+
     if(Serial.available() <= 0){
         return;
     }
@@ -53,6 +65,7 @@ void getData(){
         token = strtok(NULL, ";");
     }
 
+    write_pwm(pwm_left, pwm_right);
 }
 
 void loop() {
