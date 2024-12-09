@@ -7,6 +7,7 @@ from position import Position
 class RobotController:
     def __init__(self):
         self.pos = Position(0, 0)
+        self.target = Position(0, 0)
         self.pwm_left = (0, 0)
         self.pwm_right = (0, 0)
         
