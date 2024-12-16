@@ -3,6 +3,7 @@ import threading
 import time
 from data import SerialManager
 from position import Position
+from trajectory_follower import TrajectoryFollower
 
 class RobotController:
     def __init__(self):
@@ -10,6 +11,7 @@ class RobotController:
         self.target = Position(0, 0)
         self.pwm_left = (0, 0)
         self.pwm_right = (0, 0)
+        self.path = []
         
         # Use threading.Event for thread synchronization
         self._stop_event = threading.Event()
@@ -19,6 +21,9 @@ class RobotController:
         
         # Create serial manager once
         self._serial_manager = SerialManager()
+        
+        # Create Trajectory Follower
+        self._trajectory_follower = TrajectoryFollower()
 
     def serial_process(self):
         while not self._stop_event.is_set():
@@ -44,19 +49,15 @@ class RobotController:
         while not self._stop_event.is_set():
             try:
                 # Generate random PWM values
-                pwm_right = (random.randint(0, 255), random.randint(0, 255))
-                pwm_left = (random.randint(0, 255), random.randint(0, 255))
+                pwm_left, pwm_right = self._trajectory_follower.calculate_pwm(self.pos, self.path)
                 
                 # Use lock to safely update shared PWM values
                 with self._lock:
-                    self.pwm_right = pwm_right
                     self.pwm_left = pwm_left
-                
-                # Sleep to control update frequency
-                time.sleep(1)
+                    self.pwm_right = pwm_right
             
             except Exception as e:
-                print(f"Error in PWM process: {e}")
+                print(f"Error in PWM process: {e}") 
                 break
 
     def run(self):
