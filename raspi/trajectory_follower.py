@@ -2,7 +2,6 @@ import math
 import numpy as np
 from position import Position
 
-import math
 
 class TrajectoryFollower:
     def __init__(self, wheel_radius, wheel_base, max_linear_velocity=1, max_angular_velocity=1.0, max_pwm=255, min_pwm=12):
@@ -107,7 +106,7 @@ class TrajectoryFollower:
                 min_distance = dist
                 closest_point = point
         
-        # If no points or no point beyond lookahead, return last point
+        # If no points or no point beyond lookahead, return None
         if not trajectory:
             return None
         
@@ -241,6 +240,7 @@ class TrajectoryFollower:
                 'velocity_mm_s': velocity_mm_s,
                 'pwm': pwm
             })
+            
         return calibration_data
     
     def calculate_pwm(self, current_pos, target_trajectory):
