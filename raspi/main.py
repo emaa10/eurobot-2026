@@ -9,9 +9,9 @@ class RobotController:
     def __init__(self):
         self.pos = Position(0, 0)
         self.target = Position(0, 0)
-        self.pwm_left = (0, 0)
-        self.pwm_right = (0, 0)
-        self.path = []
+        self.pwm_left = [0, 0]
+        self.pwm_right = [0, 0]
+        self.path = [[100, 100], [200, 200], [300, 300], [400, 400], [500, 500]]
         
         # Use threading.Event for thread synchronization
         self._stop_event = threading.Event()

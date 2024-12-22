@@ -223,7 +223,7 @@ class TrajectoryFollower:
         l_pwm = max(min(l_pwm, self.max_pwm), 0)
         r_pwm = max(min(r_pwm, self.max_pwm), 0)
     
-        return (l_pwm, r_pwm)
+        return [l_pwm, r_pwm]
     
     def calibrate_velocity_to_pwm(self, test_velocities_mm_s):
         """

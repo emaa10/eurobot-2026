@@ -23,25 +23,25 @@ class Pathfinder():
         self.max_iters = max_iters
         self.bot_width = bot_width
         
-        # stacks
-        self.add_stack(Position(900, 900), Position(1300, 1000))
-        self.add_stack(Position(1700, 900), Position(2100, 1000))
-        self.add_stack(Position(1950, 1700), Position(2350, 1800))
-        self.add_stack(Position(650, 1700), Position(1050, 1800))
-        self.add_stack(Position(550, 0), Position(950, 100))
-        self.add_stack(Position(2050, 0), Position(2450, 100))
-        self.add_stack(Position(2600, 450), Position(2999, 550))
-        self.add_stack(Position(0, 450), Position(400, 550))
-        self.add_stack(Position(2600, 1000), Position(2999, 1100))
-        self.add_stack(Position(0, 1000), Position(400, 1100))
+        # # stacks
+        # self.add_stack(Position(900, 900), Position(1300, 1000))
+        # self.add_stack(Position(1700, 900), Position(2100, 1000))
+        # self.add_stack(Position(1950, 1700), Position(2350, 1800))
+        # self.add_stack(Position(650, 1700), Position(1050, 1800))
+        # self.add_stack(Position(550, 0), Position(950, 100))
+        # self.add_stack(Position(2050, 0), Position(2450, 100))
+        # self.add_stack(Position(2600, 450), Position(2999, 550))
+        # self.add_stack(Position(0, 450), Position(400, 550))
+        # self.add_stack(Position(2600, 1000), Position(2999, 1100))
+        # self.add_stack(Position(0, 1000), Position(400, 1100))
         
-        # stage and ramp
-        self.add_obstacle(Position(650, 1800), Position(2350, 1999))
-        self.add_obstacle(Position(1050, 1500), Position(1950, 1800))
+        # # stage and ramp
+        # self.add_obstacle(Position(650, 1800), Position(2350, 1999))
+        # self.add_obstacle(Position(1050, 1500), Position(1950, 1800))
         
-        # simas
-        self.add_obstacle(Position(0, 1550), Position(150, 1999))
-        self.add_obstacle(Position(2850, 1550), Position(2999, 1999))
+        # # simas
+        # self.add_obstacle(Position(0, 1550), Position(150, 1999))
+        # self.add_obstacle(Position(2850, 1550), Position(2999, 1999))
         
     def set_start_target(self, start: Position, target: Position):
         self.start = start
@@ -189,8 +189,4 @@ class Pathfinder():
         
     def proccess(self) -> None:
         path = self.plan(self.start, self.target)
-        self.display(path)
-
-pathfinder = Pathfinder(start=Position(1500, 500), target=Position(500, 1500))
-# pathfinder = Pathfinder(start=Position(2600, 1400), target=Position(2700, 1500))
-pathfinder.proccess()
+        # self.display(path)
