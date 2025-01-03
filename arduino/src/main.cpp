@@ -48,6 +48,15 @@ void getData(){
 
     String data = Serial.readStringUntil('\n');
 
+    if(data[0] == 'r'){
+        counterLeft = 0;
+        counterRight = 0;
+        lastCounterLeft = 0;
+        lastCounterRight = 0;
+
+        return;
+    }
+
     char charBuf[data.length() + 1];
     data.toCharArray(charBuf, sizeof(charBuf));
 
@@ -69,7 +78,6 @@ void getData(){
 }
 
 void loop() {
-    updatePos();
-    delay(5);
+    send_counter();
     getData();
 }

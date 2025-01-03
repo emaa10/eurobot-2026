@@ -88,4 +88,13 @@ void updatePos(){
     sendData();
 }
 
+void send_counter(){
+    String data;
+    data += "l";
+    data += String(counterLeft);
+    data += "r";
+    data += String(counterRight);
+    Serial.println(data);
+}
+
 #endif
