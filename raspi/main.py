@@ -83,12 +83,28 @@ class RobotController:
         self.extrax = distance * math.cos(self.theta + d_theta)
         self.extray = distance * math.sin(self.theta + d_theta)
         self.extraTheta = d_theta
-
+        
         # Normalize angle to [-2π, 2π]
         while self.extraTheta > 2 * math.pi:
             self.extraTheta -= 2 * math.pi
         while self.extraTheta < -2 * math.pi:
             self.extraTheta += 2 * math.pi
+        
+        self.x += self.extrax
+        self.y += self.extray
+        
+        self.extrax = 0
+        self.extray = 0
+        
+        self.theta += self.extraTheta
+        
+        while(self.theta > 2 * math.pi):
+            self.theta -= 2 * math.pi
+        
+        while(self.theta < -2 * math.pi):
+            self.theta += 2 * math.pi   
+            
+        self.extraTheta = 0
 
         # Check if target is reached
         max_d = abs(self.target[0] - pos[0])
@@ -106,22 +122,6 @@ class RobotController:
             
     def reset_position(self):
         self.update_position()
-        
-        self.x += self.extrax
-        self.y += self.extray
-        
-        self.extrax = 0
-        self.extray = 0
-        
-        self.theta += self.extraTheta
-        
-        while(self.theta > 2 * math.pi):
-            self.theta -= 2 * math.pi
-        
-        while(self.theta < -2 * math.pi):
-            self.theta += 2 * math.pi   
-            
-        self.extraTheta = 0
         
         self.lastPos[0] = 0
         self.lastPos[1] = 0
@@ -205,6 +205,7 @@ class RobotController:
                 break
 
     def run(self):
+        self.drive_distance(1000)
         self.pwm_process()
 
 def main():
