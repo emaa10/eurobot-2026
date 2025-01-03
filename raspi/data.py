@@ -1,7 +1,6 @@
 import serial
 import re
 import time
-from position import Position
 
 class SerialManager():
     def __init__(self, port="/dev/ttyACM0", baud_rate=115200):
@@ -14,25 +13,31 @@ class SerialManager():
         time.sleep(2)
 
     # serial string to x, y, t
-    def extract_values(self, s):
-        # Find matches for x, y, and t as floats
-        x_match = re.search(r'x([-+]?\d+\.\d+)', s)
-        y_match = re.search(r'y([-+]?\d+\.\d+)', s)
-        t_match = re.search(r't([-+]?\d+\.\d+)', s)
+    def extract_values(self, input_str: str):
+        # Find matches for l and r as ints
+        match = re.search(r'l(\d+)r(\d+)', input_str)
         
         # Check if all matches are found
-        if not (x_match and y_match and t_match):
-            raise ValueError(f"Could not extract all values from string: {s}")
+        if not match:
+            raise ValueError(f"Could not extract all values from string: {input_str}")
         
         # Extract and convert to floats
-        x = float(x_match.group(1))
-        y = float(y_match.group(1))
-        t = float(t_match.group(1))
+        l = float(match.group(1))
+        r = float(match.group(2))
         
-        return x, y, t
+        return [l, r]
     
-    def send_pwm(self, left_pwm: tuple[int], right_pwm: tuple[int]):
-        pwm_string = f"{left_pwm[0]};{left_pwm[1]};{right_pwm[0]};{right_pwm[1]}\n"
+    def send_pwm(self, pwm: list[int], dirs: list[int]):
+        pwm_vals = [[0, 0], [0, 0]]
+        for k in range(2):
+            if dirs[k] == 1:
+                pwm_vals[k] = [pwm[k], 0]
+            elif dirs[k] == -1:
+                pwm_vals[k] = [0, pwm[k]]
+            else:
+                pwm_vals[k] = [0, 0]
+            
+        pwm_string = f"{pwm_vals[0][0]};{pwm_vals[0][1]};{pwm_vals[1][0]};{pwm_vals[1][1]}\n"
         pwm_as_bytes = str.encode(pwm_string) # convert string to bytes
         self.ser.write(pwm_as_bytes)
     
@@ -44,13 +49,18 @@ class SerialManager():
         while True:
             line = self.ser.readline().decode("utf-8")
             
-            if line and line[0] == 'x': # make shure to get complete data
+            if line and line[0] == 'l': # make shure to get complete data
                 return line
     
-    def get_pos(self) -> Position:
+    def get_pos(self) -> list[int]:
         serial_input = self.read_input() # get latest input
-        x, y, t = self.extract_values(serial_input) # extract x y theta from serial data
+        l, r = self.extract_values(serial_input) # extract x y theta from serial data
 
-        print(f'Arduino sent: x:{x}, y:{y}, t:{t}')
-        return Position(x, y, t)
+        print(f'Arduino sent: Left Encoder:{l}, Right Encoder:{r}')
+        return [l, r]
+    
+    def reset_pos(self):
+        reset_string = f"r\n"
+        byte_string = str.encode(reset_string)
+        self.ser.write(byte_string)
     
