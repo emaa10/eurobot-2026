@@ -59,7 +59,7 @@ class RobotController:
         # self._trajectory_follower = TrajectoryFollower()
         
         # Create PID Controller
-        self._pid_controller = [SimplePID(), SimplePID()]
+        self.pid = [SimplePID(), SimplePID()]
         
     
     def update_position(self):
@@ -131,7 +131,8 @@ class RobotController:
     
     
     def drive_distance(self, distance: int):
-        self.target[0:1] += self.pulsesValue * distance
+        self.target[0] += self.pulsesValue * distance
+        self.target[1] += self.pulsesValue * distance
         
     def turn_angle(self, degree: int):
         pulses_distance = self.wheelDistance * self.pulsesValue * math.pi * degree / 360
@@ -139,8 +140,8 @@ class RobotController:
         self.target[1] += pulses_distance
     
     def pwm_process(self):
-        self.target[0] = 0
-        self.target[1] = 0
+        # self.target[0] = 0
+        # self.target[1] = 0
         
         prev_t = time.time_ns() // 1000
         last_pos_update = time.time_ns() // 1000
@@ -162,13 +163,13 @@ class RobotController:
                 
                 # Update last_pwm if not stopped
                 if not self.stopped:
-                    self.last_pwm = self.last_pwm + 1
-                    self.last_pwm = min(self.current_pwm, max(self.pwm_cutoff, self.last_pwm))
+                    self.lastpwm = self.lastpwm + 1
+                    self.lastpwm = min(self.currentPwm, max(self.pwmCutoff, self.lastpwm))
                 
                 # Loop through motors
                 for k in range(self.NMOTORS):
                     # Evaluate control signal
-                    self.pid[k].evaluate(
+                    self.pwm[k], self.dir[k] = self.pid[k].evaluate(
                         pos[k], 
                         pos[not k],
                         self.target[k], 
@@ -176,33 +177,36 @@ class RobotController:
                         delta_t
                     )
                     
-                    scaled_factor[k] = float(self.pwm[k]) / self.last_pwm
+                    scaled_factor[k] = float(self.pwm[k]) / self.lastpwm
                 
                 # Find max scaling factor and adjust PWM values
-                max_factor = max(self.scaled_factor[0], self.scaled_factor[1])
+                max_factor = max(scaled_factor[0], scaled_factor[1])
                 if max_factor > 1:
                     self.pwm[0] /= max_factor
                     self.pwm[1] /= max_factor
                 
                 if self.stopped:
                     # Decelerate for enemy
-                    while self.last_pwm >= self.pwm_cutoff:
-                        self.last_pwm -= 2
-                        self._serial_manager.send_pwm([self.last_pwm, self.last_pwm], self.dir)
+                    while self.lastpwm >= self.pwm_cutoff:
+                        self.lastpwm -= 2
+                        self._serial_manager.send_pwm([self.lastpwm, self.lastpwm], self.dir)
                         time.sleep(0.003)
                     
                     # Reset motors
-                    self.dir = [0] * self.NMOTORS
-                    self.pwm = [0] * self.NMOTORS
+                    for k in self.NMOTORS:
+                        self.dir[k] = 0
+                        self.pwm[k] = 0
                 
+                print(self.pwm)
                 self._serial_manager.send_pwm(self.pwm, self.dir)
                 
-                self.last_pwm = max(self.pwm[0], self.pwm[1])
+                self.lastpwm = max(self.pwm[0], self.pwm[1])
                     
             
             except Exception as e:
                 print(f"Error in PWM process: {e}") 
                 break
+
 
     def run(self):
         self.drive_distance(1000)

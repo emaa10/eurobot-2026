@@ -14,18 +14,13 @@ class SerialManager():
 
     # serial string to x, y, t
     def extract_values(self, input_str: str):
-        # Find matches for l and r as ints
-        match = re.search(r'l(\d+)r(\d+)', input_str)
-        
-        # Check if all matches are found
+        match = re.search(r'l-?(\d+)r-?(\d+)', input_str)
         if not match:
             raise ValueError(f"Could not extract all values from string: {input_str}")
         
-        # Extract and convert to floats
-        l = float(match.group(1))
-        r = float(match.group(2))
-        
-        return [l, r]
+        l = float(match.group(1)) * (-1 if 'l-' in input_str else 1)
+        r = float(match.group(2)) * (-1 if 'r-' in input_str else 1)
+        return l, r
     
     def send_pwm(self, pwm: list[int], dirs: list[int]):
         pwm_vals = [[0, 0], [0, 0]]
@@ -36,7 +31,7 @@ class SerialManager():
                 pwm_vals[k] = [0, pwm[k]]
             else:
                 pwm_vals[k] = [0, 0]
-            
+        
         pwm_string = f"{pwm_vals[0][0]};{pwm_vals[0][1]};{pwm_vals[1][0]};{pwm_vals[1][1]}\n"
         pwm_as_bytes = str.encode(pwm_string) # convert string to bytes
         self.ser.write(pwm_as_bytes)
@@ -54,6 +49,7 @@ class SerialManager():
     
     def get_pos(self) -> list[int]:
         serial_input = self.read_input() # get latest input
+        print(serial_input)
         l, r = self.extract_values(serial_input) # extract x y theta from serial data
 
         print(f'Arduino sent: Left Encoder:{l}, Right Encoder:{r}')
@@ -63,4 +59,3 @@ class SerialManager():
         reset_string = f"r\n"
         byte_string = str.encode(reset_string)
         self.ser.write(byte_string)
-    
