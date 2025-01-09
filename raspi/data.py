@@ -14,13 +14,18 @@ class SerialManager():
 
     # serial string to x, y, t
     def extract_values(self, input_str: str):
-        match = re.search(r'l-?(\d+)r-?(\d+)', input_str)
+        pattern = r'l(-?\d+)r(-?\d+)x(-?\d+\.?\d*)y(-?\d+\.?\d*)t(-?\d+\.?\d*)'
+        match = re.match(pattern, input_str)
         if not match:
             raise ValueError(f"Could not extract all values from string: {input_str}")
         
-        l = float(match.group(1)) * (-1 if 'l-' in input_str else 1)
-        r = float(match.group(2)) * (-1 if 'r-' in input_str else 1)
-        return l, r
+        l = int(match.group(0))  # Value for l
+        r = int(match.group(1))  # Value for r
+        x = int(match.group(2))  # Value for x
+        y = int(match.group(3))  # Value for y
+        t = int(match.group(4))  # Value for z
+        
+        return l, r, x, y, t
     
     def send_pwm(self, pwm: list[int], dirs: list[int]):
         pwm_vals = [[0, 0], [0, 0]]

@@ -11,10 +11,6 @@ class RobotController:
         self.y  = 255
         self.theta = 0
         
-        self.extrax = 0
-        self.extray = 0
-        self.extraTheta = 0
-        
         self.pwm = [0, 0]
         self.dir = [0, 0]
         
@@ -53,17 +49,19 @@ class RobotController:
         self._lock = threading.Lock()
         
         # Create serial manager once
-        self._serial_manager = SerialManager()
-        
-        # Create Trajectory Follower
-        # self._trajectory_follower = TrajectoryFollower()
+        self.serial_manager = SerialManager()
         
         # Create PID Controller
         self.pid = [SimplePID(), SimplePID()]
         
     
     def update_position(self):
-        pos = self._serial_manager.get_pos()
+        pos = self.serial_manager.get_pos()
+        
+        # set new x, y, theta
+        self.x = pos[2]
+        self.y = pos[3]
+        self.theta = pos[4]
 
         # Calculate encoder changes
         left_enc_change = pos[1] - self.lastPos[1]
@@ -72,39 +70,6 @@ class RobotController:
         # Update last positions
         self.lastPos[0] = pos[0]
         self.lastPos[1] = pos[1]
-
-        # Calculate distances and angles
-        left_distance = pos[1] / self.pulsesPerMM
-        right_distance = pos[0] / self.pulsesPerMM
-        distance = (left_distance + right_distance) / 2
-        d_theta = (right_distance - left_distance) / self.wheelDistance
-
-        # Update position and orientation
-        self.extrax = distance * math.cos(self.theta + d_theta)
-        self.extray = distance * math.sin(self.theta + d_theta)
-        self.extraTheta = d_theta
-        
-        # Normalize angle to [-2π, 2π]
-        while self.extraTheta > 2 * math.pi:
-            self.extraTheta -= 2 * math.pi
-        while self.extraTheta < -2 * math.pi:
-            self.extraTheta += 2 * math.pi
-        
-        self.x += self.extrax
-        self.y += self.extray
-        
-        self.extrax = 0
-        self.extray = 0
-        
-        self.theta += self.extraTheta
-        
-        while(self.theta > 2 * math.pi):
-            self.theta -= 2 * math.pi
-        
-        while(self.theta < -2 * math.pi):
-            self.theta += 2 * math.pi   
-            
-        self.extraTheta = 0
 
         # Check if target is reached
         max_d = abs(self.target[0] - pos[0])
@@ -122,13 +87,12 @@ class RobotController:
             
     def reset_position(self):
         self.update_position()
+        self.serial_manager.reset_pos()
         
         self.lastPos[0] = 0
         self.lastPos[1] = 0
-        self._serial_manager.reset_pos()
         self.target[0] = 0
         self.target[1] = 0
-    
     
     def drive_distance(self, distance: int):
         self.target[0] += self.pulsesValue * distance
@@ -153,7 +117,7 @@ class RobotController:
                 delta_t = float(curr_t - prev_t) / 1.0e6  # Convert to seconds
                 prev_t = curr_t
 
-                pos = self._serial_manager.get_pos()
+                pos = self.serial_manager.get_pos()
                     
                 if curr_t - last_pos_update >= 50000:
                     self.update_position()
@@ -189,7 +153,7 @@ class RobotController:
                     # Decelerate for enemy
                     while self.lastpwm >= self.pwm_cutoff:
                         self.lastpwm -= 2
-                        self._serial_manager.send_pwm([self.lastpwm, self.lastpwm], self.dir)
+                        self.serial_manager.send_pwm([self.lastpwm, self.lastpwm], self.dir)
                         time.sleep(0.003)
                     
                     # Reset motors
@@ -198,7 +162,7 @@ class RobotController:
                         self.pwm[k] = 0
                 
                 print(self.pwm)
-                self._serial_manager.send_pwm(self.pwm, self.dir)
+                self.serial_manager.send_pwm(self.pwm, self.dir)
                 
                 self.lastpwm = max(self.pwm[0], self.pwm[1])
                     
