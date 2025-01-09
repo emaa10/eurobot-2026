@@ -10,20 +10,6 @@ class SimplePID:
         self.eprev = 0.0
         self.eintegral = 0.0
     
-    def set_params(self, kp_in: float, kd_in: float, ki_in: float, umax_in: float) -> None:
-        """Set the PID controller parameters.
-        
-        Args:
-            kp_in: Proportional gain
-            kd_in: Derivative gain
-            ki_in: Integral gain
-            umax_in: Maximum control output
-        """
-        self.kp = kp_in
-        self.kd = kd_in
-        self.ki = ki_in
-        self.umax = umax_in
-    
     def evaluate(self, value1: int, value2: int, target1: int, target2: int, delta_t: float) -> list[int, int]:
         """Compute the control signal.
         
