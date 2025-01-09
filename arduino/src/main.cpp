@@ -9,6 +9,7 @@
 #define RIGHT_LPWM 9//41
 #define RIGHT_RPWM 8//40
 
+int lastPosUpdate = millis();
 
 void setup() {
     Serial.begin(115200);
@@ -20,15 +21,6 @@ void setup() {
     pinMode(ENC_RIGHT_B_PHASE, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(ENC_LEFT_A_PHASE), changeLeft, CHANGE);
     attachInterrupt(digitalPinToInterrupt(ENC_RIGHT_A_PHASE), changeRight, CHANGE);
-
-    // Pathfinder pathfinder(start, target);
-    // pathfinder.plan();
-}
-
-void flush_serial(){
-    while(Serial.available() > 0){
-        String data = Serial.readStringUntil('\n');
-    }
 }
 
 void write_pwm(int pwm_left[2], int pwm_right[2]){
@@ -78,6 +70,8 @@ void getData(){
 }
 
 void loop() {
-    send_counter();
+    if(millis() >= lastPosUpdate + 8){
+        updatePos();
+    }
     getData();
 }

@@ -25,8 +25,8 @@ int counterRight = 0;
 int lastCounterLeft = 0;
 int lastCounterRight = 0;
 
-float x = 0;            // x in mm
-float y = 0;            // y in mm
+float x = 255;            // x in mm
+float y = 255;            // y in mm
 float theta = 0;        // theta in RAD
 
 // update ticks left
@@ -85,7 +85,7 @@ void updatePos(){
     while (theta < -2 * M_PI) theta += 2 * M_PI;
     if(theta < 0) theta = 2 * M_PI - theta;
 
-    sendData();
+    send_counter();
 }
 
 void send_counter(){
@@ -94,6 +94,12 @@ void send_counter(){
     data += String(counterLeft);
     data += "r";
     data += String(counterRight);
+    data += "x";
+    data += String(x);
+    data += "y";
+    data += String(y);
+    data += "t";
+    data += String(theta * 180.0 / PI);
     Serial.println(data);
 }
 
