@@ -2,7 +2,6 @@ import math
 import threading
 import time
 from data import SerialManager
-from trajectory_follower import TrajectoryFollower
 from simple_pid import SimplePID
 
 class RobotController:
@@ -109,6 +108,7 @@ class RobotController:
         
         prev_t = time.time_ns() // 1000
         last_pos_update = time.time_ns() // 1000
+        scaled_factor = [0.0, 0.0]
 
         while True:
             try:
@@ -123,12 +123,12 @@ class RobotController:
                     self.update_position()
                     last_pos_update = time.time_ns() // 1000
                 
-                scaled_factor = [0.0, 0.0]
                 
                 # Update last_pwm if not stopped
                 if not self.stopped:
                     self.lastpwm = self.lastpwm + 1
                     self.lastpwm = min(self.currentPwm, max(self.pwmCutoff, self.lastpwm))
+    
                 
                 # Loop through motors
                 for k in range(self.NMOTORS):
