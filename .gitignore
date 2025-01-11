@@ -4,3 +4,4 @@ raspi/__pycache__
 raspi/venv
 .vscode
 raspi/logs
+robot-visualization
