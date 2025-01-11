@@ -3,3 +3,4 @@ arduino/.DS_Store
 raspi/__pycache__
 raspi/venv
 .vscode
+raspi/logs
