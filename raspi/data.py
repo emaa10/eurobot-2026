@@ -1,6 +1,8 @@
 import serial
 import re
 import time
+import csv
+from datetime import datetime
 
 class SerialManager():
     def __init__(self, port="/dev/ttyACM0", baud_rate=115200) -> None:
@@ -11,6 +13,11 @@ class SerialManager():
         self.ser.flushInput()
         self.ser.setDTR(True)
         time.sleep(2)
+        
+        self.log_file = f"encoder_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        with open(self.log_file, 'w') as f:
+            writer = csv.writer(f)
+            writer.writerow(['timestamp', 'left_encoder', 'right_encoder'])
 
     
     def send_pwm(self, pwm: list[int], dirs: list[int]) -> None:
@@ -57,10 +64,11 @@ class SerialManager():
     
     def get_pos(self) -> list[int, int, int, int, float]:
         serial_input = self.read_input() # get latest input
-        print(serial_input)
         l, r, x, y, theta = self.extract_values(serial_input) # extract x y theta from serial data
+        
+        self.log_data(l, r)
 
-        print(f'Arduino sent: Left Encoder:{l}, Right Encoder:{r}, x: {x}, y: {y}, theta: {theta}')
+        # print(f'Arduino sent: Left Encoder:{l}, Right Encoder:{r}, x: {x}, y: {y}, theta: {theta}')
         return [l, r, x, y, theta]
     
     
@@ -68,3 +76,9 @@ class SerialManager():
         reset_string = f"r\n"
         byte_string = str.encode(reset_string)
         self.ser.write(byte_string)
+        
+        
+    def log_data(self, left, right) -> None:
+        with open(self.log_file, 'a') as f:
+            writer = csv.writer(f)
+            writer.writerow([datetime.now().timestamp(), left, right])

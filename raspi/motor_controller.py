@@ -13,7 +13,7 @@ class MotorController():
         self.pos = [0, 0]
         
         self.NMOTORS = 2
-        self.pwmCutoff = 10 # Set minimum drivable pwm value
+        self.pwmCutoff = 12 # Set minimum drivable pwm value
         self.pulsesCutoff = 4
         self.pwmMax = 254
         self.currentPwm = 254
@@ -22,7 +22,7 @@ class MotorController():
         self.target = [0, 0]
 
         self.pulsesPerEncRev = 1200
-        self.encWheelDiameterCM = 5
+        self.encWheelDiameterCM = 4.975
         self.motorWheelDiameterCM = 7
         self.encWheelScope = self.encWheelDiameterCM * math.pi
         self.motorWheelScope = self.motorWheelDiameterCM * math.pi   # distance travelled per rev
@@ -118,6 +118,12 @@ class MotorController():
             )
             
             self.scaled_factor[k] = float(self.pwm[k]) / self.lastpwm
+            
+        if(self.pwm[0] < self.pwmCutoff and self.pwm[1] < self.pwmCutoff):
+            self.pwm[0] = 0
+            self.pwm[1] = 0
+            self._serial_manager.send_pwm(self.pwm, self.dir)
+            return
         
         # Find max scaling factor and adjust PWM values
         max_factor = max(self.scaled_factor[0], self.scaled_factor[1])
