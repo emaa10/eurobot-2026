@@ -58,6 +58,21 @@ void sendData(){
     Serial.println(data);
 }
 
+void send_counter(){
+    String data;
+    data += "l";
+    data += String(counterLeft);
+    data += "r";
+    data += String(counterRight);
+    data += "x";
+    data += String(x);
+    data += "y";
+    data += String(y);
+    data += "t";
+    data += String(theta * 180.0 / PI);
+    Serial.println(data);
+}
+
 void updatePos(){
     // get tick differnce for each wheel
     float leftWheelDif = counterLeft - lastCounterLeft;
@@ -88,19 +103,5 @@ void updatePos(){
     send_counter();
 }
 
-void send_counter(){
-    String data;
-    data += "l";
-    data += String(counterLeft);
-    data += "r";
-    data += String(counterRight);
-    data += "x";
-    data += String(x);
-    data += "y";
-    data += String(y);
-    data += "t";
-    data += String(theta * 180.0 / PI);
-    Serial.println(data);
-}
 
 #endif
