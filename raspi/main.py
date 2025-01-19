@@ -22,16 +22,12 @@ class RobotController:
         # Create serial manager once
         self.serial_manager = SerialManager()
         
-        # Create PID Controller
-        self.pid = [SimplePID(), SimplePID()]
-        
-        self.motor_controller = MotorController()
+        self.motor_controller = MotorController(self.serial_manager)
         
         
     def serial_process(self):
         while True:
             try:
-                self.serial_manager.send_pwm(self.pwm, self.dir)
                 l, r, x, y, theta = self.serial_manager.get_pos()
                 with self._lock:
                     self.pos = [l, r]
@@ -45,6 +41,7 @@ class RobotController:
         
     
     def pwm_process(self):
+        self.motor_controller.drive_distance(500)
         while True:
             try:
                 with self._lock:
@@ -58,8 +55,31 @@ class RobotController:
 
 
     def run(self):
-        self.drive_distance(1000)
-        self.pwm_process()
+        try:
+            serial_thread = threading.Thread(target=self.serial_process, daemon=True)
+            pwm_thread = threading.Thread(target=self.pwm_process, daemon=True)
+            
+            # Start threads
+            serial_thread.start()
+            pwm_thread.start()
+
+        
+            # Wait for keyboard interrupt
+            while not self._stop_event.is_set():
+                time.sleep(0.1)
+        
+        except KeyboardInterrupt:
+            print("Stopping threads")
+        
+        finally:
+            # Signal threads to stop
+            self._stop_event.set()
+            
+            # Optional: Wait for threads to finish with a timeout
+            serial_thread.join(timeout=2)
+            pwm_thread.join(timeout=2)
+            
+            print("All threads stopped")
 
 def main():
     controller = RobotController()

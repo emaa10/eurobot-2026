@@ -1,6 +1,7 @@
 import math
 import time
 
+from simple_pid import SimplePID
 from data import SerialManager
 
 class MotorController():
@@ -42,6 +43,9 @@ class MotorController():
         self.prev_t = time.time_ns() // 1000
         self.last_pos_update = time.time_ns() // 1000
         self.scaled_factor = [0.0, 0.0]
+        
+        # Create PID Controller
+        self.pid = [SimplePID(), SimplePID()]
     
     def update_position(self):
         # Calculate encoder changes
@@ -122,7 +126,7 @@ class MotorController():
         if(self.pwm[0] < self.pwmCutoff and self.pwm[1] < self.pwmCutoff):
             self.pwm[0] = 0
             self.pwm[1] = 0
-            self._serial_manager.send_pwm(self.pwm, self.dir)
+            self.serial_manager.send_pwm(self.pwm, self.dir)
             return
         
         # Find max scaling factor and adjust PWM values
