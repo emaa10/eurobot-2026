@@ -1,7 +1,7 @@
 class SimplePID:
     def __init__(self):
         # Parameters
-        self.kp = 0.45
+        self.kp = 0.35
         self.kd = 0.005
         self.ki = 0.0
         self.umax = 100.0

@@ -14,7 +14,7 @@ class SerialManager():
         self.ser.setDTR(True)
         time.sleep(2)
         
-        self.log_file = f"encoder_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        self.log_file = f"logs/encoder_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         with open(self.log_file, 'w') as f:
             writer = csv.writer(f)
             writer.writerow(['timestamp', 'left_encoder', 'right_encoder'])
