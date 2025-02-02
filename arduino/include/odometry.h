@@ -95,9 +95,9 @@ void send_counter(){
     data += "r";
     data += String(counterRight);
     data += "x";
-    data += String(x);
+    data += String(int(x));
     data += "y";
-    data += String(y);
+    data += String(int(y));
     data += "t";
     data += String(theta * 180.0 / PI);
     Serial.println(data);

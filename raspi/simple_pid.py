@@ -11,20 +11,6 @@ class SimplePID:
         self.eintegral = 0.0
     
     def evaluate(self, value1: int, value2: int, target1: int, target2: int, delta_t: float) -> list[int, int]:
-        """Compute the control signal.
-        
-        Args:
-            value1: First current value
-            value2: Second current value
-            target1: First target value
-            target2: Second target value
-            delta_t: Time step
-            
-        Returns:
-            list containing:
-                - power: Absolute magnitude of control signal
-                - direction: Direction of control (1: forward, -1: reverse, 0: stop)
-        """
         # Error
         e1 = target1 - value1
         e2 = target2 - value2
