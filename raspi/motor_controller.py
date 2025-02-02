@@ -54,6 +54,9 @@ class MotorController():
     def current_time(self) -> int:
         return time.time_ns() // 1000
     
+    def send_pwm(self) -> None:
+        self.serial_manager.send_pwm(self.pwm, self.dirs)
+        
     def update_position(self) -> bool:
         pos = self.serial_manager.get_pos()
         
@@ -86,7 +89,6 @@ class MotorController():
             self.send_pwm()
 
             return True
-
             
     def reset_position(self) -> None:
         self.update_position()
@@ -107,35 +109,52 @@ class MotorController():
         self.reset_position()
         
         pulses_distance = self.wheelDistance * self.pulsesValue * math.pi * degree / 360
-        self.target[0] += -pulses_distance
-        self.target[1] += pulses_distance
-        
-    def send_pwm(self):
-        self.serial_manager.send_pwm(self.pwm, self.dirs)
+        self.target[0] += pulses_distance
+        self.target[1] -= pulses_distance
     
+    def drive_to(self, x: int, y: int, theta: int) -> list[str]:
+        delta_x = x - self.x
+        delta_y = y - self.y
+                
+        dist = math.sqrt(delta_x**2+delta_y**2)
+        
+        delta_t = (delta_y/dist) - self.theta * math.pi / 180
+        
+        # normalize theta
+        while (delta_t > math.pi): delta_t -= 2 * math.pi
+        while (delta_t < -math.pi): delta_t += 2 * math.pi
+        
+        delta_t *= 180 / math.pi
+        
+        return [f't{delta_t}', f'd{int(dist)}', f'r{theta}']    
+        
+    def turn_to(self, theta):
+        delta_t = theta - self.theta
+        while (delta_t > 180): delta_t -= 360
+        while (delta_t < -180): delta_t += 360
+        
+        self.turn_angle(delta_t)
     
     def pwm_loop(self) -> DriveState:
         # time difference
-        curr_t = self.current_time()  # Get microseconds
+        curr_t = self.current_time  # Get microseconds
         delta_t = float(curr_t - self.prev_t) / 1.0e6  # Convert to seconds
         self.prev_t = curr_t
 
         pos = self.serial_manager.get_pos()
             
-        if curr_t - last_pos_update >= 50000:
+        if curr_t - self.last_pos_update >= 50000:
             if self.update_position(): 
                 self.dirs = [0, 0]
                 self.pwm = [0, 0]
                 self.send_pwm()
                 return DriveState(self.x, self.y, self.theta, True)
-            last_pos_update = time.time_ns() // 1000
-        
+            self.last_pos_update = time.time_ns() // 1000
         
         # Update last_pwm if not stopped
         if not self.stopped:
             self.lastpwm = self.lastpwm + 1
             self.lastpwm = min(self.currentPwm, max(self.pwmCutoff, self.lastpwm))
-
         
         # Loop through motors
         for k in range(self.NMOTORS):

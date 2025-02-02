@@ -15,9 +15,11 @@ class RobotController:
         # Create motor_controller
         self.motor_controller = MotorController(self.serial_manager)
         
-        self.tasks = [Task(self.motor_controller, actions=['d400', 't90', 'd400', 't90', 'd400', 't90', 'd400', 't90'])]
+        self.task = Task(self.motor_controller, actions=['t90', 'd200', 'p655;255;0', 'd300'])
         
-        self.current_task = self.tasks.pop(0)
+    def add_task(self, actions: list[str]):
+        task = Task(self.motor_controller, actions=actions)
+        self.task.add_task(task)
         
     def control_loop(self, state: DriveState):
         self.x = state.x
@@ -25,9 +27,9 @@ class RobotController:
         self.theta = state.theta
         
         if state.finished:
-            self.current_task = self.current_task.next_action()
+            self.task = self.task.next_action()
             
-        return True if not self.current_task else False
+        return True if not self.task else False
             
 
     def run(self):
