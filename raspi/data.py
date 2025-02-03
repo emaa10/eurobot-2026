@@ -48,16 +48,17 @@ class SerialManager():
     
     # serial string to l, r, x, y, t
     def extract_values(self, input_str: str) -> tuple[int, int, int, int, float]:
-        pattern = r'l(-?\d+)r(-?\d+)x(-?\d+\.?\d*)y(-?\d+\.?\d*)t(-?\d+\.?\d*)'
+        pattern = r'l(-?\d+)r(-?\d+)x(-?\d+)y(-?\d+)t(-?\d*\.?\d*)'
         match = re.match(pattern, input_str)
+        
         if not match:
             raise ValueError(f"Could not extract all values from string: {input_str}")
         
         l = int(match.group(1))  # Value for l
         r = int(match.group(2))  # Value for r
-        x = int(float(match.group(3)))  # Value for x
-        y = int(float(match.group(4)))  # Value for y
-        t = float(match.group(5))  # Value for z
+        x = int(match.group(3))  # Value for x
+        y = int(match.group(4))  # Value for y
+        t = float(match.group(5))  # Value for theta
         
         return l, r, x, y, t
     

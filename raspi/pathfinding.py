@@ -3,7 +3,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from heapq import heappop, heappush
-from position import Position
+from classes.Position import Position
 
 def add_with_limits(a, b, max_value):
     result = a + b
@@ -15,7 +15,7 @@ def add_with_limits(a, b, max_value):
             
 
 class Pathfinder():
-    def __init__(self, start=Position(100,100), target=Position(2900, 1900), map_size=[3000, 2000], max_iters=1250, bot_width=180):
+    def __init__(self, start=Position(100,100), target=Position(2700, 1800), map_size=[3000, 2000], max_iters=1250, bot_width=180):
         self.start = start
         self.target = target
         self.map_size = map_size
@@ -23,25 +23,25 @@ class Pathfinder():
         self.max_iters = max_iters
         self.bot_width = bot_width
         
-        # # stacks
-        # self.add_stack(Position(900, 900), Position(1300, 1000))
-        # self.add_stack(Position(1700, 900), Position(2100, 1000))
-        # self.add_stack(Position(1950, 1700), Position(2350, 1800))
-        # self.add_stack(Position(650, 1700), Position(1050, 1800))
-        # self.add_stack(Position(550, 0), Position(950, 100))
-        # self.add_stack(Position(2050, 0), Position(2450, 100))
-        # self.add_stack(Position(2600, 450), Position(2999, 550))
-        # self.add_stack(Position(0, 450), Position(400, 550))
-        # self.add_stack(Position(2600, 1000), Position(2999, 1100))
-        # self.add_stack(Position(0, 1000), Position(400, 1100))
+        # stacks
+        self.add_stack(Position(900, 900), Position(1300, 1000))
+        self.add_stack(Position(1700, 900), Position(2100, 1000))
+        self.add_stack(Position(1950, 1700), Position(2350, 1800))
+        self.add_stack(Position(650, 1700), Position(1050, 1800))
+        self.add_stack(Position(550, 0), Position(950, 100))
+        self.add_stack(Position(2050, 0), Position(2450, 100))
+        self.add_stack(Position(2600, 450), Position(2999, 550))
+        self.add_stack(Position(0, 450), Position(400, 550))
+        self.add_stack(Position(2600, 1000), Position(2999, 1100))
+        self.add_stack(Position(0, 1000), Position(400, 1100))
         
-        # # stage and ramp
-        # self.add_obstacle(Position(650, 1800), Position(2350, 1999))
-        # self.add_obstacle(Position(1050, 1500), Position(1950, 1800))
+        # stage and ramp
+        self.add_obstacle(Position(650, 1800), Position(2350, 1999))
+        self.add_obstacle(Position(1050, 1500), Position(1950, 1800))
         
-        # # simas
-        # self.add_obstacle(Position(0, 1550), Position(150, 1999))
-        # self.add_obstacle(Position(2850, 1550), Position(2999, 1999))
+        # simas
+        self.add_obstacle(Position(0, 1550), Position(150, 1999))
+        self.add_obstacle(Position(2850, 1550), Position(2999, 1999))
         
     def set_start_target(self, start: Position, target: Position):
         self.start = start
@@ -136,13 +136,11 @@ class Pathfinder():
             pos = Position(random.randint(0, 2999), random.randint(0, 1999))
             if not self.collission_with_bot(start, pos) and not self.collission_with_bot(pos, target):
                 possibilities.append(pos)
-        print(len(possibilities))
+        
         # check if paths were found
         if len(possibilities) <= 0:
             print("No way found")
             return []
-            # middle_pos = self.find_middle_point(start, target)
-            # return self.plan(start, middle_pos) + [middle_pos] + self.plan(middle_pos, target)
         
         # find best pos (shortest path)
         best_pos_index = 0
@@ -189,4 +187,8 @@ class Pathfinder():
         
     def proccess(self) -> None:
         path = self.plan(self.start, self.target)
-        # self.display(path)
+        self.display(path)
+        
+if __name__ == "__main__":
+    pathfinder = Pathfinder(target=Position(1900, 650))
+    pathfinder.proccess()

@@ -65,9 +65,9 @@ void send_counter(){
     data += "r";
     data += String(counterRight);
     data += "x";
-    data += String(x);
+    data += String(int(x));
     data += "y";
-    data += String(y);
+    data += String(int(y));
     data += "t";
     data += String(theta * 180.0 / PI);
     Serial.println(data);
@@ -97,8 +97,7 @@ void updatePos(){
     y = y + dy;
     theta = theta + dtheta;
     while (theta > 2 * M_PI) theta -= 2 * M_PI;
-    while (theta < -2 * M_PI) theta += 2 * M_PI;
-    if(theta < 0) theta = 2 * M_PI - theta;
+    while (theta < 0) theta += 2 * M_PI;
 
     send_counter();
 }
