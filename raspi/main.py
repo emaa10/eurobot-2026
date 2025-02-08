@@ -1,7 +1,6 @@
-from data import SerialManager
-from motor_controller import MotorController
-from classes.DriveState import DriveState
-from classes.Task import Task
+from modules.task import Task
+from modules.motor_controller import MotorController
+from modules.drive_state import DriveState
 
 class RobotController:
     def __init__(self):
@@ -9,11 +8,7 @@ class RobotController:
         self.y = 255
         self.theta = 0
         
-        # Create serial manager once
-        self.serial_manager = SerialManager()
-        
-        # Create motor_controller
-        self.motor_controller = MotorController(self.serial_manager)
+        self.motor_controller = MotorController()
         
         self.task = Task(self.motor_controller, actions=['t90', 'd200', 'p655;255;0', 'd300'])
         
