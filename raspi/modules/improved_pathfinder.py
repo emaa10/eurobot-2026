@@ -3,7 +3,7 @@ from time import time_ns
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-from position import Position
+from modules.position import Position
 
 class Pathfinder():
     def __init__(self, start=Position(400,1800), target=Position(2500, 1250), map_size=[3000, 2000], max_iters=1250, bot_width=180):

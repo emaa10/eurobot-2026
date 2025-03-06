@@ -40,8 +40,7 @@ class Task():
                 self.motor_controller.turn_to(int(value))
             case 'p':
                 target_x, target_y, target_theta = value.split(';')
-                self.pathfinder.set_start_target(start=Position(x, y), target=Position(int(target_x), int(target_y)))
-                points = self.pathfinder.plan()
+                points = self.pathfinder.plan(start=Position(x, y), target=Position(int(target_x), int(target_y)))
                 actions = []
                 for point in points:
                     actions.extend(self.motor_controller.drive_to(point.x, point.y))

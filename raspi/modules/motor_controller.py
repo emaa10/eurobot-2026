@@ -1,9 +1,9 @@
 import math
 import time
 
-from data import SerialManager
-from simple_pid import SimplePID
-from drive_state import DriveState
+from modules.data import SerialManager
+from modules.simple_pid import SimplePID
+from modules.drive_state import DriveState
 
 class MotorController():
     def __init__(self) -> None:
@@ -171,7 +171,7 @@ class MotorController():
                 delta_t
             )
             
-            self.scaled_factor[k] = float(self.pwm[k]) / self.lastpwm
+            self.scaled_factor[k] = float(self.pwm[k]) / max(self.lastpwm, 1)
         
         # Find max scaling factor and adjust PWM values
         max_factor = max(self.scaled_factor[0], self.scaled_factor[1])
@@ -181,13 +181,13 @@ class MotorController():
         
         if self.stopped:
             # Decelerate for enemy
-            while self.lastpwm >= self.pwm_cutoff:
+            while self.lastpwm >= self.pwmCutoff:
                 self.lastpwm -= 2
                 self.serial_manager.send_pwm([self.lastpwm, self.lastpwm], self.dirs)
                 time.sleep(0.003)
             
             # Reset motors
-            for k in self.NMOTORS:
+            for k in range(self.NMOTORS):
                 self.dirs[k] = 0
                 self.pwm[k] = 0
         

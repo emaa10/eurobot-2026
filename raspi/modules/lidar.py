@@ -38,7 +38,7 @@ class Lidar:
         
         self.running = True
         self.thread = threading.Thread(target=self._scan_loop)
-        self.thread.daemon = True
+        self.thread.daemon = False
         self.thread.start()
         print("Scan thread started")
         return True
@@ -101,7 +101,7 @@ class Lidar:
         """
         try:
             # Use timeout to prevent blocking forever
-            return self.scan_results.get(timeout=timeout)
+            return self.scan_results.get_nowait()
         except queue.Empty:
             # No scan results available within timeout
             return None

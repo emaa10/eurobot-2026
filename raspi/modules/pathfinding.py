@@ -3,7 +3,7 @@ import random
 from time import time_ns
 import numpy as np
 import matplotlib.pyplot as plt
-from position import Position
+from modules.position import Position
 
 def time_ms():
     return time_ns() // 1000000

@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 import math
 from rplidar import RPLidar
+from time import time_ns
 
-PORT_NAME = '/dev/tty.usbserial-0001'
+PORT_NAME = '/dev/ttyUSB0'
 
 def run():
     lidar = RPLidar(PORT_NAME)
     
+    time_stamp = time_ns()
+    
     for measurements in lidar.iter_measures():
         new_scan, quality, angle, distance = measurements
         
+        if new_scan:
+            print(str((time_ns() - time_stamp) // 1000000))
+            time_stamp = time_ns()
+            
         # point in relation to bot
         d_x = distance * math.sin(angle * math.pi / 180)
         d_y = distance * math.cos(angle * math.pi / 180)
