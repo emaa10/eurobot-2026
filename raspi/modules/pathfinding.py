@@ -3,7 +3,7 @@ import random
 from time import time_ns
 import numpy as np
 import matplotlib.pyplot as plt
-from modules.position import Position
+from position import Position
 
 def time_ms():
     return time_ns() // 1000000
@@ -13,7 +13,7 @@ def add_with_limits(a, b, max_value):
     return min(result, max_value)
 
 class Pathfinder():
-    def __init__(self, start=Position(400,1800), target=Position(2700, 1800), map_size=[3000, 2000], max_iters=1000, bot_width=180):
+    def __init__(self, start=Position(400,1800), target=Position(2700, 1800), map_size=[3000, 2000], max_iters=1500, bot_width=180):
         self.start = start
         self.target = target
         self.map_size = map_size
@@ -177,5 +177,5 @@ class Pathfinder():
         if display: self.display(path)
         
 if __name__ == "__main__":
-    pathfinder = Pathfinder(target=Position(2800, 750))
+    pathfinder = Pathfinder(target=Position(1500, 1250))
     pathfinder.proccess(True)

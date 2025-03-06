@@ -93,17 +93,15 @@ class Lidar:
             self.running = False
     
     
-    def get_latest_scan(self, timeout=0.1):
+    def get_latest_scan(self):
         """
         Get the latest scan result with timeout
         Returns: Boolean (True = path clear, False = obstacle detected)
                  or None if no data available
         """
         try:
-            # Use timeout to prevent blocking forever
             return self.scan_results.get_nowait()
         except queue.Empty:
-            # No scan results available within timeout
             return None
     
     def is_running(self):
@@ -147,7 +145,7 @@ def main():
         count = 0
         while count < 1000:
             # Get the latest scan with timeout
-            path_clear = lidar.get_latest_scan(timeout=0.5)
+            path_clear = lidar.get_latest_scan()
             
             if path_clear is not None:
                 print(f"Path clear: {path_clear}")

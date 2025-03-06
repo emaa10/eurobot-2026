@@ -16,7 +16,7 @@ class RobotController:
         
         self.lidar = Lidar('/dev/ttyUSB0')
         
-        self.task = Task(self.motor_controller, actions=['d600'])
+        self.task = Task(self.motor_controller, actions=['p1500;1250;0'])
         
         
     def add_task(self, actions: list[str]):
