@@ -1,12 +1,16 @@
 from typing import Self
 
-from motor_controller import MotorController
+from modules.motor_controller import MotorController
+from modules.pathfinding import Pathfinder
+from modules.position import Position
 
 class Task():
     def __init__(self, motor_controller: MotorController, actions: list[str] = [], successor: Self | None = None):
         self.motor_controller = motor_controller
         self.actions = actions
         self.successor = successor
+        
+        self.pathfinder = Pathfinder()
         
     def add_task(self, task: Self) -> Self:
         if not self.successor:
@@ -16,7 +20,7 @@ class Task():
         self.successor.add_task(task)
         
     # Sets next action and returns current Task (self or next task if current task finished)
-    def next_action(self) -> Self:
+    def next_action(self, x, y) -> Self:
         if len(self.actions) <= 0:
             if not self.successor: return None
             
@@ -35,12 +39,15 @@ class Task():
             case 'r':
                 self.motor_controller.turn_to(int(value))
             case 'p':
-                x, y, theta = value.split(';')
-                actions = self.motor_controller.drive_to(int(x), int(y), int(theta))
+                target_x, target_y, target_theta = value.split(';')
+                self.pathfinder.set_start_target(start=Position(x, y), target=Position(int(target_x), int(target_y)))
+                points = self.pathfinder.plan()
+                actions = []
+                for point in points:
+                    actions.extend(self.motor_controller.drive_to(point.x, point.y))
+                actions.append(f'r{target_theta}')
                 actions.extend(self.actions)
-                print(actions)
                 self.actions = actions
-                print(self.actions)
                 return self.next_action()
                 
         return self

@@ -81,7 +81,7 @@ class Lidar:
                     current_scan_data = []
                     
                 # Store valid measurements
-                if quality > 10:  
+                if quality > 10 and distance > 0:  
                     current_scan_data.append((angle, distance))
                 
         except Exception as e:

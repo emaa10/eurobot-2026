@@ -177,5 +177,5 @@ class Pathfinder():
         if display: self.display(path)
         
 if __name__ == "__main__":
-    pathfinder = Pathfinder(target=Position(1900, 650))
-    pathfinder.proccess()
+    pathfinder = Pathfinder(target=Position(2800, 750))
+    pathfinder.proccess(True)

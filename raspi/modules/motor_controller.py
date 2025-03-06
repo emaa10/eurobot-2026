@@ -112,7 +112,7 @@ class MotorController():
         self.target[0] += pulses_distance
         self.target[1] -= pulses_distance
     
-    def drive_to(self, x: int, y: int, theta: int) -> list[str]:
+    def drive_to(self, x: int, y: int, theta: int | None) -> list[str]:
         delta_x = x - self.x
         delta_y = y - self.y
                 
@@ -126,7 +126,11 @@ class MotorController():
         
         delta_t *= 180 / math.pi
         
-        return [f't{delta_t}', f'd{int(dist)}', f'r{theta}']    
+        actions = [f't{delta_t}', f'd{int(dist)}']
+        
+        if theta: actions.append(f'r{theta}')
+        
+        return actions  
         
     def turn_to(self, theta):
         delta_t = theta - self.theta
@@ -191,4 +195,7 @@ class MotorController():
         
         self.lastpwm = max(self.pwm[0], self.pwm[1])
         
-        return DriveState(self.x, self.y, self.theta, False)
+        direction = self.dirs[0]
+        if(self.dirs[0] != self.dirs[1]): direction = 0
+                
+        return DriveState(self.x, self.y, self.theta, False, direction)
