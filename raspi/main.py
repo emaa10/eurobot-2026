@@ -1,6 +1,7 @@
 from modules.task import Task
 from modules.motor_controller import MotorController
 from modules.drive_state import DriveState
+from modules.lidar import Lidar
 
 class RobotController:
     def __init__(self):
@@ -9,6 +10,8 @@ class RobotController:
         self.theta = 0
         
         self.motor_controller = MotorController()
+        
+        self.lidar = Lidar('/dev/ttyUSB0')
         
         self.task = Task(self.motor_controller, actions=['t90', 'd200', 'p655;255;0', 'd300'])
         
