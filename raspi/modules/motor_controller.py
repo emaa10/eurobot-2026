@@ -105,28 +105,22 @@ class MotorController():
         self.target[0] += self.pulsesValue * distance
         self.target[1] += self.pulsesValue * distance
         
-    def turn_angle(self, degree: int) -> None:
+    def turn_angle(self, degree: float) -> None:
         self.reset_position()
         
         pulses_distance = self.wheelDistance * self.pulsesValue * math.pi * degree / 360
         self.target[0] += pulses_distance
         self.target[1] -= pulses_distance
     
-    def drive_to(self, x: int, y: int, theta: int | None) -> list[str]:
+    def drive_to(self, x: int, y: int, theta: int | None = None) -> list[str]:
         delta_x = x - self.x
         delta_y = y - self.y
                 
         dist = math.sqrt(delta_x**2+delta_y**2)
         
-        delta_t = (delta_y/dist) - self.theta * math.pi / 180
+        t = -math.degrees(math.asin(delta_y/dist))
         
-        # normalize theta
-        while (delta_t > math.pi): delta_t -= 2 * math.pi
-        while (delta_t < -math.pi): delta_t += 2 * math.pi
-        
-        delta_t *= 180 / math.pi
-        
-        actions = [f't{delta_t}', f'd{int(dist)}']
+        actions = [f'r{t}', f'd{int(dist)}']
         
         if theta: actions.append(f'r{theta}')
         

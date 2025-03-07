@@ -37,16 +37,18 @@ class Task():
             case 't':
                 self.motor_controller.turn_angle(float(value))
             case 'r':
-                self.motor_controller.turn_to(int(value))
+                self.motor_controller.turn_to(float(value))
             case 'p':
                 target_x, target_y, target_theta = value.split(';')
-                points = self.pathfinder.plan(start=Position(x, y), target=Position(int(target_x), int(target_y)))
+                points = self.pathfinder.plan(start=Position(x//10, y//10), target=Position(int(target_x)//10, int(target_y)//10))
                 actions = []
                 for point in points:
-                    actions.extend(self.motor_controller.drive_to(point.x, point.y))
+                    print(f'{point.x}, {point.y}')
+                    actions.extend(self.motor_controller.drive_to(point.x*10, point.y*10))
                 actions.append(f'r{target_theta}')
                 actions.extend(self.actions)
                 self.actions = actions
-                return self.next_action()
+                print(self.actions)
+                return self.next_action(x, y)
                 
         return self

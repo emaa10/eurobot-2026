@@ -25,8 +25,8 @@ int counterRight = 0;
 int lastCounterLeft = 0;
 int lastCounterRight = 0;
 
-float x = 255;            // x in mm
-float y = 255;            // y in mm
+float x = 400;            // x in mm
+float y = 1800;            // y in mm
 float theta = 0;        // theta in RAD
 
 // update ticks left
@@ -94,7 +94,7 @@ void updatePos(){
 
     // update global pos
     x = x + dx;
-    y = y + dy;
+    y = y - dy;
     theta = theta + dtheta;
     while (theta > 2 * M_PI) theta -= 2 * M_PI;
     while (theta < 0) theta += 2 * M_PI;

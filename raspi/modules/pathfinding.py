@@ -3,7 +3,7 @@ import random
 from time import time_ns
 import numpy as np
 import matplotlib.pyplot as plt
-from position import Position
+from modules.position import Position
 
 def time_ms():
     return time_ns() // 1000000
@@ -13,7 +13,7 @@ def add_with_limits(a, b, max_value):
     return min(result, max_value)
 
 class Pathfinder():
-    def __init__(self, start=Position(400,1800), target=Position(2700, 1800), map_size=[3000, 2000], max_iters=1500, bot_width=180):
+    def __init__(self, start=Position(40,180), target=Position(270, 180), map_size=[300, 200], max_iters=1000, bot_width=18):
         self.start = start
         self.target = target
         self.map_size = map_size
@@ -22,24 +22,24 @@ class Pathfinder():
         self.bot_width = bot_width
         
         # stacks
-        self.add_stack(Position(900, 900), Position(1300, 1000))
-        self.add_stack(Position(1700, 900), Position(2100, 1000))
-        self.add_stack(Position(1950, 1700), Position(2350, 1800))
-        self.add_stack(Position(650, 1700), Position(1050, 1800))
-        self.add_stack(Position(550, 0), Position(950, 100))
-        self.add_stack(Position(2050, 0), Position(2450, 100))
-        self.add_stack(Position(2600, 450), Position(2999, 550))
-        self.add_stack(Position(0, 450), Position(400, 550))
-        self.add_stack(Position(2600, 1000), Position(2999, 1100))
-        self.add_stack(Position(0, 1000), Position(400, 1100))
+        self.add_stack(Position(90, 90), Position(130, 100))
+        self.add_stack(Position(170, 90), Position(210, 100))
+        self.add_stack(Position(195, 170), Position(235, 180))
+        self.add_stack(Position(65, 170), Position(105, 180))
+        self.add_stack(Position(55, 0), Position(95, 10))
+        self.add_stack(Position(205, 0), Position(245, 10))
+        self.add_stack(Position(260, 45), Position(299, 55))
+        self.add_stack(Position(0, 45), Position(40, 55))
+        self.add_stack(Position(260, 100), Position(299, 110))
+        self.add_stack(Position(0, 100), Position(40, 110))
         
         # stage and ramp
-        self.add_obstacle(Position(650, 1800), Position(2350, 1999))
-        self.add_obstacle(Position(1050, 1500), Position(1950, 1800))
+        self.add_obstacle(Position(65, 180), Position(235, 199))
+        self.add_obstacle(Position(105, 150), Position(195, 180))
         
         # simas
-        self.add_obstacle(Position(0, 1550), Position(150, 1999))
-        self.add_obstacle(Position(2850, 1550), Position(2999, 1999))
+        self.add_obstacle(Position(0, 155), Position(15, 199))
+        self.add_obstacle(Position(285, 155), Position(299, 199))
     
     def add_stack(self, pos1: Position, pos2: Position) -> None:
         self.obstacle_map[pos1.y:pos2.y, pos1.x:pos2.x] = 2
@@ -113,7 +113,8 @@ class Pathfinder():
         
         return self.collission(right1, right2) or self.collission(left1, left2)
     
-    def plan(self, start, target) -> list[Position]:       
+    def plan(self, start, target) -> list[Position]:
+        print(f'start: {start.x}, {start.y}; target: {target.x}, {target.y}')       
         # if no collision return target         
         if not self.collission_with_bot(start, target):
             return [target]
@@ -130,6 +131,8 @@ class Pathfinder():
         if len(possibilities) <= 0:
             print("No path found")
             return []
+        
+        print("path found")
         
         # find best pos (shortest path)
         best_pos_index = 0
@@ -177,5 +180,5 @@ class Pathfinder():
         if display: self.display(path)
         
 if __name__ == "__main__":
-    pathfinder = Pathfinder(target=Position(1500, 1250))
-    pathfinder.proccess(True)
+    pathfinder = Pathfinder(target=Position(150, 125))
+    pathfinder.proccess(False)
