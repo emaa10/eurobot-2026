@@ -14,16 +14,15 @@ check_python:
   script:
     - echo "Checking Python syntax..."
     - ls -alh
-    - ls -alh main-bot
-    - python -m py_compile main-bot/raspi/*.py
+    - python -m py_compile raspi/*.py
 
 build_arduino:
   stage: build-arduino
   script:
     - echo "Building Arduino code with PlatformIO..."
-    - cd main-bot/arduino
+    - cd arduino
     - pio run
   artifacts:
     paths:
-      - main-bot/arduino/.pio/build
+      - arduino/.pio/build
 
