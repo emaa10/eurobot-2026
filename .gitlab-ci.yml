@@ -7,9 +7,12 @@ build_arduino:
   tags:
     - Compile
   script:
+    - apt-get update && apt-get install -y python3 python3-venv python3-pip git
+    - python3 -m venv venv
+    - source venv/bin/activate
+    - pip install pyinstaller
+    - pip install platformio
     - cd arduino
-    - sudo apt install python3 python3-pip
-    - pip3 install platformio
     - pio run
 
 check_python:
