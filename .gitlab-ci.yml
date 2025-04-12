@@ -8,6 +8,7 @@ build_arduino:
     - Compile
   script:
     - cd arduino
+    - pip3 install platformio
     - pio run
 
 check_python:
