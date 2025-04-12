@@ -1,25 +1,27 @@
+image: python:3.11-slim
+
 stages:
+  - check-python
   - build-arduino
-  - lint-python
+
+before_script:
+  - python -m venv venv
+  - source venv/bin/activate
+  - pip install platformio
+
+check_python:
+  stage: check-python
+  script:
+    - echo "Checking Python syntax..."
+    - python -m py_compile main-bot/raspi/*.py
 
 build_arduino:
   stage: build-arduino
-  tags:
-    - Compile
   script:
-    - apt-get update && apt-get install -y python3 python3-venv python3-pip git
-    - python3 -m venv venv
-    - source venv/bin/activate
-    - pip install pyinstaller
-    - pip install platformio
-    - cd arduino
+    - echo "Building Arduino code with PlatformIO..."
+    - cd main-bot/arduino
     - pio run
-
-check_python:
-  stage: lint-python
-  tags:
-    - Compile
-  script:
-    - cd raspi
-    - python3 -m py_compile main.py
+  artifacts:
+    paths:
+      - main-bot/arduino/.pio/build
 
