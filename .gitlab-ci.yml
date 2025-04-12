@@ -13,6 +13,8 @@ check_python:
   stage: check-python
   script:
     - echo "Checking Python syntax..."
+    - ls -alh
+    - ls -alh main-bot
     - python -m py_compile main-bot/raspi/*.py
 
 build_arduino:
