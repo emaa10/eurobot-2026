@@ -1,0 +1,20 @@
+stages:
+  - build-arduino
+  - lint-python
+
+build_arduino:
+  stage: build-arduino
+  tags:
+    - Compile
+  script:
+    - cd arduino
+    - pio run
+
+check_python:
+  stage: lint-python
+  tags:
+    - Compile
+  script:
+    - cd raspi
+    - python3 -m py_compile main.py
+
