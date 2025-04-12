@@ -1,6 +1,6 @@
 from typing import Self
 
-from modules.motor_controller import MotorController
+from modules.motor_controller_old import MotorController
 from modules.pathfinding import Pathfinder
 from modules.position import Position
 

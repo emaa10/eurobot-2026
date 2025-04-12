@@ -1,5 +1,5 @@
 from modules.task import Task
-from modules.motor_controller import MotorController
+from modules.motor_controller_old import MotorController
 from modules.drive_state import DriveState
 from modules.lidar import Lidar
 
@@ -17,7 +17,6 @@ class RobotController:
         self.lidar = Lidar('/dev/ttyUSB0')
         
         self.task = Task(self.motor_controller, actions=['p600;1200;0'])
-        # self.task = Task(self.motor_controller, actions=['t75'])
         
         
     def add_task(self, actions: list[str]):
@@ -63,9 +62,7 @@ class RobotController:
         
         # task management
         if state.finished:
-            # self.lidar.stop()
             self.task = self.task.next_action(self.x, self.y)
-            # self.lidar.start_scanning()
             
         return True if not self.task else False
             
