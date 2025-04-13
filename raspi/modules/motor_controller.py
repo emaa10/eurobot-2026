@@ -177,35 +177,71 @@ class Motorcontroller():
 
         qr = moteus.QueryResolution()
         qr.trajectory_complete = moteus.INT8
+        qr.fault = moteus.INT8  # Add fault monitoring
 
         self.controllers = {x: moteus.Controller(x, query_resolution=qr) for x in self.SERVO_IDS}
 
         self.poller = Poller(self.controllers, args)
+        
+        # Initialize controllers with proper settings
+        for controller in self.controllers.values():
+            controller.set_stop()
     
     async def set_pos(self, pos1: int, pos2: int):
-        [await controller.set_output_exact(position=0.0)
-        for motor_id, controller in self.controllers.items()]
-        
-        target_positions = {1: -pos1, 2: pos2}  # forwards
-        
-        # Define velocity and acceleration limits
-        velocity_limit = 25.0
-        accel_limit = 20.0
-        watchdog_timeout = math.nan  # No timeout for watchdog
+        try:
+            # First stop all motors
+            [await controller.set_stop() for controller in self.controllers.values()]
+            
+            # Set zero position
+            [await controller.set_output_exact(position=0.0)
+            for motor_id, controller in self.controllers.items()]
+            
+            target_positions = {1: -pos1, 2: pos2}  # forwards
+            
+            # Define velocity and acceleration limits
+            velocity_limit = 25.0
+            accel_limit = 20.0
+            watchdog_timeout = 0.5  # Set a reasonable watchdog timeout
 
-        [await controller.set_position(position=target_positions.get(motor_id, 0), 
-                                    velocity_limit=velocity_limit, 
-                                    accel_limit=accel_limit, 
-                                    watchdog_timeout=watchdog_timeout)
-        for motor_id, controller in self.controllers.items()]
+            # Set positions with error handling
+            for motor_id, controller in self.controllers.items():
+                try:
+                    await controller.set_position(
+                        position=target_positions.get(motor_id, 0), 
+                        velocity_limit=velocity_limit, 
+                        accel_limit=accel_limit, 
+                        watchdog_timeout=watchdog_timeout
+                    )
+                except Exception as e:
+                    print(f"Error setting position for motor {motor_id}: {e}")
+                    await controller.set_stop()
+                    raise
 
-        await self.poller.wait_for_event(
-            lambda: all([x.values[moteus.Register.TRAJECTORY_COMPLETE]
-                        for x in self.poller.servo_data.values()]),
-            timeout=120.0
-        )
-        
-        time.sleep(0.5)
+            # Wait for completion with error checking
+            try:
+                await self.poller.wait_for_event(
+                    lambda: all([x.values[moteus.Register.TRAJECTORY_COMPLETE]
+                                for x in self.poller.servo_data.values()]),
+                    timeout=5.0  # Reduced timeout
+                )
+            except RuntimeError as e:
+                print(f"Timeout waiting for trajectory completion: {e}")
+                [await controller.set_stop() for controller in self.controllers.values()]
+                raise
+            
+            # Check for faults
+            for motor_id, data in self.poller.servo_data.items():
+                if data.values.get(moteus.Register.FAULT, 0) != 0:
+                    print(f"Motor {motor_id} reported a fault")
+                    [await controller.set_stop() for controller in self.controllers.values()]
+                    raise RuntimeError(f"Motor {motor_id} fault detected")
+            
+            await asyncio.sleep(0.1)  # Small delay for stability
+            
+        except Exception as e:
+            print(f"Error in set_pos: {e}")
+            [await controller.set_stop() for controller in self.controllers.values()]
+            raise
         
     async def drive(self, dist:int):
         await self.set_pos(dist, dist)

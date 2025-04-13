@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton,
                            QVBoxLayout, QWidget, QLabel, QGridLayout)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QColor, QPalette
-from new_motor_controller import Motorcontroller
+from motor_controller import Motorcontroller
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -34,24 +34,16 @@ class MotorWorker(QThread):
         self.running = False
         self.loop.call_soon_threadsafe(self.loop.stop)
         
-    async def run_test_case(self, case_number):
+    async def run_test_case(self, case_number: int, direction: int):
         try:
             if case_number == 1:
-                await self.controller.drive(50)
-                time.sleep(3)
-                await self.controller.drive(-50)
+                await self.controller.drive(50 * direction)
             elif case_number == 2:
-                await self.controller.drive(100)
-                time.sleep(3)
-                await self.controller.drive(-100)
+                await self.controller.drive(100 * direction)
             elif case_number == 3:
-                await self.controller.turn(90)
-                time.sleep(2)
-                await self.controller.turn(-90)
+                await self.controller.turn(90 * direction)
             elif case_number == 4:
-                await self.controller.turn(360)
-                time.sleep(2)
-                await self.controller.turn(-360)
+                await self.controller.turn(360 * direction)
             self.status_update.emit("Test completed!")
         except Exception as e:
             logger.error(f"Error in test case {case_number}: {e}")
@@ -90,17 +82,22 @@ class MotorControllerGUI(QMainWindow):
             ("#96CEB4", "#B6DEC4")   # Green
         ]
         
-        test_cases = ["drive 50", "drive 100", "turn 90", "turn 360"]
+        test_cases = [
+            ("drive 50", 50),
+            ("drive 100", 100),
+            ("turn 90", 90),
+            ("turn 360", 360)
+        ]
         
-        
-        for i, case in enumerate(test_cases):
-            btn = QPushButton(case)
-            btn.setMinimumSize(200, 150)  # Make buttons larger
-            btn.setStyleSheet(f"""
+        for i, (case_name, value) in enumerate(test_cases):
+            # Forward button
+            btn_forward = QPushButton(f"{case_name} →")
+            btn_forward.setMinimumSize(200, 100)  # Adjusted size for more buttons
+            btn_forward.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {button_colors[i][0]};
                     color: white;
-                    font-size: 20px;
+                    font-size: 18px;
                     font-weight: bold;
                     border-radius: 10px;
                     padding: 10px;
@@ -112,13 +109,34 @@ class MotorControllerGUI(QMainWindow):
                     background-color: {button_colors[i][0]};
                 }}
             """)
-            btn.clicked.connect(lambda checked, case=i+1: self.run_test_case(case))
-            self.test_buttons.append(btn)
+            btn_forward.clicked.connect(lambda checked, case=i+1, direction=1: self.run_test_case(case, direction))
+            self.test_buttons.append(btn_forward)
             
-            # Calculate grid position
-            row = (i) // 2
-            col = (i) % 2
-            grid_layout.addWidget(btn, row, col)
+            # Backward button
+            btn_backward = QPushButton(f"{case_name} ←")
+            btn_backward.setMinimumSize(200, 100)  # Adjusted size for more buttons
+            btn_backward.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {button_colors[i][0]};
+                    color: white;
+                    font-size: 18px;
+                    font-weight: bold;
+                    border-radius: 10px;
+                    padding: 10px;
+                }}
+                QPushButton:hover {{
+                    background-color: {button_colors[i][1]};
+                }}
+                QPushButton:pressed {{
+                    background-color: {button_colors[i][0]};
+                }}
+            """)
+            btn_backward.clicked.connect(lambda checked, case=i+1, direction=-1: self.run_test_case(case, direction))
+            self.test_buttons.append(btn_backward)
+            
+            # Add both buttons to grid
+            grid_layout.addWidget(btn_forward, i, 0)
+            grid_layout.addWidget(btn_backward, i, 1)
         
         main_layout.addLayout(grid_layout)
         
@@ -140,13 +158,13 @@ class MotorControllerGUI(QMainWindow):
         self.status_label.setText(message)
         QApplication.processEvents()
     
-    def run_test_case(self, case_number):
-        self.status_label.setText(f"Running Test Case {case_number}...")
+    def run_test_case(self, case_number, direction):
+        self.status_label.setText(f"Running Test Case {case_number} {'forward' if direction > 0 else 'backward'}...")
         QApplication.processEvents()
         
         # Run the test case in the worker thread
         asyncio.run_coroutine_threadsafe(
-            self.worker.run_test_case(case_number),
+            self.worker.run_test_case(case_number, direction),
             self.worker.loop
         )
 
