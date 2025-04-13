@@ -43,7 +43,7 @@ class ServoClock:
              moteus.Register.CLOCK_TRIM: moteus.INT32}
         )
         
-    def _calculate_ms_delta(time1, time2):
+    def _calculate_ms_delta(self, time1, time2):
         # These are returned as int32s, so they may have wrapped around.
         if time2 < 0 and time1 > 0:
             result_ms = time2 + (2**32) - time1
