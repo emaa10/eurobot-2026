@@ -91,7 +91,7 @@ class MotorControllerGUI(QMainWindow):
         
         for i, (case_name, value) in enumerate(test_cases):
             # Forward button
-            btn_forward = QPushButton(f"{case_name} →")
+            btn_forward = QPushButton(f"{case_name} ←")
             btn_forward.setMinimumSize(200, 100)  # Adjusted size for more buttons
             btn_forward.setStyleSheet(f"""
                 QPushButton {{
@@ -113,7 +113,7 @@ class MotorControllerGUI(QMainWindow):
             self.test_buttons.append(btn_forward)
             
             # Backward button
-            btn_backward = QPushButton(f"{case_name} ←")
+            btn_backward = QPushButton(f"{case_name} →")
             btn_backward.setMinimumSize(200, 100)  # Adjusted size for more buttons
             btn_backward.setStyleSheet(f"""
                 QPushButton {{

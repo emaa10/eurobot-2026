@@ -183,13 +183,15 @@ class Motorcontroller():
 
         self.poller = Poller(self.controllers, args)
         
-        # Initialize controllers with proper settings
-        for controller in self.controllers.values():
-            controller.set_stop()
+    async def get_finished(self) -> bool:
+        # Query the current state of all controllers
+        servo_data = {x.id: await x.query() for x in self.controllers.values()}
+        
+        # Check if all motors have completed their trajectory
+        return all(data.values[moteus.Register.TRAJECTORY_COMPLETE] for data in servo_data.values())
     
-    async def set_pos(self, pos1: int, pos2: int):
+    async def set_pos(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0):
         try:
-            # First stop all motors
             [await controller.set_stop() for controller in self.controllers.values()]
             
             # Set zero position
@@ -197,46 +199,19 @@ class Motorcontroller():
             for motor_id, controller in self.controllers.items()]
             
             target_positions = {1: -pos1, 2: pos2}  # forwards
-            
-            # Define velocity and acceleration limits
-            velocity_limit = 25.0
-            accel_limit = 20.0
-            watchdog_timeout = 0.5  # Set a reasonable watchdog timeout
 
-            # Set positions with error handling
             for motor_id, controller in self.controllers.items():
                 try:
                     await controller.set_position(
                         position=target_positions.get(motor_id, 0), 
                         velocity_limit=velocity_limit, 
                         accel_limit=accel_limit, 
-                        watchdog_timeout=watchdog_timeout
+                        watchdog_timeout=math.nan
                     )
                 except Exception as e:
                     print(f"Error setting position for motor {motor_id}: {e}")
                     await controller.set_stop()
                     raise
-
-            # Wait for completion with error checking
-            try:
-                await self.poller.wait_for_event(
-                    lambda: all([x.values[moteus.Register.TRAJECTORY_COMPLETE]
-                                for x in self.poller.servo_data.values()]),
-                    timeout=5.0  # Reduced timeout
-                )
-            except RuntimeError as e:
-                print(f"Timeout waiting for trajectory completion: {e}")
-                [await controller.set_stop() for controller in self.controllers.values()]
-                raise
-            
-            # Check for faults
-            for motor_id, data in self.poller.servo_data.items():
-                if data.values.get(moteus.Register.FAULT, 0) != 0:
-                    print(f"Motor {motor_id} reported a fault")
-                    [await controller.set_stop() for controller in self.controllers.values()]
-                    raise RuntimeError(f"Motor {motor_id} fault detected")
-            
-            await asyncio.sleep(0.1)  # Small delay for stability
             
         except Exception as e:
             print(f"Error in set_pos: {e}")
@@ -244,38 +219,32 @@ class Motorcontroller():
             raise
         
     async def drive(self, dist:int):
-        await self.set_pos(dist, dist)
+        pulses_per_cm = 0.66
+        pulses = dist * pulses_per_cm
+        
+        await self.set_pos(pulses, pulses)
         
     async def turn(self, angle:int):
-        turn = 14.25
+        turn = 14.27
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
-        
-        print(pulses)
-        
-        await self.set_pos(-pulses, pulses)
+                
+        await self.set_pos(-pulses, pulses, velocity_limit=25.0, accel_limit=25.0)
         
 
         
 async def main():
     controller = Motorcontroller()
     
-    async def test_case1():
-        controller.drive(30)
-        controller.drive(-30)
-    
-    async def test_case2():
-        controller.drive(30)
-        controller.drive(-30)
+    await controller.drive(50)
         
-    async def test_case3():
-        controller.drive(30)
-        controller.drive(-30)
+    while True:
+        time.sleep(0.5)
         
-    async def test_case4():
-        controller.drive(30)
-        controller.drive(-30)
-    
+        finished = await controller.get_finished()
+        if finished: break
+        
+    await controller.drive(-50)
 
 
 if __name__ == '__main__':
