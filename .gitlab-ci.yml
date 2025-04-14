@@ -11,13 +11,17 @@ before_script:
 
 check_python:
   stage: check-python
+  tags:
+  - Compile
   script:
     - echo "Checking Python syntax..."
     - ls -alh
     - python -m py_compile raspi/*.py
 
 build_arduino:
-  stage: build-arduino
+  stage: build-
+  tags:
+  - Compile
   script:
     - echo "Building Arduino code with PlatformIO..."
     - cd arduino
