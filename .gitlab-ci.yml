@@ -9,15 +9,19 @@ before_script:
   - source venv/bin/activate
   - pip install platformio
 
-check_python:
+check-python:
   stage: check-python
+  tags:
+  - Compile
   script:
     - echo "Checking Python syntax..."
     - ls -alh
     - python -m py_compile raspi/*.py
 
-build_arduino:
+build-arduino:
   stage: build-arduino
+  tags:
+  - Compile
   script:
     - echo "Building Arduino code with PlatformIO..."
     - cd arduino
