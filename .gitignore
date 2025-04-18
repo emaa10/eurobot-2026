@@ -6,4 +6,5 @@ arduino/.vscode
 raspi/__pycache__
 raspi/modules/__pycache__
 raspi/logs
+raspi/.venv
 robot-visualization

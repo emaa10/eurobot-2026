@@ -62,7 +62,7 @@ class Lidar:
                 if new_reading:
                     # Calculate and print time for a complete scan
                     scan_time_ms = (time_ns() - time_stamp) // 1000000
-                    print(f"Scan time: {scan_time_ms}ms")
+                    # print(f"Scan time: {scan_time_ms}ms")
                     time_stamp = time_ns()
                     
                     # Put result in queue, non-blocking
