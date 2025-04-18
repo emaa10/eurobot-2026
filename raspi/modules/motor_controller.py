@@ -9,6 +9,8 @@ import math
 import moteus
 import time
 
+from modules.drive_state import DriveState
+
 
 class ServoClock:
     '''This class can be used to keep a controller's time base
@@ -139,7 +141,7 @@ class Poller:
         }
 
         self.next_clock_time = self.last_time + self.CLOCK_UPDATE_S
-
+        
 
     async def wait_for_event(self, condition, timeout=None, per_cycle=None):
         start = time.time()
@@ -183,6 +185,12 @@ class Motorcontroller():
 
         self.poller = Poller(self.controllers, args)
         
+        self.target_positions = {1: 0, 2: 0} 
+        
+        self.finished = False
+        self.stop = False
+        self.direction = 0
+        
     async def get_finished(self) -> bool:
         # Query the current state of all controllers
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
@@ -190,7 +198,22 @@ class Motorcontroller():
         # Check if all motors have completed their trajectory
         return all(data.values[moteus.Register.TRAJECTORY_COMPLETE] for data in servo_data.values())
     
-    async def set_pos(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0):
+    async def get_stoped(self) -> bool:
+        # Query the current state of all controllers
+        servo_data = {x.id: await x.query() for x in self.controllers.values()}
+        
+        # Check if all motors have completed their trajectory
+        return all(data.values[moteus.Register.TORQUE] == 0 for data in servo_data.values())
+
+    async def override_positions(self) -> None:
+        # Query the current state of all controllers
+        servo_data = {x.id: await x.query() for x in self.controllers.values()}
+        
+        # Check if all motors have completed their trajectory
+        for i, data in enumerate(servo_data.values()):
+            self.target_positions[i+1] = self.target_positions[i+1] - data.values[moteus.Register.POSITION]
+    
+    async def set_pos(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0) -> None:
         try:
             [await controller.set_stop() for controller in self.controllers.values()]
             
@@ -198,12 +221,12 @@ class Motorcontroller():
             [await controller.set_output_exact(position=0.0)
             for motor_id, controller in self.controllers.items()]
             
-            target_positions = {1: -pos1, 2: pos2}  # forwards
+            self.target_positions = {1: -pos1, 2: pos2}  # forwards
 
             for motor_id, controller in self.controllers.items():
                 try:
                     await controller.set_position(
-                        position=target_positions.get(motor_id, 0), 
+                        position=self.target_positions.get(motor_id, 0), 
                         velocity_limit=velocity_limit, 
                         accel_limit=accel_limit, 
                         watchdog_timeout=math.nan
@@ -218,18 +241,33 @@ class Motorcontroller():
             [await controller.set_stop() for controller in self.controllers.values()]
             raise
         
-    async def drive(self, dist:int):
-        pulses_per_cm = 0.66
-        pulses = dist * pulses_per_cm
+    async def drive_distance(self, dist:int) -> None:
+        self.direction = 1 if dist > 0 else -1
+        
+        pulses_per_mm = 0.066
+        pulses = dist * pulses_per_mm
         
         await self.set_pos(pulses, pulses)
         
-    async def turn(self, angle:int):
+    async def turn_angle(self, angle:int) -> None:
+        self.direction = 0
+        
         turn = 14.27
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
         await self.set_pos(-pulses, pulses, velocity_limit=25.0, accel_limit=25.0)
+        
+    async def control_loop(self) -> DriveState:
+        self.finished =  await self.get_finished()
+        
+        if self.stop:
+            stopped = await self.get_stoped()
+            if not stopped:
+                await self.override_positions()
+                await [await controller.set_stop() for controller in self.controllers.values()]
+        
+        return DriveState(0, 0, 0, self.finished, self.direction)
         
 
         

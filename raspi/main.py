@@ -1,5 +1,5 @@
 from modules.task import Task
-from modules.motor_controller_old import MotorController
+from modules.motor_controller import MotorController
 from modules.drive_state import DriveState
 from modules.lidar import Lidar
 
@@ -16,7 +16,7 @@ class RobotController:
         
         self.lidar = Lidar('/dev/ttyUSB0')
         
-        self.task = Task(self.motor_controller, actions=['p600;1200;0'])
+        self.task = Task(self.motor_controller, actions=['d500', 't-40'])
         
         
     def add_task(self, actions: list[str]):
@@ -31,7 +31,7 @@ class RobotController:
         self.theta = state.theta
         
         # lidar
-        stopped = False
+        stop = False
         
         if latest_scan:
             for angle, distance in latest_scan:
@@ -45,20 +45,19 @@ class RobotController:
                 arena_y = distance * math.sin(arena_angle * math.pi / 180) + self.y
                 
                 point_in_arena = 50 <= arena_x <= 2950 and 50 <= arena_y <= 1950    # 5cm threshold
-                point_in_arena = False
                             
                 if (state.direction >= 0 and 0 <= d_y <= 500) and abs(d_x) <= 250 and point_in_arena:
-                    stopped = True
+                    stop = True
                     print(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
                 
                 if  (state.direction <= 0 and 0 >= d_y >= -500) and abs(d_x) <= 250 and point_in_arena:
-                    stopped = True
+                    stop = True
                     print(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
                 
         
-            self.motor_controller.stopped = stopped
+            self.motor_controller.stop = stop
         
         # task management
         if state.finished:
@@ -67,7 +66,7 @@ class RobotController:
         return True if not self.task else False
             
 
-    def run(self):
+    async def run(self):
         try:
             print("Starting Lidar scanning")
             if not self.lidar.start_scanning():
@@ -78,7 +77,7 @@ class RobotController:
             while True:
                 # Get the latest scan with timeout
                 latest_scan = self.lidar.get_latest_scan()
-                state = self.motor_controller.pwm_loop()
+                state = await self.motor_controller.pwm_loop()
                 if self.control_loop(state, latest_scan): 
                     print(f'{self.x}, {self.y}')
                     break
@@ -96,9 +95,9 @@ class RobotController:
             print("Stopping Lidar...")
             self.lidar.stop()
 
-def main():
+async def main():
     controller = RobotController()
-    controller.run()
+    await controller.run()
 
 if __name__ == '__main__':
     main()
