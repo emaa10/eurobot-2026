@@ -4,6 +4,7 @@ from modules.drive_state import DriveState
 from modules.lidar import Lidar
 
 import math
+import asyncio
 from time import time_ns
 
 class RobotController:
@@ -24,7 +25,7 @@ class RobotController:
         self.task.add_task(task)
         
         
-    def control_loop(self, state: DriveState, latest_scan: list[tuple] | None = None):
+    async def control_loop(self, state: DriveState, latest_scan: list[tuple] | None = None):
         # update pos
         self.x = state.x
         self.y = state.y
@@ -32,7 +33,7 @@ class RobotController:
         
         # lidar
         stop = False
-        
+            
         if latest_scan:
             for angle, distance in latest_scan:
                 # point in relation to bot
@@ -45,6 +46,7 @@ class RobotController:
                 arena_y = distance * math.sin(arena_angle * math.pi / 180) + self.y
                 
                 point_in_arena = 50 <= arena_x <= 2950 and 50 <= arena_y <= 1950    # 5cm threshold
+                point_in_arena = True
                             
                 if (state.direction >= 0 and 0 <= d_y <= 500) and abs(d_x) <= 250 and point_in_arena:
                     stop = True
@@ -61,7 +63,7 @@ class RobotController:
         
         # task management
         if state.finished:
-            self.task = self.task.next_action(self.x, self.y)
+            self.task = await self.task.next_action(self.x, self.y)
             
         return True if not self.task else False
             
@@ -72,13 +74,17 @@ class RobotController:
             if not self.lidar.start_scanning():
                 print("Failed to start Lidar")
                 return
+            
+            self.task = await self.task.next_action(self.x, self.y)
+            
         
             # Main loop
             while True:
                 # Get the latest scan with timeout
                 latest_scan = self.lidar.get_latest_scan()
-                state = await self.motor_controller.pwm_loop()
-                if self.control_loop(state, latest_scan): 
+                state = await self.motor_controller.control_loop()
+                control_loop = await self.control_loop(state, latest_scan)
+                if control_loop: 
                     print(f'{self.x}, {self.y}')
                     break
                 
@@ -100,4 +106,4 @@ async def main():
     await controller.run()
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())

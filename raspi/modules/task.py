@@ -4,6 +4,8 @@ from modules.motor_controller import MotorController
 from modules.pathfinding import Pathfinder
 from modules.position import Position
 
+import asyncio
+
 class Task():
     def __init__(self, motor_controller: MotorController, actions: list[str] = [], successor: Self | None = None):
         self.motor_controller = motor_controller
@@ -20,7 +22,7 @@ class Task():
         self.successor.add_task(task)
         
     # Sets next action and returns current Task (self or next task if current task finished)
-    def next_action(self, x, y) -> Self:
+    async def next_action(self, x, y) -> Self:
         if len(self.actions) <= 0:
             if not self.successor: return None
             
@@ -33,9 +35,14 @@ class Task():
         
         match prefix:
             case 'd':
-                self.motor_controller.drive_distance(int(value))
+                print("drive")
+                await self.motor_controller.drive_distance(int(value))
+                await asyncio.sleep(0.2)
             case 't':
-                self.motor_controller.turn_angle(float(value))
+                print("Turn")
+                await self.motor_controller.turn_angle(float(value))
+                await asyncio.sleep(0.2)
+                
             # case 'r':
             #     self.motor_controller.turn_to(float(value))
             # case 'p':

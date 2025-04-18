@@ -37,13 +37,13 @@ class MotorWorker(QThread):
     async def run_test_case(self, case_number: int, direction: int):
         try:
             if case_number == 1:
-                await self.controller.drive(50 * direction)
+                await self.controller.drive_distance(500 * direction)
             elif case_number == 2:
-                await self.controller.drive(100 * direction)
+                await self.controller.drive_distance(1000 * direction)
             elif case_number == 3:
-                await self.controller.turn(90 * direction)
+                await self.controller.turn_angle(90 * direction)
             elif case_number == 4:
-                await self.controller.turn(360 * direction)
+                await self.controller.turn_angle(360 * direction)
             self.status_update.emit("Test completed!")
         except Exception as e:
             logger.error(f"Error in test case {case_number}: {e}")
