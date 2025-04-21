@@ -262,7 +262,7 @@ class MotorController():
     async def turn_angle(self, angle: int) -> None:
         self.direction = 0
         
-        turn = 14.27
+        turn = 7.593
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
@@ -290,6 +290,7 @@ class MotorController():
         return actions  
         
     async def control_loop(self) -> DriveState:
+        
         self.finished = await self.get_finished()
         
         try:
@@ -311,9 +312,12 @@ class MotorController():
             await self.set_target()
             self.need_to_continue = False
             self.stopped = False
+            
+        print("check")
+        print(self.finished)
                         
         
-        return DriveState(0, 0, 0, self.finished, self.direction)
+        return DriveState(self.x, self.y, self.theta, self.finished, self.direction)
         
 
         

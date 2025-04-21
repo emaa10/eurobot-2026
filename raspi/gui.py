@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton,
                            QVBoxLayout, QWidget, QLabel, QGridLayout)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QColor, QPalette
-from motor_controller import Motorcontroller
+from modules.motor_controller import MotorController
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -49,6 +49,16 @@ class MotorWorker(QThread):
             logger.error(f"Error in test case {case_number}: {e}")
             self.status_update.emit(f"Error: {str(e)}")
 
+    async def run_reset(self):
+        try:
+            # Placeholder for actual reset functionality
+            # Simulate some processing time
+            await self.controller.reset()
+            self.status_update.emit("System Reset Complete!")
+        except Exception as e:
+            logger.error(f"Error in reset: {e}")
+            self.status_update.emit(f"Error: {str(e)}")
+
 class MotorControllerGUI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -56,7 +66,7 @@ class MotorControllerGUI(QMainWindow):
         self.setGeometry(100, 100, 800, 600)  # Increased window size
         
         # Initialize motor controller
-        self.controller = Motorcontroller()
+        self.controller = MotorController()
         
         # Create central widget and layout
         central_widget = QWidget()
@@ -140,6 +150,29 @@ class MotorControllerGUI(QMainWindow):
         
         main_layout.addLayout(grid_layout)
         
+        # Add reset button
+        reset_button = QPushButton("RESET")
+        reset_button.setMinimumSize(500, 120)  # Bigger than other buttons
+        reset_button.setStyleSheet("""
+            QPushButton {
+                background-color: #E76F51;
+                color: white;
+                font-size: 24px;
+                font-weight: bold;
+                border-radius: 15px;
+                padding: 15px;
+                margin: 20px;
+            }
+            QPushButton:hover {
+                background-color: #F4A261;
+            }
+            QPushButton:pressed {
+                background-color: #E76F51;
+            }
+        """)
+        reset_button.clicked.connect(self.reset_system)
+        main_layout.addWidget(reset_button, alignment=Qt.AlignCenter)
+        
         # Add status label
         self.status_label = QLabel("Ready")
         self.status_label.setAlignment(Qt.AlignCenter)
@@ -165,6 +198,16 @@ class MotorControllerGUI(QMainWindow):
         # Run the test case in the worker thread
         asyncio.run_coroutine_threadsafe(
             self.worker.run_test_case(case_number, direction),
+            self.worker.loop
+        )
+    
+    def reset_system(self):
+        self.status_label.setText("System Reset Initiated...")
+        QApplication.processEvents()
+        
+        # Run the reset using the worker thread pattern
+        asyncio.run_coroutine_threadsafe(
+            self.worker.run_reset(),
             self.worker.loop
         )
 

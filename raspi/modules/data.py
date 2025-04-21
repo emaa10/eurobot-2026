@@ -5,7 +5,7 @@ import csv
 from datetime import datetime
 
 class SerialManager():
-    def __init__(self, port="/dev/ttyACM0", baud_rate=115200) -> None:
+    def __init__(self, port="/dev/ttyACM1", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=3)
         
         self.ser.setDTR(False)
@@ -21,7 +21,7 @@ class SerialManager():
         while True:
             line = self.ser.readline().decode("utf-8")
             
-            if line and line[0] == 'l': # make shure to get complete data
+            if line and line[0] == 'p': # make shure to get complete data
                 return line
     
     # serial string to x, y, t
@@ -58,3 +58,12 @@ class SerialManager():
         set_string = f"s{x};{y};{theta}\n"
         byte_string = str.encode(set_string)
         self.ser.write(byte_string)
+        
+def main():
+    serial_manager = SerialManager()
+    
+    while True:
+        print(serial_manager.read_input())
+        
+if __name__ == '__main__':
+    main()

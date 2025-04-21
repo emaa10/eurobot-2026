@@ -47,6 +47,7 @@ void changeRight(){
 
 void send_pos(){
     String data;
+    data += "p";
     data += String(int(x));
     data += ";";
     data += String(int(y));
