@@ -12,28 +12,7 @@ class SerialManager():
         time.sleep(1)
         self.ser.flushInput()
         self.ser.setDTR(True)
-        time.sleep(2)
-        
-        self.log_file = f"logs/encoder_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        with open(self.log_file, 'w') as f:
-            writer = csv.writer(f)
-            writer.writerow(['timestamp', 'left_encoder', 'right_encoder'])
-
-    
-    def send_pwm(self, pwm: list[int], dirs: list[int]) -> None:
-        pwm_vals = [[0, 0], [0, 0]]
-        for k in range(2):
-            if dirs[k] == 1:
-                pwm_vals[k] = [pwm[k], 0]
-            elif dirs[k] == -1:
-                pwm_vals[k] = [0, pwm[k]]
-            else:
-                pwm_vals[k] = [0, 0]
-        
-        pwm_string = f"{pwm_vals[0][0]};{pwm_vals[0][1]};{pwm_vals[1][0]};{pwm_vals[1][1]}\n"
-        pwm_as_bytes = str.encode(pwm_string) # convert string to bytes
-        self.ser.write(pwm_as_bytes)
-    
+        time.sleep(1)
     
     def read_input(self) -> str:
         # flush input to get the latest data
@@ -45,41 +24,37 @@ class SerialManager():
             if line and line[0] == 'l': # make shure to get complete data
                 return line
     
-    
-    # serial string to l, r, x, y, t
-    def extract_values(self, input_str: str) -> tuple[int, int, int, int, float]:
-        pattern = r'l(-?\d+)r(-?\d+)x(-?\d+)y(-?\d+)t(-?\d*\.?\d*)'
-        match = re.match(pattern, input_str)
+    # serial string to x, y, t
+    def extract_values(self, input_str: str) -> tuple[int, int, float]:
+        str_list = input_str[1:].split(';')
         
-        if not match:
-            raise ValueError(f"Could not extract all values from string: {input_str}")
-        
-        l = int(match.group(1))  # Value for l
-        r = int(match.group(2))  # Value for r
-        x = int(match.group(3))  # Value for x
-        y = int(match.group(4))  # Value for y
-        t = float(match.group(5))  # Value for theta
-        
-        return l, r, x, y, t
-    
-    
-    def get_pos(self) -> list[int, int, int, int, float]:
-        serial_input = self.read_input() # get latest input
-        l, r, x, y, theta = self.extract_values(serial_input) # extract x y theta from serial data
-        
-        self.log_data(l, r)
+        if not input_str.startswith('p') or not len(str_list) == 3:        
+            return 0, 0, 0.0
 
-        # print(f'Arduino sent: Left Encoder:{l}, Right Encoder:{r}, x: {x}, y: {y}, theta: {theta}')
-        return [l, r, x, y, theta]
+        x = int(str_list[0])
+        y = int(str_list[1])
+        theta = int(str_list[2])
     
+    def get_pos(self) -> tuple[int, int, float] | None:
+        serial_input = self.read_input() # get latest input
+        
+        str_list = serial_input[1:].split(';')
+        
+        if not serial_input.startswith('p') or not len(str_list) == 3:        
+            return None
+
+        x = int(str_list[0])
+        y = int(str_list[1])
+        theta = float(str_list[2])
+        
+        return x, y, theta
     
     def reset_pos(self) -> None:
-        reset_string = f"r\n"
+        reset_string = "r\n"
         byte_string = str.encode(reset_string)
         self.ser.write(byte_string)
         
-        
-    def log_data(self, left, right) -> None:
-        with open(self.log_file, 'a') as f:
-            writer = csv.writer(f)
-            writer.writerow([datetime.now().timestamp(), left, right])
+    def set_pos(self, x: int, y: int, theta: int) -> None:
+        set_string = f"s{x};{y};{theta}\n"
+        byte_string = str.encode(set_string)
+        self.ser.write(byte_string)

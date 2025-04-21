@@ -10,6 +10,7 @@ import moteus
 import time
 
 from modules.drive_state import DriveState
+from modules.data import SerialManager
 
 
 class ServoClock:
@@ -185,7 +186,15 @@ class MotorController():
 
         self.poller = Poller(self.controllers, args)
         
-        self.target_positions = {1: 0, 2: 0} 
+        self.serial_manager = SerialManager()
+        
+        self.x = 0
+        self.y = 0
+        self.theta = 0.0
+        
+        self.serial_manager.set_pos(self.x, self.y, self.theta)
+        
+        self.target_positions = {1: 0, 2: 0}
         
         self.finished = False
         self.stopped = False
@@ -250,7 +259,7 @@ class MotorController():
         
         await self.set_pos(pulses, pulses)
         
-    async def turn_angle(self, angle:int) -> None:
+    async def turn_angle(self, angle: int) -> None:
         self.direction = 0
         
         turn = 14.27
@@ -259,8 +268,34 @@ class MotorController():
                 
         await self.set_pos(-pulses, pulses, velocity_limit=25.0, accel_limit=25.0)
         
+    async def turn_to(self, theta: float):
+        delta_t = theta - self.theta
+        while (delta_t > 180): delta_t -= 360
+        while (delta_t < -180): delta_t += 360
+        
+        await self.turn_angle(delta_t)
+        
+    def drive_to(self, x: int, y: int, theta: float | None = None) -> list[str]:
+        delta_x = x - self.x
+        delta_y = y - self.y
+                
+        dist = math.sqrt(delta_x**2+delta_y**2)
+        
+        t = -math.degrees(math.asin(delta_y/dist))
+        
+        actions = [f'r{t}', f'd{int(dist)}']
+        
+        if theta: actions.append(f'r{theta}')
+        
+        return actions  
+        
     async def control_loop(self) -> DriveState:
         self.finished = await self.get_finished()
+        
+        try:
+            self.x, self.y, self.theta = self.serial_manager.get_pos()
+        except:
+            print("Could not read new pos data")
 
         if self.stop:
             print("stopped")
@@ -276,9 +311,7 @@ class MotorController():
             await self.set_target()
             self.need_to_continue = False
             self.stopped = False
-            
-        print(self.finished)
-            
+                        
         
         return DriveState(0, 0, 0, self.finished, self.direction)
         
