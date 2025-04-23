@@ -5,7 +5,7 @@ import os
 import subprocess
 import logging
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, 
-                           QVBoxLayout, QWidget, QLabel, QGridLayout)
+                           QVBoxLayout, QWidget, QLabel, QGridLayout, QHBoxLayout)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QColor, QPalette
 from modules.motor_controller import MotorController
@@ -151,10 +151,13 @@ class MotorControllerGUI(QMainWindow):
             grid_layout.addWidget(btn_backward, i, 1)
         
         main_layout.addLayout(grid_layout)
-        
+
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(20)  # Abstand zwischen Reset und Shutdown
+
         # Add reset button
         reset_button = QPushButton("RESET")
-        reset_button.setMinimumSize(500, 120)  # Bigger than other buttons
+        reset_button.setMinimumSize(300, 120)  # Bigger than other buttons
         reset_button.setStyleSheet("""
             QPushButton {
                 background-color: #E76F51;
@@ -173,11 +176,16 @@ class MotorControllerGUI(QMainWindow):
             }
         """)
         reset_button.clicked.connect(self.reset_system)
-        main_layout.addWidget(reset_button, alignment=Qt.AlignCenter)
 
-        reset_button = QPushButton("Shutdown")
-        reset_button.setMinimumSize(500, 120)  # Bigger than other buttons
-        reset_button.setStyleSheet("""
+        
+        button_layout.addWidget(reset_button)
+        
+        
+        # main_layout.addWidget(reset_button, alignment=Qt.AlignCenter)
+
+        shutdown_button = QPushButton("Shutdown")
+        shutdown_button.setMinimumSize(300, 120)  # Bigger than other buttons
+        shutdown_button.setStyleSheet("""
             QPushButton {
                 background-color: #E76F51;
                 color: white;
@@ -194,8 +202,10 @@ class MotorControllerGUI(QMainWindow):
                 background-color: #E76F51;
             }
         """)
-        reset_button.clicked.connect(self.shutdown)
-        main_layout.addWidget(reset_button, alignment=Qt.AlignCenter)
+        shutdown_button.clicked.connect(self.shutdown)
+        # main_layout.addWidget(shutdown_button)
+        button_layout.addWidget(shutdown_button)
+        main_layout.addLayout(button_layout)
         
         
         # Add status label
@@ -236,7 +246,7 @@ class MotorControllerGUI(QMainWindow):
             self.worker.loop
         )
 
-    def shutdown():
+    def shutdown(self):
         try:
             print("Fahre den Raspberry Pi herunter...")
             subprocess.run(["sudo", "shutdown", "now"], check=True)
