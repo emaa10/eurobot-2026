@@ -1,4 +1,6 @@
 import sys
+import os
+import subprocess
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 class MainScene(QtWidgets.QWidget):
@@ -58,13 +60,28 @@ class MainScene(QtWidgets.QWidget):
         color_layout.addStretch()
         self.layout.addLayout(color_layout)
 
-        # Spielfeld Container
-        self.field_container = QtWidgets.QWidget()
+        # Spielfeld Container als QLabel
+        self.field_container = QtWidgets.QLabel()
         self.field_container.setFixedSize(1000, 400)
-        self.field_container.setStyleSheet("background-color: #cccccc; border: 2px solid black;")
-        self.field_layout = QtWidgets.QVBoxLayout(self.field_container)
-        self.field_layout.setContentsMargins(0, 0, 0, 0)
-        
+        self.field_container.setStyleSheet("""
+            background-color: #ffffff;
+            border: 3px solid black;
+        """)
+        self.field_container.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Bild laden und skalieren
+        image_path = os.path.expanduser("/home/pi/Desktop/main-bot/raspi/eurobot.png")
+        if os.path.exists(image_path):
+            pixmap = QtGui.QPixmap(image_path)
+            pixmap = pixmap.scaled(
+                980,  # 1000 - 2*10 border
+                380,  # 400 - 2*10 border
+                QtCore.Qt.KeepAspectRatio,
+                QtCore.Qt.SmoothTransformation
+            )
+            self.field_container.setPixmap(pixmap)
+            self.field_container.setScaledContents(False)
+
         self.position_buttons = []
         self.layout.addWidget(self.field_container, alignment=QtCore.Qt.AlignCenter)
 
@@ -74,7 +91,17 @@ class MainScene(QtWidgets.QWidget):
         for i in range(4):
             btn = QtWidgets.QPushButton(f"TAKTIK {i+1}")
             btn.setFixedSize(280, 60)
-            btn.setStyleSheet("font-size: 20px;")
+            btn.setStyleSheet("""
+                QPushButton {
+                    font-size: 20px;
+                    background-color: #f0f0f0;
+                }
+                QPushButton:checked {
+                    background-color: white;
+                    border: 2px solid black;
+                }
+            """)
+            btn.setCheckable(True)
             btn.clicked.connect(lambda _, x=i+1: self.on_tactic_selected(x))
             self.tactic_buttons.append(btn)
             tactics_layout.addWidget(btn)
@@ -126,7 +153,7 @@ class MainScene(QtWidgets.QWidget):
             btn = QtWidgets.QPushButton(self.field_container)
             btn.setGeometry(QtCore.QRect(*pos))
             btn.setStyleSheet("""
-                background-color: rgba(255, 0, 0, 50);
+                background-color: rgba(255, 0, 0, 30);
                 border: 3px solid #ff0000;
                 border-radius: 5px;
             """)
@@ -139,6 +166,10 @@ class MainScene(QtWidgets.QWidget):
         self.check_selections()
 
     def on_tactic_selected(self, tactic):
+        # Deselect other tactics
+        for btn in self.tactic_buttons:
+            btn.setChecked(False)
+        self.tactic_buttons[tactic-1].setChecked(True)
         self.selected_tactic = tactic
         self.check_selections()
 
@@ -180,11 +211,20 @@ class DebugScene(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
-    def on_shutdown(self): pass
-    def on_test_codes(self): window.stacked.setCurrentIndex(3)
-    def on_show_keyboard(self): pass
-    def on_clean_wheels(self): pass
-    def on_show_camera(self): pass
+    def on_shutdown(self):
+        os.system("sudo shutdown now")
+
+    def on_test_codes(self):
+        window.stacked.setCurrentIndex(3)
+
+    def on_show_keyboard(self):
+        subprocess.Popen(['wvkbd'], env=dict(os.environ, WVKBD_HEIGHT='250'))
+
+    def on_clean_wheels(self):
+        pass  # Implement wheel cleaning logic
+
+    def on_show_camera(self):
+        pass  # Implement camera stream
 
 
 class TestCodesScene(QtWidgets.QWidget):
@@ -224,6 +264,7 @@ class DriveScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
+        self.points_visible = False
 
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
@@ -238,28 +279,35 @@ class DriveScene(QtWidgets.QWidget):
             color: white;
             border-radius: 10px;
         """)
+        self.stop_btn.clicked.connect(lambda: os.system("killall python3"))
         layout.addWidget(self.stop_btn, alignment=QtCore.Qt.AlignTop | QtCore.Qt.AlignRight)
 
         # Value Display
-        self.value_label = QtWidgets.QLabel("0")
+        self.value_label = QtWidgets.QLabel("Waiting for pullcord...")
         self.value_label.setAlignment(QtCore.Qt.AlignCenter)
-        self.value_label.setStyleSheet("font-size: 80px;")
+        self.value_label.setStyleSheet("font-size: 40px;")
+        
+        self.points_label = QtWidgets.QLabel("0")
+        self.points_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.points_label.setStyleSheet("font-size: 80px;")
+        self.points_label.hide()
+        
         layout.addWidget(self.value_label)
-
-        # Points Label
-        points_label = QtWidgets.QLabel("Points")
-        points_label.setAlignment(QtCore.Qt.AlignCenter)
-        points_label.setStyleSheet("font-size: 32px;")
-        layout.addWidget(points_label)
+        layout.addWidget(self.points_label)
 
         self.setLayout(layout)
+    
+    def show_points(self):
+        self.value_label.setText("Points")
+        self.points_label.show()
+        self.value_label.setStyleSheet("font-size: 60px; font-weight: bold;")
 
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
-        self.setFixedSize(1280, 720)
+        self.showMaximized()
 
     def initUI(self):
         self.stacked = QtWidgets.QStackedWidget()
@@ -282,27 +330,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drive_scene.stop_btn.clicked.connect(self.return_to_main)
 
     def show_waiting_screen(self):
-        self.drive_scene.setStyleSheet("background-color: #00ff00;")
-        self.drive_scene.value_label.setText("Waiting for pullcord...")
         self.stacked.setCurrentIndex(2)
+        self.drive_scene.setStyleSheet("background-color: white;")
 
     def return_to_main(self):
         self.stacked.setCurrentIndex(0)
-        self.drive_scene.setStyleSheet("")
-        self.drive_scene.value_label.setText("0")
+        self.drive_scene.points_label.hide()
+        self.drive_scene.value_label.setText("Waiting for pullcord...")
+        self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
+    
+    def activate_pullcord(self):
+        self.drive_scene.show_points()
 
 
-# Positionsbeispiele für 1000x400 Container
+# Positionsangaben für das Spielfeld
 yellow_positions = [
-    (100, 100, 150, 80),
-    (400, 100, 150, 80),
-    (700, 100, 150, 80)
+    (220, 133, 84, 84),
+    (507, 12, 84, 84),
+    (665, 300, 84, 84)
 ]
 
 blue_positions = [
-    (100, 250, 150, 80),
-    (400, 250, 150, 80),
-    (700, 250, 150, 80)
+    (250, 300, 84, 84),
+    (405, 12, 84, 84),
+    (695, 135, 84, 84)
 ]
 
 if __name__ == '__main__':
