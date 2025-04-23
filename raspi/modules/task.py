@@ -3,12 +3,14 @@ from typing import Self
 from modules.motor_controller import MotorController
 from modules.pathfinding import Pathfinder
 from modules.position import Position
+from modules.drive_state import  DriveState
 
 import asyncio
 
 class Task():
     def __init__(self, motor_controller: MotorController, actions: list[str] = [], successor: Self | None = None):
         self.motor_controller = motor_controller
+        self.initial_actions = actions  # if we abort and want to add task to end
         self.actions = actions
         self.successor = successor
         
@@ -21,11 +23,15 @@ class Task():
 
         self.successor.add_task(task)
         
-    async def loop(self):
-        state = self.motor_controller.control_loop()
-        pass
+    async def control_loop(self) -> DriveState:
+        state = await self.motor_controller.control_loop()
+        state.task = self
         
-    # Sets next action and returns current Task (self or next task if current task finished)
+        if state.finished:
+            state.task = await self.task.next_action(state.x, state.y)
+        
+        return state
+        
     async def next_action(self, x, y) -> Self:
         if len(self.actions) <= 0:
             if not self.successor: return None

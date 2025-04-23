@@ -14,7 +14,7 @@ class RobotController:
     def __init__(self):
         self.x = 0
         self.y = 0
-        self.theta = 0
+        self.theta = 0.0
         
         self.motor_controller = MotorController()
                         
@@ -80,9 +80,10 @@ class RobotController:
                 self.x = state.x
                 self.y = state.y
                 self.theta = state.theta
+                self.task = state.task
                 
-                finished = await self.control_loop(state, latest_scan)
-                if finished: break
+                await self.control_loop(state, latest_scan)
+                if state.finished: break
                 
                 if LIDAR and not self.lidar.is_running():
                     print("Lidar thread stopped unexpectedly")

@@ -299,7 +299,7 @@ class MotorController():
         if self.finished:
             await self.stop()
         
-        return DriveState(self.x, self.y, self.theta, self.finished, self.direction)
+        return DriveState(self.x, self.y, self.theta, self.finished, None, self.direction)
         
         
 async def main():
