@@ -10,8 +10,7 @@ import moteus
 import time
 
 from modules.drive_state import DriveState
-from modules.data import SerialManager
-
+from modules.arduino_com import SerialManager
 
 class ServoClock:
     '''This class can be used to keep a controller's time base
@@ -180,7 +179,7 @@ class MotorController():
 
         qr = moteus.QueryResolution()
         qr.trajectory_complete = moteus.INT8
-        qr.fault = moteus.INT8  # Add fault monitoring
+        qr.fault = moteus.INT8 
 
         self.controllers = {x: moteus.Controller(x, query_resolution=qr) for x in self.SERVO_IDS}
 
@@ -202,42 +201,22 @@ class MotorController():
         self.stop = False
         self.direction = 0
         
-    async def reset(self) -> None:
+    async def stop(self) -> None:
         [await controller.set_stop() for controller in self.controllers.values()]
         
     async def get_finished(self) -> bool:
-        # Query the current state of all controllers
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
                 
-        # Check if all motors have completed their trajectory
         return all(data.values[moteus.Register.TRAJECTORY_COMPLETE] for data in servo_data.values())
 
-    async def override_positions(self) -> None:
-        # Query the current state of all controllers
+    async def override_target(self) -> None:
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
         
-        # Check if all motors have completed their trajectory
         for i, data in enumerate(servo_data.values()):
             self.target_positions[i+1] = self.target_positions[i+1] - data.values[moteus.Register.POSITION]
     
-    async def set_pos(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0) -> None:
-        [await controller.set_stop() for controller in self.controllers.values()]
-        
-        # Set zero position
-        [await controller.set_output_exact(position=0.0)
-        for motor_id, controller in self.controllers.items()]
-        
-        self.target_positions = {1: -pos1, 2: pos2}  # forwards
-
-        for motor_id, controller in self.controllers.items():
-            await controller.set_position(
-                position=self.target_positions.get(motor_id, 0), 
-                velocity_limit=velocity_limit, 
-                accel_limit=accel_limit, 
-                watchdog_timeout=math.nan
-            )
     async def set_target(self, velocity_limit=60.0, accel_limit=30.0) -> None:
-        [await controller.set_stop() for controller in self.controllers.values()]
+        await self.stop()
         
         # Set zero position
         [await controller.set_output_exact(position=0.0)
@@ -250,6 +229,11 @@ class MotorController():
                 accel_limit=accel_limit, 
                 watchdog_timeout=math.nan
             )
+            
+    async def set_pos(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0) -> None:
+        self.target_positions = {1: -pos1, 2: pos2}
+        await self.set_target(velocity_limit, accel_limit)
+        
         
     async def drive_distance(self, dist:int) -> None:
         self.direction = 1 if dist > 0 else -1
@@ -302,8 +286,7 @@ class MotorController():
             print("stopped")
             self.finished = False
             if not self.stopped:
-                await self.override_positions()
-                print(self.target_positions)
+                await self.override_target()
                 [await controller.set_stop() for controller in self.controllers.values()]
                 self.stopped = True
                 self.need_to_continue = True
@@ -313,13 +296,11 @@ class MotorController():
             self.need_to_continue = False
             self.stopped = False
             
-        print("check")
-        print(self.finished)
-                        
+        if self.finished:
+            await self.stop()
         
         return DriveState(self.x, self.y, self.theta, self.finished, self.direction)
         
-
         
 async def main():
     controller = MotorController()

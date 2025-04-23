@@ -6,25 +6,23 @@ from modules.camera import Camera
 
 import math
 import asyncio
-from time import time_ns
+
+LIDAR = False
+CAM = True
 
 class RobotController:
     def __init__(self):
         self.x = 0
         self.y = 0
         self.theta = 0
-                
-        self.motor_controller = MotorController()
+                        
+        self.lidar = Lidar('/dev/ttyUSB0') if LIDAR else None
         
-        # self.lidar = Lidar('/dev/ttyUSB0')
-        
-        self.task = Task(self.motor_controller, actions=['d-500'])
-        
+        self.task = Task(actions=['d-500'])
         
     def add_task(self, actions: list[str]):
-        task = Task(self.motor_controller, actions=actions)
+        task = Task(actions=actions)
         self.task.add_task(task)
-        
         
     async def control_loop(self, state: DriveState, latest_scan: list[tuple] | None = None):
         # update pos
@@ -67,45 +65,37 @@ class RobotController:
             print(f"x:{self.x}, y:{self.y}, theta:{self.theta}")
             self.task = await self.task.next_action(self.x, self.y)
             
-        return True if not self.task else False
-            
+        return True if not self.task else False    
 
     async def run(self):
         try:
-            # print("Starting Lidar scanning")
-            # if not self.lidar.start_scanning():
-            #     print("Failed to start Lidar")
-            #     return
+            if not self.lidar.start_scanning() and LIDAR:
+                print("Failed to start Lidar")
+                return
             
             self.task = await self.task.next_action(self.x, self.y)
             
-        
-            # Main loop
             while True:
-                # Get the latest scan with timeout
-                # latest_scan = self.lidar.get_latest_scan()
                 state = await self.motor_controller.control_loop()
+                latest_scan = self.lidar.get_latest_scan() if LIDAR else None
                 
                 self.x = state.x
                 self.y = state.y
                 self.theta = state.theta
                 
-                control_loop = await self.control_loop(state)
-                if control_loop: 
-                    break
+                finished = await self.control_loop(state, latest_scan)
+                if finished: break
                 
-                # # Check if Lidar thread is still running
-                # if not self.lidar.is_running():
-                #     print("Lidar thread stopped unexpectedly")
-                #     break
-                
+                if LIDAR and not self.lidar.is_running():
+                    print("Lidar thread stopped unexpectedly")
+                    break        
     
         except KeyboardInterrupt:
             print("Interrupted by user")
     
-        # finally:
-            # print("Stopping Lidar...")
-            # self.lidar.stop()
+        finally:
+            print("Stopping Lidar...")
+            if LIDAR: self.lidar.stop()
 
 async def main():
     controller = RobotController()

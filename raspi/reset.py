@@ -4,7 +4,7 @@ import asyncio
 
 async def main():
     controller = MotorController()
-    await controller.reset()
+    await controller.stop()
     
 if __name__ == "__main__":
     asyncio.run(main())

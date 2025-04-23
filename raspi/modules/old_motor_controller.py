@@ -1,7 +1,7 @@
 import math
 import time
 
-from modules.data import SerialManager
+from modules.arduino_com import SerialManager
 from modules.simple_pid import SimplePID
 from modules.drive_state import DriveState
 
