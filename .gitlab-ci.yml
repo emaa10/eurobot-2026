@@ -44,4 +44,7 @@ build-pico:
   artifacts:
     paths:
       - pico/.pio/build
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
+
 
