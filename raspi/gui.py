@@ -1,276 +1,363 @@
 import sys
-import asyncio
-import time
 import os
 import subprocess
-import logging
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, 
-                           QVBoxLayout, QWidget, QLabel, QGridLayout, QHBoxLayout)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from PyQt5.QtGui import QColor, QPalette
-from modules.motor_controller import MotorController
+from PyQt5 import QtWidgets, QtCore, QtGui
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-class MotorWorker(QThread):
-    status_update = pyqtSignal(str)
-    
-    def __init__(self, controller):
-        super().__init__()
-        self.controller = controller
-        self.loop = asyncio.new_event_loop()
-        self.running = True
-        
-    def run(self):
-        asyncio.set_event_loop(self.loop)
-        while self.running:
-            try:
-                self.loop.run_forever()
-            except Exception as e:
-                logger.error(f"Error in event loop: {e}")
-                self.status_update.emit(f"Error: {str(e)}")
-                
-    def stop(self):
-        self.running = False
-        self.loop.call_soon_threadsafe(self.loop.stop)
-        
-    async def run_test_case(self, case_number: int, direction: int):
-        try:
-            if case_number == 1:
-                await self.controller.drive_distance(500 * direction)
-            elif case_number == 2:
-                await self.controller.drive_distance(1000 * direction)
-            elif case_number == 3:
-                await self.controller.turn_angle(90 * direction)
-            elif case_number == 4:
-                await self.controller.turn_angle(360 * direction)
-            self.status_update.emit("Test completed!")
-        except Exception as e:
-            logger.error(f"Error in test case {case_number}: {e}")
-            self.status_update.emit(f"Error: {str(e)}")
-
-    async def run_reset(self):
-        try:
-            # Placeholder for actual reset functionality
-            # Simulate some processing time
-            await self.controller.reset()
-            self.status_update.emit("System Reset Complete!")
-        except Exception as e:
-            logger.error(f"Error in reset: {e}")
-            self.status_update.emit(f"Error: {str(e)}")
-
-class MotorControllerGUI(QMainWindow):
+class MainScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("MAI Robotics GUI")
-        #self.setGeometry(100, 100, 800, 600)  # Increased window size
-        
-        # Initialize motor controller
-        self.controller = MotorController()
-        
-        # Create central widget and layout
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        main_layout = QVBoxLayout(central_widget)
-        
-        # Add title label
-        # title_label = QLabel("Select Test Case to Run:")
-        # title_label.setAlignment(Qt.AlignCenter)
-        # title_label.setStyleSheet("font-size: 24px; font-weight: bold; margin: 20px;")
-        # main_layout.addWidget(title_label)
-        
-        # Create grid layout for buttons
-        grid_layout = QGridLayout()
-        grid_layout.setSpacing(20)  # Add spacing between buttons
-        
-        # Create buttons for each test case
-        self.test_buttons = []
-        button_colors = [
-            ("#FF6B6B", "#FF8E8E"),  # Red
-            ("#4ECDC4", "#6EDDD6"),  # Teal
-            ("#45B7D1", "#65C7E1"),  # Blue
-            ("#96CEB4", "#B6DEC4")   # Green
-        ]
-        
-        test_cases = [
-            ("drive 50", 50),
-            ("drive 100", 100),
-            ("turn 90", 90),
-            ("turn 360", 360)
-        ]
-        
-        for i, (case_name, value) in enumerate(test_cases):
-            # Forward button
-            btn_forward = QPushButton(f"{case_name} ←")
-            btn_forward.setMinimumSize(200, 100)  # Adjusted size for more buttons
-            btn_forward.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {button_colors[i][0]};
-                    color: white;
-                    font-size: 18px;
-                    font-weight: bold;
-                    border-radius: 10px;
-                    padding: 10px;
-                }}
-                QPushButton:hover {{
-                    background-color: {button_colors[i][1]};
-                }}
-                QPushButton:pressed {{
-                    background-color: {button_colors[i][0]};
-                }}
-            """)
-            btn_forward.clicked.connect(lambda checked, case=i+1, direction=1: self.run_test_case(case, direction))
-            self.test_buttons.append(btn_forward)
-            
-            # Backward button
-            btn_backward = QPushButton(f"{case_name} →")
-            btn_backward.setMinimumSize(200, 100)  # Adjusted size for more buttons
-            btn_backward.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {button_colors[i][0]};
-                    color: white;
-                    font-size: 18px;
-                    font-weight: bold;
-                    border-radius: 10px;
-                    padding: 10px;
-                }}
-                QPushButton:hover {{
-                    background-color: {button_colors[i][1]};
-                }}
-                QPushButton:pressed {{
-                    background-color: {button_colors[i][0]};
-                }}
-            """)
-            btn_backward.clicked.connect(lambda checked, case=i+1, direction=-1: self.run_test_case(case, direction))
-            self.test_buttons.append(btn_backward)
-            
-            # Add both buttons to grid
-            grid_layout.addWidget(btn_forward, i, 0)
-            grid_layout.addWidget(btn_backward, i, 1)
-        
-        main_layout.addLayout(grid_layout)
+        self.initUI()
+        self.selected_color = None
+        self.selected_position = None
+        self.selected_tactic = None
 
-        button_layout = QHBoxLayout()
-        button_layout.setSpacing(20)  # Abstand zwischen Reset und Shutdown
-
-        # Add reset button
-        reset_button = QPushButton("RESET")
-        reset_button.setMinimumSize(300, 120)  # Bigger than other buttons
-        reset_button.setStyleSheet("""
+    def initUI(self):
+        self.layout = QtWidgets.QVBoxLayout()
+        self.layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Color Selection
+        color_layout = QtWidgets.QHBoxLayout()
+        self.color_group = QtWidgets.QButtonGroup()
+        
+        self.yellow_btn = QtWidgets.QPushButton("GELB")
+        self.yellow_btn.setFixedSize(250, 80)
+        self.yellow_btn.setStyleSheet("""
             QPushButton {
-                background-color: #E76F51;
-                color: white;
-                font-size: 24px;
-                font-weight: bold;
-                border-radius: 15px;
-                padding: 15px;
-                margin: 20px;
+                background-color: #ffff00;
+                font-size: 28px;
+                border: 3px solid black;
+                border-radius: 10px;
             }
-            QPushButton:hover {
-                background-color: #F4A261;
-            }
-            QPushButton:pressed {
-                background-color: #E76F51;
+            QPushButton:checked {
+                border: 5px solid #00ff00;
             }
         """)
-        reset_button.clicked.connect(self.reset_system)
-
+        self.yellow_btn.setCheckable(True)
         
-        button_layout.addWidget(reset_button)
-        
-        
-        # main_layout.addWidget(reset_button, alignment=Qt.AlignCenter)
-
-        shutdown_button = QPushButton("Shutdown")
-        shutdown_button.setMinimumSize(300, 120)  # Bigger than other buttons
-        shutdown_button.setStyleSheet("""
+        self.blue_btn = QtWidgets.QPushButton("BLAU")
+        self.blue_btn.setFixedSize(250, 80)
+        self.blue_btn.setStyleSheet("""
             QPushButton {
-                background-color: #E76F51;
+                background-color: #0000ff;
                 color: white;
-                font-size: 24px;
-                font-weight: bold;
-                border-radius: 15px;
-                padding: 15px;
-                margin: 20px;
+                font-size: 28px;
+                border: 3px solid black;
+                border-radius: 10px;
             }
-            QPushButton:hover {
-                background-color: #F4A261;
-            }
-            QPushButton:pressed {
-                background-color: #E76F51;
+            QPushButton:checked {
+                border: 5px solid #00ff00;
             }
         """)
-        shutdown_button.clicked.connect(self.shutdown)
-        # main_layout.addWidget(shutdown_button)
-        button_layout.addWidget(shutdown_button)
-        main_layout.addLayout(button_layout)
+        self.blue_btn.setCheckable(True)
         
+        self.color_group.addButton(self.yellow_btn)
+        self.color_group.addButton(self.blue_btn)
+        self.color_group.buttonToggled.connect(self.on_color_changed)
         
-        # Add status label
-        self.status_label = QLabel("Ready")
-        self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setStyleSheet("font-size: 24px; font-weight: bold; margin: 20px; color: #333333;")
-        main_layout.addWidget(self.status_label)
+        color_layout.addStretch()
+        color_layout.addWidget(self.yellow_btn)
+        color_layout.addWidget(self.blue_btn)
+        color_layout.addStretch()
+        self.layout.addLayout(color_layout)
+
+        # Spielfeld Container als QLabel
+        self.field_container = QtWidgets.QLabel()
+        self.field_container.setFixedSize(1000, 400)
+        self.field_container.setStyleSheet("""
+            background-color: #ffffff;
+            border: 3px solid black;
+        """)
+        self.field_container.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Bild laden und skalieren
+        image_path = os.path.expanduser("/home/pi/Desktop/main-bot/raspi/eurobot.png")
+        if os.path.exists(image_path):
+            pixmap = QtGui.QPixmap(image_path)
+            pixmap = pixmap.scaled(
+                980,  # 1000 - 2*10 border
+                380,  # 400 - 2*10 border
+                QtCore.Qt.KeepAspectRatio,
+                QtCore.Qt.SmoothTransformation
+            )
+            self.field_container.setPixmap(pixmap)
+            self.field_container.setScaledContents(False)
+
+        self.position_buttons = []
+        self.layout.addWidget(self.field_container, alignment=QtCore.Qt.AlignCenter)
+
+        # Taktik Buttons
+        tactics_layout = QtWidgets.QHBoxLayout()
+        self.tactic_buttons = []
+        for i in range(4):
+            btn = QtWidgets.QPushButton(f"TAKTIK {i+1}")
+            btn.setFixedSize(280, 60)
+            btn.setStyleSheet("""
+                QPushButton {
+                    font-size: 20px;
+                    background-color: #f0f0f0;
+                }
+                QPushButton:checked {
+                    background-color: white;
+                    border: 2px solid black;
+                }
+            """)
+            btn.setCheckable(True)
+            btn.clicked.connect(lambda _, x=i+1: self.on_tactic_selected(x))
+            self.tactic_buttons.append(btn)
+            tactics_layout.addWidget(btn)
+        self.layout.addLayout(tactics_layout)
+
+        # Start/Debug Buttons
+        button_layout = QtWidgets.QHBoxLayout()
+        self.start_btn = QtWidgets.QPushButton("START")
+        self.start_btn.setFixedHeight(60)
+        self.start_btn.setEnabled(False)
+        self.start_btn.setStyleSheet("""
+            QPushButton {
+                font-size: 28px;
+                background-color: #808080;
+                color: white;
+                border-radius: 10px;
+            }
+            QPushButton:enabled {
+                background-color: #00ff00;
+                color: black;
+            }
+        """)
         
-        # Add stretch to push everything to the top
-        main_layout.addStretch()
+        self.debug_btn = QtWidgets.QPushButton("DEBUG")
+        self.debug_btn.setFixedHeight(60)
+        self.debug_btn.setStyleSheet("font-size: 28px; border-radius: 10px;")
+        
+        button_layout.addWidget(self.start_btn)
+        button_layout.addWidget(self.debug_btn)
+        self.layout.addLayout(button_layout)
+
+        self.setLayout(self.layout)
+
+    def on_color_changed(self, button, checked):
+        if checked:
+            self.selected_color = button.text()
+            positions = yellow_positions if button == self.yellow_btn else blue_positions
+            self.show_position_rectangles(positions)
+        self.check_selections()
+
+    def show_position_rectangles(self, positions):
+        # Alte Buttons entfernen
+        for btn in self.position_buttons:
+            btn.deleteLater()
+        self.position_buttons.clear()
+        
+        # Neue Buttons erstellen
+        for idx, pos in enumerate(positions):
+            btn = QtWidgets.QPushButton(self.field_container)
+            btn.setGeometry(QtCore.QRect(*pos))
+            btn.setStyleSheet("""
+                background-color: rgba(255, 0, 0, 30);
+                border: 3px solid #ff0000;
+                border-radius: 5px;
+            """)
+            btn.clicked.connect(lambda _, p=pos: self.on_position_selected(p))
+            btn.show()
+            self.position_buttons.append(btn)
+
+    def on_position_selected(self, position):
+        self.selected_position = position
+        self.check_selections()
+
+    def on_tactic_selected(self, tactic):
+        # Deselect other tactics
+        for btn in self.tactic_buttons:
+            btn.setChecked(False)
+        self.tactic_buttons[tactic-1].setChecked(True)
+        self.selected_tactic = tactic
+        self.check_selections()
+
+    def check_selections(self):
+        enable = all([self.selected_color, self.selected_position, self.selected_tactic])
+        self.start_btn.setEnabled(enable)
+
+
+class DebugScene(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        layout = QtWidgets.QVBoxLayout()
+        layout.setContentsMargins(50, 50, 50, 50)
+        
+        buttons = [
+            ("Shutdown", self.on_shutdown),
+            ("Test Codes", self.on_test_codes),
+            ("Show Keyboard", self.on_show_keyboard),
+            ("Clean Wheels", self.on_clean_wheels),
+            ("Show Camera Stream", self.on_show_camera)
+        ]
+
+        for text, handler in buttons:
+            btn = QtWidgets.QPushButton(text)
+            btn.setFixedHeight(80)
+            btn.setStyleSheet("font-size: 24px; border-radius: 10px;")
+            btn.clicked.connect(handler)
+            layout.addWidget(btn)
+
+        # Back Button
+        back_btn = QtWidgets.QPushButton("Zurück")
+        back_btn.setFixedHeight(60)
+        back_btn.setStyleSheet("font-size: 24px; background-color: #ff4444; border-radius: 10px;")
+        back_btn.clicked.connect(lambda: window.stacked.setCurrentIndex(0))
+        layout.addWidget(back_btn)
+
+        self.setLayout(layout)
+
+    def on_shutdown(self):
+        os.system("sudo shutdown now")
+
+    def on_test_codes(self):
+        window.stacked.setCurrentIndex(3)
+
+    def on_show_keyboard(self):
+        subprocess.Popen(['wvkbd'], env=dict(os.environ, WVKBD_HEIGHT='250'))
+
+    def on_clean_wheels(self):
+        pass  # Implement wheel cleaning logic
+
+    def on_show_camera(self):
+        pass  # Implement camera stream
+
+
+class TestCodesScene(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        layout = QtWidgets.QVBoxLayout()
+        layout.setContentsMargins(50, 50, 50, 50)
+        
+        buttons = [
+            ("Drive 100 →", lambda: None),
+            ("Drive 100 ←", lambda: None),
+            ("Turn 90°", lambda: None),
+            ("Turn -90°", lambda: None)
+        ]
+
+        for text, handler in buttons:
+            btn = QtWidgets.QPushButton(text)
+            btn.setFixedHeight(80)
+            btn.setStyleSheet("font-size: 24px; border-radius: 10px;")
+            btn.clicked.connect(handler)
+            layout.addWidget(btn)
+
+        # Back Button
+        back_btn = QtWidgets.QPushButton("Zurück")
+        back_btn.setFixedHeight(60)
+        back_btn.setStyleSheet("font-size: 24px; background-color: #ff4444; border-radius: 10px;")
+        back_btn.clicked.connect(lambda: window.stacked.setCurrentIndex(1))
+        layout.addWidget(back_btn)
+
+        self.setLayout(layout)
+
+
+class DriveScene(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+        self.points_visible = False
+
+    def initUI(self):
+        layout = QtWidgets.QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Stop Button
+        self.stop_btn = QtWidgets.QPushButton("STOP")
+        self.stop_btn.setFixedSize(120, 60)
+        self.stop_btn.setStyleSheet("""
+            background-color: red;
+            font-size: 24px;
+            color: white;
+            border-radius: 10px;
+        """)
+        self.stop_btn.clicked.connect(lambda: os.system("killall python3"))
+        layout.addWidget(self.stop_btn, alignment=QtCore.Qt.AlignTop | QtCore.Qt.AlignRight)
+
+        # Value Display
+        self.value_label = QtWidgets.QLabel("Waiting for pullcord...")
+        self.value_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.value_label.setStyleSheet("font-size: 40px;")
+        
+        self.points_label = QtWidgets.QLabel("0")
+        self.points_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.points_label.setStyleSheet("font-size: 80px;")
+        self.points_label.hide()
+        
+        layout.addWidget(self.value_label)
+        layout.addWidget(self.points_label)
+
+        self.setLayout(layout)
+    
+    def show_points(self):
+        self.value_label.setText("Points")
+        self.points_label.show()
+        self.value_label.setStyleSheet("font-size: 60px; font-weight: bold;")
+
+
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
         self.showMaximized()
 
+    def initUI(self):
+        self.stacked = QtWidgets.QStackedWidget()
         
-        # Initialize worker thread
-        self.worker = MotorWorker(self.controller)
-        self.worker.status_update.connect(self.update_status)
-        self.worker.start()
-    
-    def update_status(self, message):
-        self.status_label.setText(message)
-        QApplication.processEvents()
-    
-    def run_test_case(self, case_number, direction):
-        self.status_label.setText(f"Running Test Case {case_number} {'forward' if direction > 0 else 'backward'}...")
-        QApplication.processEvents()
+        self.main_scene = MainScene()
+        self.debug_scene = DebugScene()
+        self.drive_scene = DriveScene()
+        self.testcodes_scene = TestCodesScene()
         
-        # Run the test case in the worker thread
-        asyncio.run_coroutine_threadsafe(
-            self.worker.run_test_case(case_number, direction),
-            self.worker.loop
-        )
+        self.stacked.addWidget(self.main_scene)
+        self.stacked.addWidget(self.debug_scene)
+        self.stacked.addWidget(self.drive_scene)
+        self.stacked.addWidget(self.testcodes_scene)
+
+        self.setCentralWidget(self.stacked)
+
+        # Verbindungen
+        self.main_scene.debug_btn.clicked.connect(lambda: self.stacked.setCurrentIndex(1))
+        self.main_scene.start_btn.clicked.connect(self.show_waiting_screen)
+        self.drive_scene.stop_btn.clicked.connect(self.return_to_main)
+
+    def show_waiting_screen(self):
+        self.stacked.setCurrentIndex(2)
+        self.drive_scene.setStyleSheet("background-color: white;")
+
+    def return_to_main(self):
+        self.stacked.setCurrentIndex(0)
+        self.drive_scene.points_label.hide()
+        self.drive_scene.value_label.setText("Waiting for pullcord...")
+        self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
     
-    def reset_system(self):
-        self.status_label.setText("System Reset Initiated...")
-        QApplication.processEvents()
-        
-        # Run the reset using the worker thread pattern
-        asyncio.run_coroutine_threadsafe(
-            self.worker.run_reset(),
-            self.worker.loop
-        )
-
-    def shutdown(self):
-        try:
-            print("Fahre den Raspberry Pi herunter...")
-            subprocess.run(["sudo", "shutdown", "now"], check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"Fehler beim Herunterfahren: {e}")
+    def activate_pullcord(self):
+        self.drive_scene.show_points()
 
 
-    def closeEvent(self, event):
-        # Clean up the worker thread
-        self.worker.stop()
-        self.worker.wait()
-        event.accept()
+# Positionsangaben für das Spielfeld
+yellow_positions = [
+    (220, 133, 84, 84),
+    (507, 12, 84, 84),
+    (665, 300, 84, 84)
+]
 
-def main():
-    try:
-        app = QApplication(sys.argv)
-        window = MotorControllerGUI()
-        window.show()
-        sys.exit(app.exec_())
-    except Exception as e:
-        logger.error(f"Application error: {e}")
-        sys.exit(1)
+blue_positions = [
+    (250, 300, 84, 84),
+    (405, 12, 84, 84),
+    (695, 135, 84, 84)
+]
 
 if __name__ == '__main__':
-    main() 
+    app = QtWidgets.QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
