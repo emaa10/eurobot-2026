@@ -76,8 +76,8 @@ class RobotController:
             self.task = await self.task.next_action(self.x, self.y)
             
             while True:
-                state = await self.motor_controller.control_loop()
                 latest_scan = self.lidar.get_latest_scan() if LIDAR else None
+                state = await self.task.control_loop()
                 
                 self.x = state.x
                 self.y = state.y
