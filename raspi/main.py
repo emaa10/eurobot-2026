@@ -15,15 +15,13 @@ class RobotController:
         self.x = 0
         self.y = 0
         self.theta = 0
-                
-        self.motor_controller = MotorController()
-        
+                        
         self.lidar = Lidar('/dev/ttyUSB0') if LIDAR else None
         
-        self.task = Task(self.motor_controller, actions=['d-500'])
+        self.task = Task(actions=['d-500'])
         
     def add_task(self, actions: list[str]):
-        task = Task(self.motor_controller, actions=actions)
+        task = Task(actions=actions)
         self.task.add_task(task)
         
     async def control_loop(self, state: DriveState, latest_scan: list[tuple] | None = None):
@@ -78,8 +76,8 @@ class RobotController:
             self.task = await self.task.next_action(self.x, self.y)
             
             while True:
-                latest_scan = self.lidar.get_latest_scan() if LIDAR else None
                 state = await self.motor_controller.control_loop()
+                latest_scan = self.lidar.get_latest_scan() if LIDAR else None
                 
                 self.x = state.x
                 self.y = state.y

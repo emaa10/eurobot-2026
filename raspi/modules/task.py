@@ -21,6 +21,10 @@ class Task():
 
         self.successor.add_task(task)
         
+    async def loop(self):
+        state = self.motor_controller.control_loop()
+        pass
+        
     # Sets next action and returns current Task (self or next task if current task finished)
     async def next_action(self, x, y) -> Self:
         if len(self.actions) <= 0:
