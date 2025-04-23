@@ -8,7 +8,6 @@ class SerialManager():
     def __init__(self, port="/dev/ttyACM1", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=3)
         self.ser.setDTR(True)
-        time.sleep(0.2)
         self.ser.flushInput()
             
     def read_input(self) -> str:
