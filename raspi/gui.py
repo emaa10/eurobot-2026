@@ -1,6 +1,8 @@
 import sys
 import asyncio
 import time
+import os
+import subprocess
 import logging
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, 
                            QVBoxLayout, QWidget, QLabel, QGridLayout)
@@ -74,10 +76,10 @@ class MotorControllerGUI(QMainWindow):
         main_layout = QVBoxLayout(central_widget)
         
         # Add title label
-        title_label = QLabel("Select Test Case to Run:")
-        title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("font-size: 24px; font-weight: bold; margin: 20px;")
-        main_layout.addWidget(title_label)
+        # title_label = QLabel("Select Test Case to Run:")
+        # title_label.setAlignment(Qt.AlignCenter)
+        # title_label.setStyleSheet("font-size: 24px; font-weight: bold; margin: 20px;")
+        # main_layout.addWidget(title_label)
         
         # Create grid layout for buttons
         grid_layout = QGridLayout()
@@ -172,6 +174,29 @@ class MotorControllerGUI(QMainWindow):
         """)
         reset_button.clicked.connect(self.reset_system)
         main_layout.addWidget(reset_button, alignment=Qt.AlignCenter)
+
+        reset_button = QPushButton("Shutdown")
+        reset_button.setMinimumSize(500, 120)  # Bigger than other buttons
+        reset_button.setStyleSheet("""
+            QPushButton {
+                background-color: #E76F51;
+                color: white;
+                font-size: 24px;
+                font-weight: bold;
+                border-radius: 15px;
+                padding: 15px;
+                margin: 20px;
+            }
+            QPushButton:hover {
+                background-color: #F4A261;
+            }
+            QPushButton:pressed {
+                background-color: #E76F51;
+            }
+        """)
+        reset_button.clicked.connect(self.shutdown)
+        main_layout.addWidget(reset_button, alignment=Qt.AlignCenter)
+        
         
         # Add status label
         self.status_label = QLabel("Ready")
@@ -210,6 +235,14 @@ class MotorControllerGUI(QMainWindow):
             self.worker.run_reset(),
             self.worker.loop
         )
+
+    def shutdown():
+        try:
+            print("Fahre den Raspberry Pi herunter...")
+            subprocess.run(["sudo", "shutdown", "now"], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Fehler beim Herunterfahren: {e}")
+
 
     def closeEvent(self, event):
         # Clean up the worker thread
