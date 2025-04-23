@@ -34,15 +34,14 @@ class Task():
         
         match prefix:
             case 'd':
-                print("drive")
                 await self.motor_controller.drive_distance(int(value))
                 await asyncio.sleep(0.2)
             case 't':
-                print("Turn")
                 await self.motor_controller.turn_angle(float(value))
                 await asyncio.sleep(0.2)
             case 'r':
-                self.motor_controller.turn_to(float(value))
+                await self.motor_controller.turn_to(float(value))
+                await asyncio.sleep(0.2)
             case 'p':
                 target_x, target_y, target_theta = value.split(';')
                 points = self.pathfinder.plan(start=Position(x//10, y//10), target=Position(int(target_x)//10, int(target_y)//10))
