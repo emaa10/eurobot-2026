@@ -64,8 +64,8 @@ class MotorWorker(QThread):
 class MotorControllerGUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Motor Controller Test Interface")
-        self.setGeometry(100, 100, 800, 600)  # Increased window size
+        self.setWindowTitle("MAI Robotics GUI")
+        #self.setGeometry(100, 100, 800, 600)  # Increased window size
         
         # Initialize motor controller
         self.controller = MotorController()
@@ -216,6 +216,8 @@ class MotorControllerGUI(QMainWindow):
         
         # Add stretch to push everything to the top
         main_layout.addStretch()
+        self.showMaximized()
+
         
         # Initialize worker thread
         self.worker = MotorWorker(self.controller)
