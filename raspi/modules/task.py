@@ -7,8 +7,8 @@ from modules.position import Position
 import asyncio
 
 class Task():
-    def __init__(self, motor_controller: MotorController, actions: list[str] = [], successor: Self | None = None):
-        self.motor_controller = motor_controller
+    def __init__(self, actions: list[str] = [], successor: Self | None = None):
+        self.motor_controller = MotorController()
         self.actions = actions
         self.successor = successor
         

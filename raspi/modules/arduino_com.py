@@ -7,13 +7,10 @@ from datetime import datetime
 class SerialManager():
     def __init__(self, port="/dev/ttyACM1", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=3)
-        
-        self.ser.setDTR(False)
-        time.sleep(1)
-        self.ser.flushInput()
         self.ser.setDTR(True)
-        time.sleep(1)
-    
+        time.sleep(0.2)
+        self.ser.flushInput()
+            
     def read_input(self) -> str:
         # flush input to get the latest data
         self.ser.flushInput()

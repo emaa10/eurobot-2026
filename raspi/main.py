@@ -58,12 +58,7 @@ class RobotController:
                     break
                 
         
-            self.motor_controller.stop = stop
-        
-        # task management
-        if state.finished:
-            print(f"x:{self.x}, y:{self.y}, theta:{self.theta}")
-            self.task = await self.task.next_action(self.x, self.y)
+            self.task.motor_controller.stop = stop
             
         return True if not self.task else False    
 

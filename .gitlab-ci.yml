@@ -7,6 +7,7 @@ stages:
   - build-pico
 
 before_script:
+  - apt-get update && apt-get install -y git
   - python -m venv venv
   - source venv/bin/activate
   - pip install platformio
