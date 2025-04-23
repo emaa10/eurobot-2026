@@ -4,6 +4,7 @@ image: python:3.11-slim
 stages:
   - check-python
   - build-arduino
+  - build-pico
 
 before_script:
   - python -m venv venv
@@ -30,4 +31,16 @@ build-arduino:
   artifacts:
     paths:
       - arduino/.pio/build
+
+build-pico:
+  stage: build-pico
+  tags:
+  - Compile
+  script:
+    - echo "Building Pico code with PlatformIO..."
+    - cd pico
+    - pio run
+  artifacts:
+    paths:
+      - pico/.pio/build
 
