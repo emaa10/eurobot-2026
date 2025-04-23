@@ -17,7 +17,7 @@ check-python:
   script:
     - echo "Checking Python syntax..."
     - ls -alh
-    - python -m py_compile raspi/*.py
+    - find raspi/ -name "*.py" -exec python3 -m py_compile {} +
 
 build-arduino:
   stage: build-arduino
