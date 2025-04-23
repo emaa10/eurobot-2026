@@ -2,6 +2,7 @@ from modules.task import Task
 from modules.motor_controller import MotorController
 from modules.drive_state import DriveState
 from modules.lidar import Lidar
+from modules.camera import Camera
 
 import math
 import asyncio
@@ -108,7 +109,8 @@ class RobotController:
 
 async def main():
     controller = RobotController()
-    await controller.run()
+    # await controller.run()
+    print(Camera.get_distance())
 
 if __name__ == '__main__':
     asyncio.run(main())
