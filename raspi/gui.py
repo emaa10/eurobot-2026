@@ -70,7 +70,7 @@ class MainScene(QtWidgets.QWidget):
         self.field_container.setAlignment(QtCore.Qt.AlignCenter)
 
         # Bild laden und skalieren
-        image_path = os.path.expanduser("/home/pi/Desktop/main-bot/raspi/eurobot.png")
+        image_path = os.path.expanduser("/home/pi/main-bot/raspi/eurobot.png")
         if os.path.exists(image_path):
             pixmap = QtGui.QPixmap(image_path)
             pixmap = pixmap.scaled(
