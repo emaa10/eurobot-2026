@@ -199,10 +199,38 @@ class DebugScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
+        self.robot_data = {
+            'x': 0.0,
+            'y': 0.0,
+            'angle': 0.0,
+            'goal_x': 100.0,
+            'goal_y': 200.0
+        }
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.update_data)
+        self.timer.start(1000)
 
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(50, 50, 50, 50)
+
+        # Status Anzeige
+        status_group = QtWidgets.QGroupBox("Status")
+        status_layout = QtWidgets.QGridLayout()
+        
+        self.lbl_position = QtWidgets.QLabel("X: 0.0 mm\nY: 0.0 mm")
+        self.lbl_angle = QtWidgets.QLabel("Angle: 0.0°")
+        self.lbl_goal = QtWidgets.QLabel("Goal: (0.0, 0.0)")
+        
+        status_layout.addWidget(QtWidgets.QLabel("Pos:"), 0, 0)
+        status_layout.addWidget(self.lbl_position, 0, 1)
+        status_layout.addWidget(QtWidgets.QLabel("test"), 1, 0)
+        status_layout.addWidget(self.lbl_angle, 1, 1)
+        status_layout.addWidget(QtWidgets.QLabel("test:"), 2, 0)
+        status_layout.addWidget(self.lbl_goal, 2, 1)
+        
+        status_group.setLayout(status_layout)
+        layout.addWidget(status_group)
         
         buttons = [
             ("Shutdown", self.on_shutdown),
