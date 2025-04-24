@@ -16,6 +16,7 @@ class MainScene(QtWidgets.QWidget):
     def initUI(self):
         self.layout = QtWidgets.QVBoxLayout()
         self.layout.setContentsMargins(20, 20, 20, 20)
+        self.layout.setContentsMargins(0,0,0,0)
 
         # Close Button (X) for non-drive scenes
         close_layout = QtWidgets.QHBoxLayout()
@@ -78,7 +79,7 @@ class MainScene(QtWidgets.QWidget):
 
         # Status neben Spielfeld
         status_layout = QtWidgets.QVBoxLayout()
-        self.lbl_pullcord = QtWidgets.QLabel("Pullcord: NICHT AKTIV")
+        self.lbl_pullcord = QtWidgets.QLabel("Pullcord: false")
         self.lbl_pullcord.setStyleSheet("color: red; font-weight: bold;")
         self.lbl_status = QtWidgets.QLabel("X: 0.0\nY: 0.0\nWinkel: 0.0°")
         status_layout.addWidget(self.lbl_pullcord)
@@ -126,7 +127,7 @@ class MainScene(QtWidgets.QWidget):
 
     def update_pullcord_status(self, active):
         self.pullcord_active = active
-        text = "Pullcord: AKTIV" if active else "Pullcord: NICHT AKTIV"
+        text = "Pullcord: true" if active else "Pullcord: false"
         color = "green" if active else "red"
         self.lbl_pullcord.setText(text)
         self.lbl_pullcord.setStyleSheet(f"color: {color}; font-weight: bold;")
