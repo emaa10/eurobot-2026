@@ -16,7 +16,6 @@ class MainScene(QtWidgets.QWidget):
     def initUI(self):
         self.layout = QtWidgets.QVBoxLayout()
         self.layout.setContentsMargins(20, 20, 20, 20)
-        self.layout.setContentsMargins(0,0,0,0)
 
         # Close Button (X) for non-drive scenes
         close_layout = QtWidgets.QHBoxLayout()
@@ -33,7 +32,7 @@ class MainScene(QtWidgets.QWidget):
         self.color_group = QtWidgets.QButtonGroup()
         
         self.yellow_btn = QtWidgets.QPushButton("GELB")
-        self.yellow_btn.setFixedSize(250, 80)
+        self.yellow_btn.setFixedSize(250, 60)
         self.yellow_btn.setStyleSheet("""
             QPushButton { background-color: #ffff00; font-size: 28px; border: 3px solid black; border-radius: 10px; }
             QPushButton:checked { border: 5px solid #00ff00; }
@@ -41,7 +40,7 @@ class MainScene(QtWidgets.QWidget):
         self.yellow_btn.setCheckable(True)
         
         self.blue_btn = QtWidgets.QPushButton("BLAU")
-        self.blue_btn.setFixedSize(250, 80)
+        self.blue_btn.setFixedSize(250, 60)
         self.blue_btn.setStyleSheet("""
             QPushButton { background-color: #0000ff; color: white; font-size: 28px; border: 3px solid black; border-radius: 10px; }
             QPushButton:checked { border: 5px solid #00ff00; }
@@ -63,7 +62,7 @@ class MainScene(QtWidgets.QWidget):
 
         # Spielfeld Container als QLabel
         self.field_container = QtWidgets.QLabel()
-        self.field_container.setFixedSize(1000, 400)
+        self.field_container.setFixedSize(1000, 380)
         self.field_container.setStyleSheet("background-color: #ffffff; border: 3px solid black;")
         self.field_container.setAlignment(QtCore.Qt.AlignCenter)
 
@@ -94,7 +93,7 @@ class MainScene(QtWidgets.QWidget):
         self.tactic_buttons = []
         for i in range(4):
             btn = QtWidgets.QPushButton(f"TAKTIK {i+1}")
-            btn.setFixedSize(280, 60)
+            btn.setFixedSize(280, 50)
             btn.setStyleSheet("""
                 QPushButton { font-size: 20px; background-color: #f0f0f0; }
                 QPushButton:checked { background-color: white; border: 2px solid black; }
@@ -108,7 +107,7 @@ class MainScene(QtWidgets.QWidget):
         # Start/Debug Buttons
         button_layout = QtWidgets.QHBoxLayout()
         self.start_btn = QtWidgets.QPushButton("START")
-        self.start_btn.setFixedHeight(60)
+        self.start_btn.setFixedHeight(50)
         self.start_btn.setEnabled(False)
         self.start_btn.setStyleSheet("""
             QPushButton { font-size: 28px; background-color: #808080; color: white; border-radius: 10px; }
@@ -116,7 +115,7 @@ class MainScene(QtWidgets.QWidget):
         """)
         
         self.debug_btn = QtWidgets.QPushButton("DEBUG")
-        self.debug_btn.setFixedHeight(60)
+        self.debug_btn.setFixedHeight(50)
         self.debug_btn.setStyleSheet("font-size: 28px; border-radius: 10px;")
         
         button_layout.addWidget(self.start_btn)
