@@ -80,7 +80,7 @@ class MainScene(QtWidgets.QWidget):
         status_layout = QtWidgets.QVBoxLayout()
         self.lbl_pullcord = QtWidgets.QLabel("Pullcord: NICHT AKTIV")
         self.lbl_pullcord.setStyleSheet("color: red; font-weight: bold;")
-        self.lbl_status = QtWidgets.QLabel("X: 0.0 | Y: 0.0 | Winkel: 0.0°")
+        self.lbl_status = QtWidgets.QLabel("X: 0.0\nY: 0.0\nWinkel: 0.0°")
         status_layout.addWidget(self.lbl_pullcord)
         status_layout.addWidget(self.lbl_status)
         status_layout.addStretch()
