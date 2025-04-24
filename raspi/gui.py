@@ -153,13 +153,30 @@ class MainScene(QtWidgets.QWidget):
             btn = QtWidgets.QPushButton(self.field_container)
             btn.setGeometry(QtCore.QRect(*pos))
             btn.setStyleSheet("""
-                background-color: rgba(255, 0, 0, 30);
-                border: 3px solid #ff0000;
-                border-radius: 5px;
+                QPushButton {
+                    background-color: rgba(255, 0, 0, 30);
+                    border: 3px solid #ff0000;
+                    border-radius: 5px;
+                }
+                QPushButton[selected="true"] {
+                    background-color: rgba(0, 255, 0, 50);
+                    border: 3px solid #00ff00;
+                }
             """)
-            btn.clicked.connect(lambda _, p=pos: self.on_position_selected(p))
+            btn.clicked.connect(self.create_position_click_handler(pos))
             btn.show()
             self.position_buttons.append(btn)
+
+    def create_position_click_handler(self, position):
+        def handler():
+            for btn in self.position_buttons:
+                btn.setProperty("selected", False)
+                btn.style().polish(btn)
+            self.sender().setProperty("selected", True)
+            self.sender().style().polish(self.sender())
+            self.selected_position = position
+            self.check_selections()
+        return handler
 
     def on_position_selected(self, position):
         self.selected_position = position
