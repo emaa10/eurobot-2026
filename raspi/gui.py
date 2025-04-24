@@ -7,48 +7,45 @@ import random
 class MainScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.initUI()
         self.selected_color = None
         self.selected_position = None
         self.selected_tactic = None
         self.pullcord_active = False
+        self.initUI()
 
     def initUI(self):
         self.layout = QtWidgets.QVBoxLayout()
-        self.layout.setContentsMargins(20, 20, 20, 20)
-        
+        self.layout.setContentsMargins(10, 10, 10, 10)
+        self.layout.setSpacing(6)
+
+        # Close Button (X) for non-drive scenes
+        close_layout = QtWidgets.QHBoxLayout()
+        close_layout.addStretch()
+        close_btn = QtWidgets.QPushButton("X")
+        close_btn.setFixedSize(40, 40)
+        close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        close_btn.clicked.connect(QtWidgets.QApplication.quit)
+        close_layout.addWidget(close_btn)
+        self.layout.addLayout(close_layout)
+
         # Color Selection
         color_layout = QtWidgets.QHBoxLayout()
+        color_layout.setSpacing(4)
         self.color_group = QtWidgets.QButtonGroup()
         
         self.yellow_btn = QtWidgets.QPushButton("GELB")
-        self.yellow_btn.setFixedSize(250, 60)
+        self.yellow_btn.setFixedSize(200, 60)
         self.yellow_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #ffff00;
-                font-size: 28px;
-                border: 3px solid black;
-                border-radius: 10px;
-            }
-            QPushButton:checked {
-                border: 5px solid #00ff00;
-            }
+            QPushButton { background-color: #ffff00; font-size: 28px; border: 2px solid black; border-radius: 8px; }
+            QPushButton:checked { border: 3px solid #00ff00; }
         """)
         self.yellow_btn.setCheckable(True)
         
         self.blue_btn = QtWidgets.QPushButton("BLAU")
-        self.blue_btn.setFixedSize(250, 60)
+        self.blue_btn.setFixedSize(200, 60)
         self.blue_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #0000ff;
-                color: white;
-                font-size: 28px;
-                border: 3px solid black;
-                border-radius: 10px;
-            }
-            QPushButton:checked {
-                border: 5px solid #00ff00;
-            }
+            QPushButton { background-color: #0000ff; color: white; font-size: 28px; border: 2px solid black; border-radius: 8px; }
+            QPushButton:checked { border: 3px solid #00ff00; }
         """)
         self.blue_btn.setCheckable(True)
         
@@ -62,46 +59,51 @@ class MainScene(QtWidgets.QWidget):
         color_layout.addStretch()
         self.layout.addLayout(color_layout)
 
+        # Field and Status Side-by-Side
+        field_status_layout = QtWidgets.QHBoxLayout()
+        field_status_layout.setSpacing(6)
+        
         # Spielfeld Container als QLabel
         self.field_container = QtWidgets.QLabel()
-        self.field_container.setFixedSize(980, 380)
-        self.field_container.setStyleSheet("""
-            background-color: #ffffff;
-            border: 3px solid black;
-        """)
+        self.field_container.setFixedSize(1000, 380)
+        self.field_container.setStyleSheet("background-color: #ffffff; border: 2px solid black;")
         self.field_container.setAlignment(QtCore.Qt.AlignCenter)
 
         # Bild laden und skalieren
-        image_path = os.path.expanduser("/home/pi/main-bot/raspi/eurobot.png")
+        image_path = os.path.expanduser("~/main-bot/raspi/eurobot.png")
         if os.path.exists(image_path):
             pixmap = QtGui.QPixmap(image_path)
-            pixmap = pixmap.scaled(
-                980,  # 1000 - 2*10 border
-                380,  # 400 - 2*10 border
-                QtCore.Qt.KeepAspectRatio,
-                QtCore.Qt.SmoothTransformation
-            )
+            pixmap = pixmap.scaled(980, 380, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
             self.field_container.setPixmap(pixmap)
-            self.field_container.setScaledContents(False)
 
-        self.position_buttons = []
-        self.layout.addWidget(self.field_container, alignment=QtCore.Qt.AlignCenter)
+        field_status_layout.addWidget(self.field_container)
+
+        # Status neben Spielfeld
+        status_layout = QtWidgets.QVBoxLayout()
+        status_layout.setContentsMargins(0, 0, 0, 0)
+        self.lbl_pullcord = QtWidgets.QLabel("Pullcord: false")
+        self.lbl_pullcord.setStyleSheet("color: red; font-weight: bold; font-size: 18px;")
+        self.lbl_pullcord.setAlignment(QtCore.Qt.AlignCenter)
+        self.lbl_status = QtWidgets.QLabel("X: 0.0\nY: 0.0\nWinkel: 0.0°")
+        self.lbl_status.setStyleSheet("font-size: 16px;")
+        self.lbl_status.setAlignment(QtCore.Qt.AlignCenter)
+        status_layout.addWidget(self.lbl_pullcord)
+        status_layout.addWidget(self.lbl_status)
+        status_layout.addStretch()
+        field_status_layout.addLayout(status_layout)
+
+        self.layout.addLayout(field_status_layout)
 
         # Taktik Buttons
         tactics_layout = QtWidgets.QHBoxLayout()
+        tactics_layout.setSpacing(4)
         self.tactic_buttons = []
         for i in range(4):
             btn = QtWidgets.QPushButton(f"TAKTIK {i+1}")
-            btn.setFixedSize(280, 50)
+            btn.setFixedSize(180, 50)
             btn.setStyleSheet("""
-                QPushButton {
-                    font-size: 20px;
-                    background-color: #f0f0f0;
-                }
-                QPushButton:checked {
-                    background-color: white;
-                    border: 2px solid black;
-                }
+                QPushButton { font-size: 20px; background-color: #f0f0f0; border-radius: 6px; }
+                QPushButton:checked { background-color: white; border: 2px solid black; }
             """)
             btn.setCheckable(True)
             btn.clicked.connect(lambda _, x=i+1: self.on_tactic_selected(x))
@@ -111,51 +113,33 @@ class MainScene(QtWidgets.QWidget):
 
         # Start/Debug Buttons
         button_layout = QtWidgets.QHBoxLayout()
+        button_layout.setSpacing(4)
         self.start_btn = QtWidgets.QPushButton("START")
-        self.start_btn.setFixedHeight(50)
+        self.start_btn.setFixedSize(160, 50)
         self.start_btn.setEnabled(False)
         self.start_btn.setStyleSheet("""
-            QPushButton {
-                font-size: 28px;
-                background-color: #808080;
-                color: white;
-                border-radius: 10px;
-            }
-            QPushButton:enabled {
-                background-color: #00ff00;
-                color: black;
-            }
+            QPushButton { font-size: 28px; background-color: #808080; color: white; border-radius: 8px; }
+            QPushButton:enabled { background-color: #00ff00; color: black; }
         """)
         
         self.debug_btn = QtWidgets.QPushButton("DEBUG")
-        self.debug_btn.setFixedHeight(50)
-        self.debug_btn.setStyleSheet("font-size: 28px; border-radius: 10px;")
+        self.debug_btn.setFixedSize(160, 50)
+        self.debug_btn.setStyleSheet("font-size: 28px; border-radius: 8px;")
         
+        button_layout.addStretch()
         button_layout.addWidget(self.start_btn)
         button_layout.addWidget(self.debug_btn)
+        button_layout.addStretch()
         self.layout.addLayout(button_layout)
 
         self.setLayout(self.layout)
 
-        # Statuszeile unten
-        status_bar = QtWidgets.QHBoxLayout()
-        self.lbl_pullcord = QtWidgets.QLabel("Pullcord: NICHT AKTIV")
-        self.lbl_pullcord.setStyleSheet("color: red; font-weight: bold;")
-        
-        self.lbl_status = QtWidgets.QLabel("X: 0.0 | Y: 0.0 | Winkel: 0.0°")
-        
-        status_bar.addWidget(self.lbl_pullcord)
-        status_bar.addStretch()
-        status_bar.addWidget(self.lbl_status)
-        
-        self.layout.addLayout(status_bar) 
-
     def update_pullcord_status(self, active):
         self.pullcord_active = active
-        text = "Pullcord: AKTIV" if active else "Pullcord: NICHT AKTIV"
+        text = "Pullcord: true" if active else "Pullcord: false"
         color = "green" if active else "red"
         self.lbl_pullcord.setText(text)
-        self.lbl_pullcord.setStyleSheet(f"color: {color}; font-weight: bold;")
+        self.lbl_pullcord.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 18px;")
 
     def on_color_changed(self, button, checked):
         if checked:
@@ -165,25 +149,15 @@ class MainScene(QtWidgets.QWidget):
         self.check_selections()
 
     def show_position_rectangles(self, positions):
-        # Alte Buttons entfernen
-        for btn in self.position_buttons:
+        for btn in getattr(self, 'position_buttons', []):
             btn.deleteLater()
-        self.position_buttons.clear()
-        
-        # Neue Buttons erstellen
-        for idx, pos in enumerate(positions):
+        self.position_buttons = []
+        for pos in positions:
             btn = QtWidgets.QPushButton(self.field_container)
             btn.setGeometry(QtCore.QRect(*pos))
             btn.setStyleSheet("""
-                QPushButton {
-                    background-color: rgba(255, 0, 0, 30);
-                    border: 3px solid #ff0000;
-                    border-radius: 5px;
-                }
-                QPushButton[selected="true"] {
-                    background-color: rgba(0, 255, 0, 50);
-                    border: 3px solid #00ff00;
-                }
+                QPushButton { background-color: rgba(255,0,0,30); border: 2px solid #ff0000; border-radius: 4px; }
+                QPushButton[selected=\"true\"] { background-color: rgba(0,255,0,50); border: 2px solid #00ff00; }
             """)
             btn.clicked.connect(self.create_position_click_handler(pos))
             btn.show()
@@ -200,12 +174,7 @@ class MainScene(QtWidgets.QWidget):
             self.check_selections()
         return handler
 
-    def on_position_selected(self, position):
-        self.selected_position = position
-        self.check_selections()
-
     def on_tactic_selected(self, tactic):
-        # Deselect other tactics
         for btn in self.tactic_buttons:
             btn.setChecked(False)
         self.tactic_buttons[tactic-1].setChecked(True)
@@ -220,88 +189,85 @@ class MainScene(QtWidgets.QWidget):
 class DebugScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+        self.robot_data = {'x': 0.0, 'y': 0.0, 'angle': 0.0, 'goal_x': 100.0, 'goal_y': 200.0}
         self.initUI()
-        self.robot_data = {
-            'x': 0.0,
-            'y': 0.0,
-            'angle': 0.0,
-            'goal_x': 100.0,
-            'goal_y': 200.0
-        }
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_data)
         self.timer.start(1000)
 
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
-        layout.setContentsMargins(50, 50, 50, 50)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(6)
+
+        # Close Button
+        close_layout = QtWidgets.QHBoxLayout()
+        close_layout.addStretch()
+        close_btn = QtWidgets.QPushButton("X")
+        close_btn.setFixedSize(40, 40)
+        close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        close_btn.clicked.connect(QtWidgets.QApplication.quit)
+        close_layout.addWidget(close_btn)
+        layout.addLayout(close_layout)
 
         # Status Anzeige
         status_group = QtWidgets.QGroupBox("Status")
         status_layout = QtWidgets.QGridLayout()
-        
+        status_layout.setContentsMargins(2,2,2,2)
+        status_layout.setVerticalSpacing(2)
+        status_layout.setHorizontalSpacing(4)
         self.lbl_position = QtWidgets.QLabel("X: 0.0 mm\nY: 0.0 mm")
         self.lbl_angle = QtWidgets.QLabel("Angle: 0.0°")
         self.lbl_goal = QtWidgets.QLabel("Goal: (0.0, 0.0)")
-        
         status_layout.addWidget(QtWidgets.QLabel("Pos:"), 0, 0)
         status_layout.addWidget(self.lbl_position, 0, 1)
         status_layout.addWidget(QtWidgets.QLabel("Ausrichtung:"), 1, 0)
         status_layout.addWidget(self.lbl_angle, 1, 1)
         status_layout.addWidget(QtWidgets.QLabel("Ziel:"), 2, 0)
         status_layout.addWidget(self.lbl_goal, 2, 1)
-        
         status_group.setLayout(status_layout)
+        self.lbl_position.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
+        self.lbl_angle   .setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
+        self.lbl_goal    .setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
+
         layout.addWidget(status_group)
-        
-        buttons = [
+
+        # Buttons
+        btns = [
             ("Shutdown", self.on_shutdown),
             ("Test Codes", self.on_test_codes),
             ("Show Keyboard", self.on_show_keyboard),
             ("Clean Wheels", self.on_clean_wheels),
             ("Show Camera Stream", self.on_show_camera)
         ]
-
-        for text, handler in buttons:
+        for text, handler in btns:
             btn = QtWidgets.QPushButton(text)
-            btn.setFixedHeight(80)
-            btn.setStyleSheet("font-size: 24px; border-radius: 10px;")
+            btn.setFixedHeight(60)
+            btn.setStyleSheet("font-size: 20px; border-radius: 8px;")
             btn.clicked.connect(handler)
             layout.addWidget(btn)
 
-        # Back Button
         back_btn = QtWidgets.QPushButton("Zurück")
-        back_btn.setFixedHeight(60)
-        back_btn.setStyleSheet("font-size: 24px; background-color: #ff4444; border-radius: 10px;")
+        back_btn.setFixedHeight(50)
+        back_btn.setStyleSheet("font-size: 20px; background-color: #ff4444; border-radius: 8px;")
         back_btn.clicked.connect(lambda: window.stacked.setCurrentIndex(0))
         layout.addWidget(back_btn)
 
         self.setLayout(layout)
 
     def update_data(self):
-        # Dummy-Daten - später durch echte Werte ersetzen
         self.robot_data['x'] += 1
         self.robot_data['y'] += 0.5
         self.robot_data['angle'] = (self.robot_data['angle'] + 5) % 360
-        
         self.lbl_position.setText(f"X: {self.robot_data['x']:.1f} mm\nY: {self.robot_data['y']:.1f} mm")
         self.lbl_angle.setText(f"Angle: {self.robot_data['angle']:.1f}°")
         self.lbl_goal.setText(f"Goal: ({self.robot_data['goal_x']:.1f}, {self.robot_data['goal_y']:.1f})")
 
-    def on_shutdown(self):
-        os.system("sudo shutdown now")
-
-    def on_test_codes(self):
-        window.stacked.setCurrentIndex(3)
-
-    def on_show_keyboard(self):
-        subprocess.Popen(['wvkbd'], env=dict(os.environ, WVKBD_HEIGHT='250'))
-
-    def on_clean_wheels(self):
-        pass  # Implement wheel cleaning logic
-
-    def on_show_camera(self):
-        pass  # Implement camera stream
+    def on_shutdown(self): os.system("sudo shutdown now")
+    def on_test_codes(self): window.stacked.setCurrentIndex(3)
+    def on_show_keyboard(self): subprocess.Popen(['wvkbd'], env=dict(os.environ, WVKBD_HEIGHT='250'))
+    def on_clean_wheels(self): pass
+    def on_show_camera(self): pass
 
 
 class TestCodesScene(QtWidgets.QWidget):
@@ -312,22 +278,29 @@ class TestCodesScene(QtWidgets.QWidget):
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(50, 50, 50, 50)
-        
-        buttons = [
+
+        # Close Button
+        close_layout = QtWidgets.QHBoxLayout()
+        close_layout.addStretch()
+        close_btn = QtWidgets.QPushButton("X")
+        close_btn.setFixedSize(40, 40)
+        close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        close_btn.clicked.connect(QtWidgets.QApplication.quit)
+        close_layout.addWidget(close_btn)
+        layout.addLayout(close_layout)
+
+        for text, handler in [
             ("Drive 100 →", lambda: None),
             ("Drive 100 ←", lambda: None),
             ("Turn 90°", lambda: None),
             ("Turn -90°", lambda: None)
-        ]
-
-        for text, handler in buttons:
+        ]:
             btn = QtWidgets.QPushButton(text)
             btn.setFixedHeight(80)
             btn.setStyleSheet("font-size: 24px; border-radius: 10px;")
             btn.clicked.connect(handler)
             layout.addWidget(btn)
 
-        # Back Button
         back_btn = QtWidgets.QPushButton("Zurück")
         back_btn.setFixedHeight(60)
         back_btn.setStyleSheet("font-size: 24px; background-color: #ff4444; border-radius: 10px;")
@@ -347,19 +320,12 @@ class DriveScene(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
         
-        # Stop Button
         self.stop_btn = QtWidgets.QPushButton("STOP")
         self.stop_btn.setFixedSize(120, 60)
-        self.stop_btn.setStyleSheet("""
-            background-color: red;
-            font-size: 24px;
-            color: white;
-            border-radius: 10px;
-        """)
+        self.stop_btn.setStyleSheet("background-color: red; font-size: 24px; color: white; border-radius: 10px;")
         self.stop_btn.clicked.connect(lambda: os.system("killall python3"))
         layout.addWidget(self.stop_btn, alignment=QtCore.Qt.AlignTop | QtCore.Qt.AlignRight)
 
-        # Value Display
         self.value_label = QtWidgets.QLabel("Waiting for pullcord...")
         self.value_label.setAlignment(QtCore.Qt.AlignCenter)
         self.value_label.setStyleSheet("font-size: 40px;")
@@ -384,14 +350,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.initUI()
-        self.showMaximized()
+        self.showFullScreen()
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_status)
         self.timer.start(500)
 
     def initUI(self):
         self.stacked = QtWidgets.QStackedWidget()
-        
         self.main_scene = MainScene()
         self.debug_scene = DebugScene()
         self.drive_scene = DriveScene()
@@ -403,8 +368,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stacked.addWidget(self.testcodes_scene)
 
         self.setCentralWidget(self.stacked)
-
-        # Verbindungen
         self.main_scene.debug_btn.clicked.connect(lambda: self.stacked.setCurrentIndex(1))
         self.main_scene.start_btn.clicked.connect(self.show_waiting_screen)
         self.drive_scene.stop_btn.clicked.connect(self.return_to_main)
@@ -420,28 +383,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
     
     def update_status(self):
-        # Dummy-Daten für die Hauptseite
-        status_text = f"X: {random.uniform(0,3000):.1f} mm | "
-        status_text += f"Y: {random.uniform(0,2000):.1f} mm | "
-        status_text += f"Winkel: {random.uniform(0,360):.1f}°"
+        status_text = f"X: {random.uniform(0,3000):.1f} mm\nY: {random.uniform(0,2000):.1f} mm\nWinkel: {random.uniform(0,360):.1f}°"
         self.main_scene.lbl_status.setText(status_text)
-    
+
     def activate_pullcord(self):
         self.drive_scene.show_points()
         self.main_scene.update_pullcord_status(True)
 
-
 # Positionsangaben für das Spielfeld
 yellow_positions = [
-    (220, 133, 84, 84),
-    (507, 12, 84, 84),
-    (665, 300, 84, 84)
+    (220, 122, 84, 84),
+    (507, 2, 84, 84),
+    (665, 290, 84, 84)
 ]
-
 blue_positions = [
-    (250, 300, 84, 84),
-    (405, 12, 84, 84),
-    (695, 135, 84, 84)
+    (250, 290, 84, 84),
+    (405, 2, 84, 84),
+    (695, 125, 84, 84)
 ]
 
 if __name__ == '__main__':
@@ -449,3 +407,4 @@ if __name__ == '__main__':
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
+
