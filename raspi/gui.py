@@ -2,6 +2,7 @@ import sys
 import os
 import subprocess
 from PyQt5 import QtWidgets, QtCore, QtGui
+import random
 
 class MainScene(QtWidgets.QWidget):
     def __init__(self):
@@ -10,6 +11,7 @@ class MainScene(QtWidgets.QWidget):
         self.selected_color = None
         self.selected_position = None
         self.selected_tactic = None
+        self.pullcord_active = False
 
     def initUI(self):
         self.layout = QtWidgets.QVBoxLayout()
@@ -135,6 +137,26 @@ class MainScene(QtWidgets.QWidget):
 
         self.setLayout(self.layout)
 
+        # Statuszeile unten
+        status_bar = QtWidgets.QHBoxLayout()
+        self.lbl_pullcord = QtWidgets.QLabel("Pullcord: NICHT AKTIV")
+        self.lbl_pullcord.setStyleSheet("color: red; font-weight: bold;")
+        
+        self.lbl_status = QtWidgets.QLabel("X: 0.0 | Y: 0.0 | Winkel: 0.0°")
+        
+        status_bar.addWidget(self.lbl_pullcord)
+        status_bar.addStretch()
+        status_bar.addWidget(self.lbl_status)
+        
+        self.layout.addLayout(status_bar) 
+
+    def update_pullcord_status(self, active):
+        self.pullcord_active = active
+        text = "Pullcord: AKTIV" if active else "Pullcord: NICHT AKTIV"
+        color = "green" if active else "red"
+        self.lbl_pullcord.setText(text)
+        self.lbl_pullcord.setStyleSheet(f"color: {color}; font-weight: bold;")
+
     def on_color_changed(self, button, checked):
         if checked:
             self.selected_color = button.text()
@@ -224,9 +246,9 @@ class DebugScene(QtWidgets.QWidget):
         
         status_layout.addWidget(QtWidgets.QLabel("Pos:"), 0, 0)
         status_layout.addWidget(self.lbl_position, 0, 1)
-        status_layout.addWidget(QtWidgets.QLabel("test"), 1, 0)
+        status_layout.addWidget(QtWidgets.QLabel("Ausrichtung:"), 1, 0)
         status_layout.addWidget(self.lbl_angle, 1, 1)
-        status_layout.addWidget(QtWidgets.QLabel("test:"), 2, 0)
+        status_layout.addWidget(QtWidgets.QLabel("Ziel:"), 2, 0)
         status_layout.addWidget(self.lbl_goal, 2, 1)
         
         status_group.setLayout(status_layout)
@@ -263,8 +285,8 @@ class DebugScene(QtWidgets.QWidget):
         self.robot_data['angle'] = (self.robot_data['angle'] + 5) % 360
         
         self.lbl_position.setText(f"X: {self.robot_data['x']:.1f} mm\nY: {self.robot_data['y']:.1f} mm")
-        self.lbl_angle.setText(f"Winkel: {self.robot_data['angle']:.1f}°")
-        self.lbl_goal.setText(f"Ziel: ({self.robot_data['goal_x']:.1f}, {self.robot_data['goal_y']:.1f})")
+        self.lbl_angle.setText(f"Angle: {self.robot_data['angle']:.1f}°")
+        self.lbl_goal.setText(f"Goal: ({self.robot_data['goal_x']:.1f}, {self.robot_data['goal_y']:.1f})")
 
     def on_shutdown(self):
         os.system("sudo shutdown now")
@@ -363,6 +385,9 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.initUI()
         self.showMaximized()
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.update_status)
+        self.timer.start(500)
 
     def initUI(self):
         self.stacked = QtWidgets.QStackedWidget()
@@ -394,8 +419,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drive_scene.value_label.setText("Waiting for pullcord...")
         self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
     
+    def update_status(self):
+        # Dummy-Daten für die Hauptseite
+        status_text = f"X: {random.uniform(0,3000):.1f} mm | "
+        status_text += f"Y: {random.uniform(0,2000):.1f} mm | "
+        status_text += f"Winkel: {random.uniform(0,360):.1f}°"
+        self.main_scene.lbl_status.setText(status_text)
+    
     def activate_pullcord(self):
         self.drive_scene.show_points()
+        self.main_scene.update_pullcord_status(True)
 
 
 # Positionsangaben für das Spielfeld
