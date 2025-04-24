@@ -256,6 +256,16 @@ class DebugScene(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
+    def update_data(self):
+        # Dummy-Daten - später durch echte Werte ersetzen
+        self.robot_data['x'] += 1
+        self.robot_data['y'] += 0.5
+        self.robot_data['angle'] = (self.robot_data['angle'] + 5) % 360
+        
+        self.lbl_position.setText(f"X: {self.robot_data['x']:.1f} mm\nY: {self.robot_data['y']:.1f} mm")
+        self.lbl_angle.setText(f"Winkel: {self.robot_data['angle']:.1f}°")
+        self.lbl_goal.setText(f"Ziel: ({self.robot_data['goal_x']:.1f}, {self.robot_data['goal_y']:.1f})")
+
     def on_shutdown(self):
         os.system("sudo shutdown now")
 
