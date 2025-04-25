@@ -8,7 +8,7 @@ import math
 import asyncio
 
 LIDAR = False
-CAM = True
+CAM = False
 
 class RobotController:
     def __init__(self):
@@ -20,7 +20,7 @@ class RobotController:
                         
         self.lidar = Lidar('/dev/ttyUSB0') if LIDAR else None
         
-        self.task = Task(actions=['d-500'])
+        self.task = Task(actions=['dd-500'])
         
     def add_task(self, actions: list[str]):
         task = Task(actions=actions)
@@ -61,9 +61,7 @@ class RobotController:
                 print(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                 break
                 
-        self.motor_controller.stop = stop
-            
-        return True if not self.task else False    
+        self.motor_controller.stop = stop   
 
     async def run(self):
         try:
@@ -98,8 +96,8 @@ class RobotController:
 
 async def main():
     controller = RobotController()
-    # await controller.run()
-    print(Camera.get_distance())
+    await controller.run()
+    # print(Camera.get_distance())
 
 if __name__ == '__main__':
     asyncio.run(main())

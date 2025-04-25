@@ -3,7 +3,8 @@ import random
 from time import time_ns
 import numpy as np
 import matplotlib.pyplot as plt
-from modules.position import Position
+
+from position import Position
 
 def time_ms():
     return time_ns() // 1000000
@@ -40,6 +41,9 @@ class Pathfinder():
         # simas
         self.add_obstacle(Position(0, 155), Position(15, 199))
         self.add_obstacle(Position(285, 155), Position(299, 199))
+        
+        # middle_points
+        self.middle_points = [Position(150, 75), Position(150, 115), Position(60, 100), Position(240, 100)]
     
     def add_stack(self, pos1: Position, pos2: Position) -> None:
         self.obstacle_map[pos1.y:pos2.y, pos1.x:pos2.x] = 2
@@ -113,7 +117,7 @@ class Pathfinder():
         
         return self.collission(right1, right2) or self.collission(left1, left2)
     
-    def plan(self, start, target) -> list[Position]:
+    def plan(self, start, target) -> list[Position] | None:
         print(f'start: {start.x}, {start.y}; target: {target.x}, {target.y}')       
         # if no collision return target         
         if not self.collission_with_bot(start, target):
@@ -130,7 +134,7 @@ class Pathfinder():
         # check if paths were found
         if len(possibilities) <= 0:
             print("No path found")
-            return []
+            return None
         
         print("path found")
         
@@ -172,13 +176,27 @@ class Pathfinder():
         plt.legend()
         plt.grid(True)
         plt.show()
+        
+    def find_alternative(self):
+        for point in self.middle_points:
+            path1 = self.plan(self.start, point)
+            path2 = self.plan(point, self.target)
+            if path1 and path2:
+                path1 += path2
+                return path1 
+        
+        return None
     
     def proccess(self, display: bool = False) -> None:
         time_start = time_ms()
         path = self.plan(self.start, self.target)
+        
+        if not path:
+            path = self.find_alternative()
+        
         print(f'{int(time_ms() - time_start)} ms')
         if display: self.display(path)
         
 if __name__ == "__main__":
-    pathfinder = Pathfinder(target=Position(150, 125))
-    pathfinder.proccess(False)
+    pathfinder = Pathfinder(start=Position(25, 10), target=Position(275, 10))
+    pathfinder.proccess(True)
