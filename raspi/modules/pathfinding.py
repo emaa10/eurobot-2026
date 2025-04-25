@@ -118,7 +118,6 @@ class Pathfinder():
         return self.collission(right1, right2) or self.collission(left1, left2)
     
     def plan(self, start, target) -> list[Position] | None:
-        print(f'start: {start.x}, {start.y}; target: {target.x}, {target.y}')       
         # if no collision return target         
         if not self.collission_with_bot(start, target):
             return [target]
@@ -184,7 +183,9 @@ class Pathfinder():
         def distance_to_middle(p: Position):
             return self.distance(p, Position(middle_point_x, middle_point_y))
         
-        for point in self.middle_points:
+        sorted_middle_points = sorted(self.middle_points, key=distance_to_middle)
+        
+        for point in sorted_middle_points:
             path1 = self.plan(self.start, point)
             path2 = self.plan(point, self.target)
             if path1 and path2:
@@ -193,16 +194,18 @@ class Pathfinder():
         
         return None
     
-    def proccess(self, display: bool = False) -> None:
-        time_start = time_ms()
+    def proccess(self, debug = False) -> list[Position]:
+        if debug: time_start = time_ms()
         path = self.plan(self.start, self.target)
         
         if not path:
             path = self.find_alternative()
         
-        print(f'{int(time_ms() - time_start)} ms')
-        if display: self.display(path)
+        if debug: print(f'{int(time_ms() - time_start)} ms')
+        if debug: self.display(path)
+        
+        return path
         
 if __name__ == "__main__":
-    pathfinder = Pathfinder(start=Position(25, 10), target=Position(35, 175))
-    pathfinder.proccess(True)
+    pathfinder = Pathfinder(start=Position(25, 10), target=Position(30, 135))
+    pathfinder.proccess(False)

@@ -20,7 +20,7 @@ class RobotController:
                         
         self.lidar = Lidar('/dev/ttyUSB0') if LIDAR else None
         
-        self.task = Task(actions=['dd-500'])
+        self.task = Task(actions=[['dd500'], ['ta90'], ['ta90']])
         
     def add_task(self, actions: list[str]):
         task = Task(actions=actions)

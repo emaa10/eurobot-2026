@@ -72,7 +72,7 @@ class Task():
                 await asyncio.sleep(0.2)
             case 'dp':
                 target_x, target_y, target_theta = value.split(';')
-                points = self.pathfinder.plan(start=Position(x//10, y//10), target=Position(int(target_x)//10, int(target_y)//10))
+                points = self.pathfinder.proccess(start=Position(x//10, y//10), target=Position(int(target_x)//10, int(target_y)//10))
                 actions = []
                 for point in points:
                     actions.extend(self.motor_controller.drive_to(point.x*10, point.y*10))
