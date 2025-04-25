@@ -1,18 +1,18 @@
-### Actions
-# Driving
+# Actions
+## Driving
 - dd => drive distance in mm
 - dp => drive to point x y theta 
 
-# Turning
+## Turning
 - ta => turn relative angle
 - tt => turn to absolute angle
 
-# Gripper
+## Gripper
 - gX => Gripper acitons -> currently not defined
 
-# Camera
+## Camera
 - cc => check camera (stacks)
 
-# Points
+## Points
 - ap => add points (display)
 - sp => set points (display)
