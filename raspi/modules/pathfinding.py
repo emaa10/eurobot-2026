@@ -5,7 +5,7 @@ import numpy as np
 import random
 import logging
 
-from position import Position
+from modules.position import Position
 
 def time_ms():
     return time_ns() // 1000000

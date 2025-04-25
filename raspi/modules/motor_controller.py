@@ -204,7 +204,7 @@ class MotorController():
         self.stop = False
         self.direction = 0
         
-    async def stop(self) -> None:
+    async def set_stop(self) -> None:
         [await controller.set_stop() for controller in self.controllers.values()]
         
     async def get_finished(self) -> bool:
@@ -219,7 +219,9 @@ class MotorController():
             self.target_positions[i+1] = self.target_positions[i+1] - data.values[moteus.Register.POSITION]
     
     async def set_target(self, velocity_limit=60.0, accel_limit=30.0) -> None:
-        await self.stop()
+        await self.set_stop()
+        
+        await asyncio.sleep(0.2)
         
         # Set zero position
         [await controller.set_output_exact(position=0.0)
@@ -249,11 +251,11 @@ class MotorController():
     async def turn_angle(self, angle: int) -> None:
         self.direction = 0
         
-        turn = 7.593
+        turn = 10.796
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
-        await self.set_pos(-pulses, pulses, velocity_limit=25.0, accel_limit=25.0)
+        await self.set_pos(pulses, -pulses, velocity_limit=35.0, accel_limit=30.0)
         
     async def turn_to(self, theta: float):
         delta_t = theta - self.theta
@@ -299,7 +301,7 @@ class MotorController():
             self.stopped = False
             
         if self.finished:
-            await self.stop()
+            await self.set_stop()
         
         return DriveState(self.x, self.y, self.theta, self.finished, None, self.stopped, self.direction)
         

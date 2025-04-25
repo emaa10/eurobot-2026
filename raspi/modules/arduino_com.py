@@ -8,8 +8,12 @@ import logging
 class SerialManager():
     def __init__(self, port="/dev/ttyACM1", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=3)
-        self.ser.setDTR(True)
+        
+        self.ser.setDTR(False)
+        time.sleep(1)
         self.ser.flushInput()
+        self.ser.setDTR(True)
+        time.sleep(1)
         
         self.logger = logging.getLogger(__name__)
             
@@ -62,7 +66,7 @@ def main():
     serial_manager = SerialManager()
     
     while True:
-        self.logger.info(serial_manager.read_input())
+        serial_manager.logger.info(serial_manager.read_input())
         
 if __name__ == '__main__':
     main()

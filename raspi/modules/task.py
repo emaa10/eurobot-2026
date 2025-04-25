@@ -36,7 +36,6 @@ class Task():
         self.successor.add_task(task)
         
     async def control_loop(self, time_started) -> DriveState:
-        self.logger.info('loop')
         state = await self.motor_controller.control_loop()
         state.task = self
         
@@ -55,8 +54,9 @@ class Task():
         if time_started + 90 < time():
             pass    # drive home
             
-        if time_started + 99 < time():
-            self.motor_controller.stop()
+        if time_started + 99999 < time():
+            self.logger.info('Cutoff')
+            await self.motor_controller.set_stop()
             state.finished = True
         
         return state

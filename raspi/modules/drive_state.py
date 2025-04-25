@@ -1,7 +1,5 @@
-from modules.task import Task
-
 class DriveState():
-    def __init__(self, x: int, y: int, theta: float, finished: bool, task: Task | None, stopped: bool, direction: int = 1):
+    def __init__(self, x: int, y: int, theta: float, finished: bool, task, stopped: bool, direction: int = 1):
         self.x = x
         self.y = y
         self.theta = theta

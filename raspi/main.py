@@ -27,7 +27,7 @@ class RobotController:
                         
         self.lidar = Lidar('/dev/ttyUSB0') if LIDAR else None
         
-        self.task = Task(actions=[['dd500'], ['ta90'], ['ta90']])
+        self.task = Task(motor_controller=self.motor_controller, action_set=[['ta180']])
         
     def add_task(self, actions: list[str]):
         task = Task(actions=actions)
@@ -68,11 +68,11 @@ class RobotController:
                 self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                 break
                 
-        self.motor_controller.stop = stop   
+        self.motor_controller.set_stop = stop   
 
     async def run(self):
         try:
-            if not self.lidar.start_scanning() and LIDAR:
+            if LIDAR and not self.lidar.start_scanning():
                 self.logger.info("Failed to start Lidar")
                 return
             
@@ -84,7 +84,9 @@ class RobotController:
             while True:
                 latest_scan = self.lidar.get_latest_scan() if LIDAR else None
                 state = await self.task.control_loop(self.time_started)
-                if state.finished: break
+                if state.finished: 
+                    self.logger.info(f'theta: {state.theta}')
+                    break
                 
                 self.x = state.x
                 self.y = state.y
@@ -101,13 +103,13 @@ class RobotController:
             self.logger.info("Interrupted by user")
     
         finally:
-            self.logger.info("Stopping Lidar...")
+            self.logger.info("Stopping ...")
+            await self.motor_controller.set_stop()
             if LIDAR: self.lidar.stop()
 
 async def main():
     controller = RobotController()
     await controller.run()
-    # self.logger.info(Camera.get_distance())
 
 if __name__ == '__main__':
     asyncio.run(main())
