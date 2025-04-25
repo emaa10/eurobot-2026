@@ -14,7 +14,7 @@ def add_with_limits(a, b, max_value):
     return min(result, max_value)
 
 class Pathfinder():
-    def __init__(self, start=Position(40,180), target=Position(270, 180), map_size=[300, 200], max_iters=1000, bot_width=18):
+    def __init__(self, start=Position(40,180), target=Position(270, 180), map_size=[300, 200], max_iters=1000, bot_width=17):
         self.start = start
         self.target = target
         self.map_size = map_size
@@ -43,7 +43,7 @@ class Pathfinder():
         self.add_obstacle(Position(285, 155), Position(299, 199))
         
         # middle_points
-        self.middle_points = [Position(150, 75), Position(150, 115), Position(60, 100), Position(240, 100)]
+        self.middle_points = [Position(150, 75), Position(150, 115), Position(75, 50), Position(225, 50)]
     
     def add_stack(self, pos1: Position, pos2: Position) -> None:
         self.obstacle_map[pos1.y:pos2.y, pos1.x:pos2.x] = 2
@@ -178,6 +178,12 @@ class Pathfinder():
         plt.show()
         
     def find_alternative(self):
+        middle_point_x = self.target.x - self.start.x
+        middle_point_y = self.target.y - self.start.y
+        
+        def distance_to_middle(p: Position):
+            return self.distance(p, Position(middle_point_x, middle_point_y))
+        
         for point in self.middle_points:
             path1 = self.plan(self.start, point)
             path2 = self.plan(point, self.target)
@@ -198,5 +204,5 @@ class Pathfinder():
         if display: self.display(path)
         
 if __name__ == "__main__":
-    pathfinder = Pathfinder(start=Position(25, 10), target=Position(275, 10))
+    pathfinder = Pathfinder(start=Position(25, 10), target=Position(35, 175))
     pathfinder.proccess(True)
