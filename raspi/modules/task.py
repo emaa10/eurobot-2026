@@ -1,5 +1,6 @@
 from typing import Self
 from time import time
+import logging
 
 from modules.motor_controller import MotorController
 from modules.pathfinding import Pathfinder
@@ -18,9 +19,11 @@ class Task():
         
         self.stopped_since = None
         self.abortable = True
+        
+        self.logger = logging.getLogger(__name__)
                 
         for actions in action_set:
-            # print(actions)
+            # self.logger.info(actions)
             self.add_task(Task(self.motor_controller, [actions]))
         
         self.pathfinder = Pathfinder()
@@ -32,7 +35,8 @@ class Task():
 
         self.successor.add_task(task)
         
-    async def control_loop(self) -> DriveState:
+    async def control_loop(self, time_started) -> DriveState:
+        self.logger.info('loop')
         state = await self.motor_controller.control_loop()
         state.task = self
         
@@ -47,6 +51,13 @@ class Task():
         if state.finished:
             state.task = await self.next_action(state.x, state.y)
             if state.task: state.finished = False
+            
+        if time_started + 90 < time():
+            pass    # drive home
+            
+        if time_started + 99 < time():
+            self.motor_controller.stop()
+            state.finished = True
         
         return state
         

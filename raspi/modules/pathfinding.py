@@ -1,8 +1,9 @@
-from math import sqrt
-import random
 from time import time_ns
-import numpy as np
+from math import sqrt
 import matplotlib.pyplot as plt
+import numpy as np
+import random
+import logging
 
 from position import Position
 
@@ -44,6 +45,8 @@ class Pathfinder():
         
         # middle_points
         self.middle_points = [Position(150, 75), Position(150, 115), Position(75, 50), Position(225, 50)]
+        
+        self.logger = logging.getLogger(__name__)
     
     def add_stack(self, pos1: Position, pos2: Position) -> None:
         self.obstacle_map[pos1.y:pos2.y, pos1.x:pos2.x] = 2
@@ -132,10 +135,10 @@ class Pathfinder():
         
         # check if paths were found
         if len(possibilities) <= 0:
-            print("No path found")
+            self.logger.info("No path found")
             return None
         
-        print("path found")
+        self.logger.info("path found")
         
         # find best pos (shortest path)
         best_pos_index = 0
@@ -201,7 +204,7 @@ class Pathfinder():
         if not path:
             path = self.find_alternative()
         
-        if debug: print(f'{int(time_ms() - time_start)} ms')
+        if debug: self.logger.info(f'{int(time_ms() - time_start)} ms')
         if debug: self.display(path)
         
         return path

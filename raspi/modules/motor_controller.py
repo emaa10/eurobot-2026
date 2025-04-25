@@ -8,6 +8,7 @@ import asyncio
 import math
 import moteus
 import time
+import logging
 
 from modules.drive_state import DriveState
 from modules.arduino_com import SerialManager
@@ -187,6 +188,8 @@ class MotorController():
         
         self.serial_manager = SerialManager()
         
+        self.logger = logging.getLogger(__name__)
+        
         self.x = 0
         self.y = 0
         self.theta = 0.0
@@ -280,10 +283,9 @@ class MotorController():
         try:
             self.x, self.y, self.theta = self.serial_manager.get_pos()
         except:
-            print("Could not read new pos data")
+            self.logger.info("Could not read new pos data")
 
         if self.stop:
-            print("stopped")
             self.finished = False
             if not self.stopped:
                 await self.override_target()

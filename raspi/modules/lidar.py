@@ -1,5 +1,5 @@
 import threading
-import time
+import logging
 from time import time_ns
 import queue
 from rplidar import RPLidar
@@ -8,6 +8,8 @@ class Lidar:
     def __init__(self, port: str):
         self.port = port
         self.lidar = None
+        
+        self.logger = logging.getLogger(__name__)
         
         # Queue to store scan results
         self.scan_results = queue.Queue(maxsize=10)
@@ -20,10 +22,10 @@ class Lidar:
         """Connect to the Lidar device"""
         try:
             self.lidar = RPLidar(self.port)
-            print("Lidar connected successfully")
+            self.logger.info("Lidar connected successfully")
             return True
         except Exception as e:
-            print(f"Failed to connect to Lidar: {e}")
+            self.logger.info(f"Failed to connect to Lidar: {e}")
             return False
     
     def start_scanning(self):
@@ -40,13 +42,13 @@ class Lidar:
         self.thread = threading.Thread(target=self._scan_loop)
         self.thread.daemon = False
         self.thread.start()
-        print("Scan thread started")
+        self.logger.info("Scan thread started")
         return True
     
     def _scan_loop(self):
         """Background thread for continuous scanning"""
         try:
-            print("Scan loop started")
+            self.logger.info("Scan loop started")
             time_stamp = time_ns()
             
             # Reset scan data
@@ -60,9 +62,9 @@ class Lidar:
                 
                 # Process only if this is part of a new scan
                 if new_reading:
-                    # Calculate and print time for a complete scan
+                    # Calculate and self.logger.info time for a complete scan
                     scan_time_ms = (time_ns() - time_stamp) // 1000000
-                    # print(f"Scan time: {scan_time_ms}ms")
+                    # self.logger.info(f"Scan time: {scan_time_ms}ms")
                     time_stamp = time_ns()
                     
                     # Put result in queue, non-blocking
@@ -85,11 +87,11 @@ class Lidar:
                     current_scan_data.append((angle, distance))
                 
         except Exception as e:
-            print(f"Error in scan loop: {e}")
+            self.logger.info(f"Error in scan loop: {e}")
                 
         finally:
-            if self.running:  # Only print if we didn't deliberately stop
-                print("Scan loop ended unexpectedly")
+            if self.running:  # Only self.logger.info if we didn't deliberately stop
+                self.logger.info("Scan loop ended unexpectedly")
             self.running = False
     
     
@@ -117,7 +119,7 @@ class Lidar:
             # Wait for thread to finish with timeout
             self.thread.join(timeout=2.0)
             if self.thread.is_alive():
-                print("Warning: Lidar thread didn't exit cleanly")
+                self.logger.info("Warning: Lidar thread didn't exit cleanly")
             self.thread = None
         
         if self.lidar:
@@ -125,20 +127,20 @@ class Lidar:
                 self.lidar.stop()
                 self.lidar.disconnect()
             except Exception as e:
-                print(f"Error stopping Lidar: {e}")
+                self.logger.info(f"Error stopping Lidar: {e}")
             
             self.lidar = None
         
-        print("Lidar stopped")
+        self.logger.info("Lidar stopped")
 
 # Example usage
 def main():
     lidar = Lidar('/dev/tty.usbserial-0001')  # Update with your port
     
     try:
-        print("Starting Lidar scanning")
+        self.logger.info("Starting Lidar scanning")
         if not lidar.start_scanning():
-            print("Failed to start Lidar")
+            self.logger.info("Failed to start Lidar")
             return
         
         # Main loop
@@ -148,19 +150,19 @@ def main():
             path_clear = lidar.get_latest_scan()
             
             if path_clear is not None:
-                print(f"Path clear: {path_clear}")
+                self.logger.info(f"Path clear: {path_clear}")
                 count += 1
             
             # Check if Lidar thread is still running
             if not lidar.is_running():
-                print("Lidar thread stopped unexpectedly")
+                self.logger.info("Lidar thread stopped unexpectedly")
                 break
     
     except KeyboardInterrupt:
-        print("Interrupted by user")
+        self.logger.info("Interrupted by user")
     
     finally:
-        print("Stopping Lidar...")
+        self.logger.info("Stopping Lidar...")
         lidar.stop()
 
 if __name__ == "__main__":

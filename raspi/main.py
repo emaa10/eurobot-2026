@@ -6,6 +6,8 @@ from modules.camera import Camera
 
 import math
 import asyncio
+from time import time
+import logging
 
 LIDAR = False
 CAM = False
@@ -15,6 +17,11 @@ class RobotController:
         self.x = 0
         self.y = 0
         self.theta = 0.0
+        
+        logging.basicConfig(filename='eurobot.log', level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
+        
+        self.time_started = time()
         
         self.motor_controller = MotorController()
                         
@@ -53,12 +60,12 @@ class RobotController:
                         
             if (state.direction >= 0 and 0 <= d_y <= 500) and abs(d_x) <= 250 and point_in_arena:
                 stop = True
-                print(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
+                self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                 break
             
             if  (state.direction <= 0 and 0 >= d_y >= -500) and abs(d_x) <= 250 and point_in_arena:
                 stop = True
-                print(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
+                self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                 break
                 
         self.motor_controller.stop = stop   
@@ -66,14 +73,18 @@ class RobotController:
     async def run(self):
         try:
             if not self.lidar.start_scanning() and LIDAR:
-                print("Failed to start Lidar")
+                self.logger.info("Failed to start Lidar")
                 return
             
             self.task = await self.task.next_action(self.x, self.y)
             
+            self.time_started = time()
+            self.logger.info(f'Started at {self.time_started}')
+            
             while True:
                 latest_scan = self.lidar.get_latest_scan() if LIDAR else None
-                state = await self.task.control_loop()
+                state = await self.task.control_loop(self.time_started)
+                if state.finished: break
                 
                 self.x = state.x
                 self.y = state.y
@@ -81,23 +92,22 @@ class RobotController:
                 self.task = state.task
                 
                 await self.control_loop(state, latest_scan)
-                if state.finished: break
                 
                 if LIDAR and not self.lidar.is_running():
-                    print("Lidar thread stopped unexpectedly")
+                    self.logger.info("Lidar thread stopped unexpectedly")
                     break        
     
         except KeyboardInterrupt:
-            print("Interrupted by user")
+            self.logger.info("Interrupted by user")
     
         finally:
-            print("Stopping Lidar...")
+            self.logger.info("Stopping Lidar...")
             if LIDAR: self.lidar.stop()
 
 async def main():
     controller = RobotController()
     await controller.run()
-    # print(Camera.get_distance())
+    # self.logger.info(Camera.get_distance())
 
 if __name__ == '__main__':
     asyncio.run(main())

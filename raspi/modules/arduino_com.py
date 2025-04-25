@@ -3,12 +3,15 @@ import re
 import time
 import csv
 from datetime import datetime
+import logging
 
 class SerialManager():
     def __init__(self, port="/dev/ttyACM1", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=3)
         self.ser.setDTR(True)
         self.ser.flushInput()
+        
+        self.logger = logging.getLogger(__name__)
             
     def read_input(self) -> str:
         # flush input to get the latest data
@@ -59,7 +62,7 @@ def main():
     serial_manager = SerialManager()
     
     while True:
-        print(serial_manager.read_input())
+        self.logger.info(serial_manager.read_input())
         
 if __name__ == '__main__':
     main()

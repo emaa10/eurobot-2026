@@ -85,9 +85,9 @@ class Camera:
         frame = self._get_frame()
         display, angle, distance = self._process_distance(frame)
 
-        cv2.imshow("Distance Analysis", display)
-        cv2.waitKey(3000)
-        cv2.destroyWindow("Distance Analysis")
+        # cv2.imshow("Distance Analysis", display)
+        # cv2.waitKey(3000)
+        # cv2.destroyWindow("Distance Analysis")
 
         return [angle, distance]
 
@@ -99,9 +99,9 @@ class Camera:
         frame = self._get_frame()
         ok, display = self._process_check(frame)
 
-        cv2.imshow("Check Cans", display)
-        cv2.waitKey(3000)
-        cv2.destroyWindow("Check Cans")
+        # cv2.imshow("Check Cans", display)
+        # cv2.waitKey(3000)
+        # cv2.destroyWindow("Check Cans")
 
         return ok
 
