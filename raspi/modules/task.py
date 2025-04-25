@@ -64,12 +64,6 @@ class Task():
             case 'dd':
                 await self.motor_controller.drive_distance(int(value))
                 await asyncio.sleep(0.2)
-            case 'ta':
-                await self.motor_controller.turn_angle(float(value))
-                await asyncio.sleep(0.2)
-            case 'tt':
-                await self.motor_controller.turn_to(float(value))
-                await asyncio.sleep(0.2)
             case 'dp':
                 target_x, target_y, target_theta = value.split(';')
                 points = self.pathfinder.proccess(start=Position(x//10, y//10), target=Position(int(target_x)//10, int(target_y)//10))
@@ -80,6 +74,12 @@ class Task():
                 actions.extend(self.actions)
                 self.actions = actions
                 return self.next_action(x, y)
+            case 'ta':
+                await self.motor_controller.turn_angle(float(value))
+                await asyncio.sleep(0.2)
+            case 'tt':
+                await self.motor_controller.turn_to(float(value))
+                await asyncio.sleep(0.2)
             case 'gl':
                 self.abortable = False  # after gripperaction lift not abortable
             case 'gr':
