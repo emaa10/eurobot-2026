@@ -194,6 +194,7 @@ class DebugScene(QtWidgets.QWidget):
             ("Show Keyboard", self.on_show_keyboard),
             ("Clean Wheels", self.on_clean_wheels),
             ("Show Camera Stream", self.on_show_camera)
+            ("Log Tail", self.on_log_tail)
         ]
         for text, handler in btns:
             btn = QtWidgets.QPushButton(text)
@@ -216,6 +217,14 @@ class DebugScene(QtWidgets.QWidget):
     def on_show_keyboard(self): subprocess.Popen(['wvkbd'], env=dict(os.environ, WVKBD_HEIGHT='250'))
     def on_clean_wheels(self): pass
     def on_show_camera(self): pass
+
+    def on_log_tail(self):
+        """Open new terminal with log tail command"""
+        log_path = "/path/to/your/log.log"  # Update this path to your actual log file
+        subprocess.Popen(
+            ['lxterminal', '-e', f'tail -f {log_path}'],
+            env=dict(os.environ)
+        )
 
 
 class TestCodesScene(QtWidgets.QWidget):
@@ -250,7 +259,7 @@ class TestCodesScene(QtWidgets.QWidget):
             btn.clicked.connect(handler)
             layout.addWidget(btn)
 
-        back_btn = QtWidgets.QPushButton("Zurück")
+        back_btn = QtWidgets.QPushButton("Back")
         back_btn.setFixedHeight(60)
         back_btn.setStyleSheet("font-size: 24px; background-color: #ff4444; border-radius: 10px;")
         back_btn.clicked.connect(lambda: window.stacked.setCurrentIndex(1))
