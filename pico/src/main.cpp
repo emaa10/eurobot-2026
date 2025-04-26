@@ -106,6 +106,8 @@ void homeStepper2() {
     currentPosStepper2 = 0;
 }
 
+// ========== setup / loop ==========
+
 // run if ready
 void startupRoutine() {
     homeServos();
@@ -116,6 +118,8 @@ void startupRoutine() {
 
 // nur serial init, warten dann auf setup command von raspi
 void setup() {
+    Serial.begin(115200);
+
     pinMode(STEPPER1_DIR, OUTPUT);
     pinMode(STEPPER1_EN, OUTPUT);
     pinMode(STEPPER1_STEP, OUTPUT);
@@ -139,8 +143,42 @@ void setup() {
     servo6.attach(SERVO6);
     servo7.attach(SERVO7);
     delay(1000);
+    //startupRoutine();
 }
 
 void loop() {
-    delay(1000);
+    if (Serial.available()) {
+        String command = Serial.readStringUntil('\n'); 
+        command.trim();
+
+        if (command.length() < 2) {
+            Serial.println("f");
+            return;
+        }
+
+        char device = command.charAt(0);
+        int value = command.substring(1).toInt();
+
+        bool success = false;
+
+        switch (device) {
+            case 'a': stepperDrive1(value); success = true; break;
+            case 'b': stepperDrive2(value); success = true; break;
+            case 's': servo1.write(value); success = true; break;
+            case 't': servo2.write(value); success = true; break;
+            case 'u': servo3.write(value); success = true; break;
+            case 'v': servo4.write(value); success = true; break;
+            case 'w': servo5.write(value); success = true; break;
+            case 'x': servo6.write(value); success = true; break;
+            case 'y': servo7.write(value); success = true; break;
+            case 'h': startupRoutine(); success = true; break;
+            default: success = false;
+        }
+
+        if (success) {
+            Serial.println("ok");
+        } else {
+            Serial.println("f");
+        }
+    }
 }
