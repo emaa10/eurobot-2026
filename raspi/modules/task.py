@@ -1,3 +1,4 @@
+import math
 from typing import Self
 from time import time
 import logging
@@ -35,6 +36,23 @@ class Task():
 
         self.successor.add_task(task)
         
+    def drive_to(self, x: int, y: int) -> list[str]:
+        delta_x = x - self.motor_controller.x
+        delta_y = y - self.motor_controller.y
+                
+        dist = math.sqrt(delta_x**2+delta_y**2)
+        
+        delta_t = (delta_y/dist) - self.motor_controller.theta * math.pi / 180
+        
+        # normalize theta
+        while (delta_t > math.pi): delta_t -= 2 * math.pi
+        while (delta_t < -math.pi): delta_t += 2 * math.pi
+        
+        delta_t *= 180 / math.pi
+        
+        return [f'ta{delta_t}', f'dd{int(dist)}']
+
+        
     async def control_loop(self, time_started) -> DriveState:
         state = await self.motor_controller.control_loop()
         state.task = self
@@ -48,7 +66,9 @@ class Task():
             state.task = await self.next_task(state.x, state.y)
         
         if state.finished:
-            state.task = await self.next_action(state.x, state.y)
+            self.logger.info(f'x: {state.x}, y: {state.y}, theta: {state.theta}')
+            
+            state.task = await self.next_action()
             if state.task: state.finished = False
             
         if time_started + 90 < time():
@@ -61,15 +81,16 @@ class Task():
         
         return state
         
-    async def next_action(self, x, y) -> Self:
+    async def next_action(self) -> Self:
         if len(self.actions) <= 0:
             if not self.successor: return None
             
-            return await self.successor.next_action(x, y)
+            return await self.successor.next_action()
         
         self.current_action = self.actions.pop(0)
         prefix = self.current_action[:2]
         value = self.current_action[2:]
+        
         
         match prefix:
             case 'dd':
@@ -77,14 +98,15 @@ class Task():
                 await asyncio.sleep(0.2)
             case 'dp':
                 target_x, target_y, target_theta = value.split(';')
-                points = self.pathfinder.proccess(start=Position(x//10, y//10), target=Position(int(target_x)//10, int(target_y)//10))
+                points = self.pathfinder.proccess(start=Position(self.motor_controller.x//10, self.motor_controller.y//10), target=Position(int(target_x)//10, int(target_y)//10))
                 actions = []
                 for point in points:
-                    actions.extend(self.motor_controller.drive_to(point.x*10, point.y*10))
-                actions.append(f'r{target_theta}')
+                    print('test')
+                    actions.extend(self.drive_to(point.x*10, point.y*10))
+                actions.append(f'tt{target_theta}')
                 actions.extend(self.actions)
                 self.actions = actions
-                return self.next_action(x, y)
+                return await self.next_action()
             case 'ta':
                 await self.motor_controller.turn_angle(float(value))
                 await asyncio.sleep(0.2)
@@ -98,8 +120,8 @@ class Task():
                 
         return self
     
-    async def next_task(self, x, y):
-        successor = await self.successor.next_action(x, y)
+    async def next_task(self):
+        successor = await self.successor.next_action()
         return successor
     
 

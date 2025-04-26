@@ -27,7 +27,7 @@ class RobotController:
                         
         self.lidar = Lidar('/dev/ttyUSB0') if LIDAR else None
         
-        self.task = Task(motor_controller=self.motor_controller, action_set=[['ta180']])
+        self.task = Task(motor_controller=self.motor_controller, action_set=[['dp500;250;0']])
         
     def add_task(self, actions: list[str]):
         task = Task(actions=actions)
@@ -76,7 +76,7 @@ class RobotController:
                 self.logger.info("Failed to start Lidar")
                 return
             
-            self.task = await self.task.next_action(self.x, self.y)
+            self.task = await self.task.next_action()
             
             self.time_started = time()
             self.logger.info(f'Started at {self.time_started}')

@@ -236,7 +236,7 @@ class MotorController():
             )
             
     async def set_pos(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0) -> None:
-        self.target_positions = {1: -pos1, 2: pos2}
+        self.target_positions = {1: pos1, 2: -pos2}
         await self.set_target(velocity_limit, accel_limit)
         
         
@@ -251,11 +251,11 @@ class MotorController():
     async def turn_angle(self, angle: int) -> None:
         self.direction = 0
         
-        turn = 10.796
+        turn = 10.8051
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
-        await self.set_pos(pulses, -pulses, velocity_limit=35.0, accel_limit=30.0)
+        await self.set_pos(-pulses, pulses, velocity_limit=35.0, accel_limit=30.0)
         
     async def turn_to(self, theta: float):
         delta_t = theta - self.theta

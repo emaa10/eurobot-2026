@@ -24,24 +24,24 @@ class Pathfinder():
         self.bot_width = bot_width
         
         # stacks
-        self.add_stack(Position(90, 90), Position(130, 100))
-        self.add_stack(Position(170, 90), Position(210, 100))
-        self.add_stack(Position(195, 170), Position(235, 180))
-        self.add_stack(Position(65, 170), Position(105, 180))
-        self.add_stack(Position(55, 0), Position(95, 10))
-        self.add_stack(Position(205, 0), Position(245, 10))
-        self.add_stack(Position(260, 45), Position(299, 55))
-        self.add_stack(Position(0, 45), Position(40, 55))
-        self.add_stack(Position(260, 100), Position(299, 110))
-        self.add_stack(Position(0, 100), Position(40, 110))
+        # self.add_stack(Position(90, 90), Position(130, 100))
+        # self.add_stack(Position(170, 90), Position(210, 100))
+        # self.add_stack(Position(195, 170), Position(235, 180))
+        # self.add_stack(Position(65, 170), Position(105, 180))
+        # self.add_stack(Position(55, 0), Position(95, 10))
+        # self.add_stack(Position(205, 0), Position(245, 10))
+        # self.add_stack(Position(260, 45), Position(299, 55))
+        # self.add_stack(Position(0, 45), Position(40, 55))
+        # self.add_stack(Position(260, 100), Position(299, 110))
+        # self.add_stack(Position(0, 100), Position(40, 110))
         
         # stage and ramp
-        self.add_obstacle(Position(65, 180), Position(235, 199))
-        self.add_obstacle(Position(105, 150), Position(195, 180))
+        # self.add_obstacle(Position(65, 180), Position(235, 199))
+        # self.add_obstacle(Position(105, 150), Position(195, 180))
         
         # simas
-        self.add_obstacle(Position(0, 155), Position(15, 199))
-        self.add_obstacle(Position(285, 155), Position(299, 199))
+        # self.add_obstacle(Position(0, 155), Position(15, 199))
+        # self.add_obstacle(Position(285, 155), Position(299, 199))
         
         # middle_points
         self.middle_points = [Position(150, 75), Position(150, 115), Position(75, 50), Position(225, 50)]
@@ -197,7 +197,11 @@ class Pathfinder():
         
         return None
     
-    def proccess(self, debug = False) -> list[Position]:
+    def proccess(self, start: Position, target: Position, debug = False) -> list[Position]:
+        
+        self.start = start
+        self.target = target
+        
         if debug: time_start = time_ms()
         path = self.plan(self.start, self.target)
         
