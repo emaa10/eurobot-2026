@@ -193,7 +193,7 @@ class DebugScene(QtWidgets.QWidget):
             ("Test Codes", self.on_test_codes),
             ("Show Keyboard", self.on_show_keyboard),
             ("Clean Wheels", self.on_clean_wheels),
-            ("Show Camera Stream", self.on_show_camera)
+            ("Show Camera Stream", self.on_show_camera),
             ("Log Tail", self.on_log_tail)
         ]
         for text, handler in btns:
@@ -217,7 +217,6 @@ class DebugScene(QtWidgets.QWidget):
     def on_show_keyboard(self): subprocess.Popen(['wvkbd'], env=dict(os.environ, WVKBD_HEIGHT='250'))
     def on_clean_wheels(self): pass
     def on_show_camera(self): pass
-
     def on_log_tail(self):
         """Open new terminal with log tail command"""
         log_path = "/path/to/your/log.log"  # Update this path to your actual log file
