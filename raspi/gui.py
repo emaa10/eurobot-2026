@@ -134,12 +134,12 @@ class MainScene(QtWidgets.QWidget):
 
         self.setLayout(self.layout)
 
-    def update_pullcord_status(self, active):
-        self.pullcord_active = active
-        text = "Pullcord: true" if active else "Pullcord: false"
-        color = "green" if active else "red"
-        self.lbl_pullcord.setText(text)
-        self.lbl_pullcord.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 18px;")
+    # def update_pullcord_status(self, active):
+    #     self.pullcord_active = active
+    #     text = "Pullcord: true" if active else "Pullcord: false"
+    #     color = "green" if active else "red"
+    #     self.lbl_pullcord.setText(text)
+    #     self.lbl_pullcord.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 18px;")
 
     def on_color_changed(self, button, checked):
         if checked:
@@ -192,7 +192,7 @@ class DebugScene(QtWidgets.QWidget):
         self.robot_data = {'x': 0.0, 'y': 0.0, 'angle': 0.0, 'goal_x': 100.0, 'goal_y': 200.0}
         self.initUI()
         self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.update_data)
+        # self.timer.timeout.connect(self.update_data)
         self.timer.start(1000)
 
     def initUI(self):
@@ -255,13 +255,13 @@ class DebugScene(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
-    def update_data(self):
-        self.robot_data['x'] += 1
-        self.robot_data['y'] += 0.5
-        self.robot_data['angle'] = (self.robot_data['angle'] + 5) % 360
-        self.lbl_position.setText(f"X: {self.robot_data['x']:.1f} mm\nY: {self.robot_data['y']:.1f} mm")
-        self.lbl_angle.setText(f"Angle: {self.robot_data['angle']:.1f}°")
-        self.lbl_goal.setText(f"Goal: ({self.robot_data['goal_x']:.1f}, {self.robot_data['goal_y']:.1f})")
+    # def update_data(self):
+    #     self.robot_data['x'] += 1
+    #     self.robot_data['y'] += 0.5
+    #     self.robot_data['angle'] = (self.robot_data['angle'] + 5) % 360
+    #     self.lbl_position.setText(f"X: {self.robot_data['x']:.1f} mm\nY: {self.robot_data['y']:.1f} mm")
+    #     self.lbl_angle.setText(f"Angle: {self.robot_data['angle']:.1f}°")
+    #     self.lbl_goal.setText(f"Goal: ({self.robot_data['goal_x']:.1f}, {self.robot_data['goal_y']:.1f})")
 
     def on_shutdown(self): os.system("sudo shutdown now")
     def on_test_codes(self): window.stacked.setCurrentIndex(3)
