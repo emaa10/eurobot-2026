@@ -9,6 +9,9 @@ Servo servo5;
 Servo servo6;
 Servo servo7;
 
+/*              GLOBALS            */
+const int tPerStep = 
+
 
 /*              PINS            */
 #define STEPPER1_EN 17
@@ -47,7 +50,13 @@ void homeServos() {
 }
 
 void stepperDrive(unsigned int steps, bool dir, int pinDir, int pinStep) {
-    digitalWrite(pinDir, dir ? 0 : 1);        
+    digitalWrite(pinDir, dir ? 0 : 1);
+    delay(10);
+    for (unsigned int i = 0; i < steps; i++) {
+        digitalWrite(right_stepper_STEP, HIGH);
+        digitalWrite(left_stepper_STEP, HIGH);
+        delayMicroseconds(timePerStep);
+    }
 }
 
 //drives one direction until switch 1 activates
