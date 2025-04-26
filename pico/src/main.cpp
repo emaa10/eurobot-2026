@@ -92,6 +92,7 @@ void homeStepper1() {
         digitalWrite(STEPPER1_STEP, LOW);
         delayMicroseconds(tPerStep);
     }
+    currentPosStepper1 = 0;
 }
 
 void homeStepper2() {
@@ -102,6 +103,7 @@ void homeStepper2() {
         digitalWrite(STEPPER2_STEP, LOW);
         delayMicroseconds(tPerStep);
     }
+    currentPosStepper2 = 0;
 }
 
 // run if ready
