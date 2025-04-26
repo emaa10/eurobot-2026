@@ -92,7 +92,7 @@ class MainScene(QtWidgets.QWidget):
         # status_layout.addStretch()
         # field_status_layout.addLayout(status_layout)
 
-        # self.layout.addLayout(field_status_layout)
+        self.layout.addLayout(field_status_layout)
 
         # Taktik Buttons
         tactics_layout = QtWidgets.QHBoxLayout()
