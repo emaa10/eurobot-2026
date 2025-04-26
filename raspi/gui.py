@@ -4,6 +4,8 @@ import subprocess
 from PyQt5 import QtWidgets, QtCore, QtGui
 import random
 
+# hilfe: https://chatgpt.com/share/680cd025-864c-8000-8271-5632adeeb5b3
+
 class MainScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
@@ -77,21 +79,6 @@ class MainScene(QtWidgets.QWidget):
             self.field_container.setPixmap(pixmap)
 
         field_status_layout.addWidget(self.field_container)
-
-        # Status neben Spielfeld
-        # status_layout = QtWidgets.QVBoxLayout()
-        # status_layout.setContentsMargins(0, 0, 0, 0)
-        # self.lbl_pullcord = QtWidgets.QLabel("Pullcord: false")
-        # self.lbl_pullcord.setStyleSheet("color: red; font-weight: bold; font-size: 18px;")
-        # self.lbl_pullcord.setAlignment(QtCore.Qt.AlignCenter)
-        # self.lbl_status = QtWidgets.QLabel("X: 0.0\nY: 0.0\nWinkel: 0.0°")
-        # self.lbl_status.setStyleSheet("font-size: 16px;")
-        # self.lbl_status.setAlignment(QtCore.Qt.AlignCenter)
-        # status_layout.addWidget(self.lbl_pullcord)
-        # status_layout.addWidget(self.lbl_status)
-        # status_layout.addStretch()
-        # field_status_layout.addLayout(status_layout)
-
         self.layout.addLayout(field_status_layout)
 
         # Taktik Buttons
@@ -134,13 +121,6 @@ class MainScene(QtWidgets.QWidget):
 
         self.setLayout(self.layout)
 
-    def update_pullcord_status(self, active):
-        self.pullcord_active = active
-        text = "Pullcord: true" if active else "Pullcord: false"
-        color = "green" if active else "red"
-        self.lbl_pullcord.setText(text)
-        self.lbl_pullcord.setStyleSheet(f"color: {color}; font-weight: bold; font-size: 18px;")
-
     def on_color_changed(self, button, checked):
         if checked:
             self.selected_color = button.text()
@@ -174,6 +154,7 @@ class MainScene(QtWidgets.QWidget):
             self.check_selections()
         return handler
 
+    ###############################################################
     def on_tactic_selected(self, tactic):
         for btn in self.tactic_buttons:
             btn.setChecked(False)
@@ -191,9 +172,6 @@ class DebugScene(QtWidgets.QWidget):
         super().__init__()
         self.robot_data = {'x': 0.0, 'y': 0.0, 'angle': 0.0, 'goal_x': 100.0, 'goal_y': 200.0}
         self.initUI()
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.update_data)
-        self.timer.start(1000)
 
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
@@ -210,35 +188,13 @@ class DebugScene(QtWidgets.QWidget):
         close_layout.addWidget(close_btn)
         layout.addLayout(close_layout)
 
-        # Status Anzeige
-        # status_group = QtWidgets.QGroupBox("Status")
-        # status_layout = QtWidgets.QGridLayout()
-        # status_layout.setContentsMargins(2,2,2,2)
-        # status_layout.setVerticalSpacing(2)
-        # status_layout.setHorizontalSpacing(4)
-        # self.lbl_position = QtWidgets.QLabel("X: 0.0 mm\nY: 0.0 mm")
-        # self.lbl_angle = QtWidgets.QLabel("Angle: 0.0°")
-        # self.lbl_goal = QtWidgets.QLabel("Goal: (0.0, 0.0)")
-        # status_layout.addWidget(QtWidgets.QLabel("Pos:"), 0, 0)
-        # status_layout.addWidget(self.lbl_position, 0, 1)
-        # status_layout.addWidget(QtWidgets.QLabel("Ausrichtung:"), 1, 0)
-        # status_layout.addWidget(self.lbl_angle, 1, 1)
-        # status_layout.addWidget(QtWidgets.QLabel("Ziel:"), 2, 0)
-        # status_layout.addWidget(self.lbl_goal, 2, 1)
-        # status_group.setLayout(status_layout)
-        # self.lbl_position.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
-        # self.lbl_angle   .setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
-        # self.lbl_goal    .setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
-
-        # layout.addWidget(status_group)
-
-        # Buttons
         btns = [
             ("Shutdown", self.on_shutdown),
             ("Test Codes", self.on_test_codes),
             ("Show Keyboard", self.on_show_keyboard),
             ("Clean Wheels", self.on_clean_wheels),
-            ("Show Camera Stream", self.on_show_camera)
+            ("Show Camera Stream", self.on_show_camera),
+            ("Log Tail", self.on_log_tail)
         ]
         for text, handler in btns:
             btn = QtWidgets.QPushButton(text)
@@ -255,19 +211,19 @@ class DebugScene(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
-    def update_data(self):
-        self.robot_data['x'] += 1
-        self.robot_data['y'] += 0.5
-        self.robot_data['angle'] = (self.robot_data['angle'] + 5) % 360
-        self.lbl_position.setText(f"X: {self.robot_data['x']:.1f} mm\nY: {self.robot_data['y']:.1f} mm")
-        self.lbl_angle.setText(f"Angle: {self.robot_data['angle']:.1f}°")
-        self.lbl_goal.setText(f"Goal: ({self.robot_data['goal_x']:.1f}, {self.robot_data['goal_y']:.1f})")
-
+    ###############################################################
     def on_shutdown(self): os.system("sudo shutdown now")
     def on_test_codes(self): window.stacked.setCurrentIndex(3)
     def on_show_keyboard(self): subprocess.Popen(['wvkbd'], env=dict(os.environ, WVKBD_HEIGHT='250'))
     def on_clean_wheels(self): pass
     def on_show_camera(self): pass
+    def on_log_tail(self):
+        """Open new terminal with log tail command"""
+        log_path = "/home/eurobot/main-bot/raspi/eurobot.log"  # Update this path to your actual log file
+        subprocess.Popen(
+            ['lxterminal', '-e', f'tail -f {log_path}'],
+            env=dict(os.environ)
+        )
 
 
 class TestCodesScene(QtWidgets.QWidget):
@@ -291,6 +247,7 @@ class TestCodesScene(QtWidgets.QWidget):
 
         for text, handler in [
             ("Drive 100 →", lambda: None),
+            # ("Drive 100 →", self.on_drive_forward),
             ("Drive 100 ←", lambda: None),
             ("Turn 90°", lambda: None),
             ("Turn -90°", lambda: None)
@@ -301,7 +258,7 @@ class TestCodesScene(QtWidgets.QWidget):
             btn.clicked.connect(handler)
             layout.addWidget(btn)
 
-        back_btn = QtWidgets.QPushButton("Zurück")
+        back_btn = QtWidgets.QPushButton("Back")
         back_btn.setFixedHeight(60)
         back_btn.setStyleSheet("font-size: 24px; background-color: #ff4444; border-radius: 10px;")
         back_btn.clicked.connect(lambda: window.stacked.setCurrentIndex(1))
@@ -352,7 +309,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initUI()
         self.showFullScreen()
         self.timer = QtCore.QTimer()
-        # self.timer.timeout.connect(self.update_status)
+        # self.timer.timeout.connect(self.update_pullcord)
+        # des an für pullcord
+        
         self.timer.start(500)
 
     def initUI(self):
@@ -375,6 +334,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def show_waiting_screen(self):
         self.stacked.setCurrentIndex(2)
         self.drive_scene.setStyleSheet("background-color: white;")
+        # hier taktik start button
 
     def return_to_main(self):
         self.stacked.setCurrentIndex(0)
@@ -382,10 +342,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drive_scene.value_label.setText("Waiting for pullcord...")
         self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
     
-    # def update_status(self):
-    #     status_text = f"X: {random.uniform(0,3000):.1f} mm\nY: {random.uniform(0,2000):.1f} mm\nWinkel: {random.uniform(0,360):.1f}°"
-    #     self.main_scene.lbl_status.setText(status_text)
-
     def activate_pullcord(self):
         self.drive_scene.show_points()
         self.main_scene.update_pullcord_status(True)
