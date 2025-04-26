@@ -35,8 +35,10 @@ int currentPosStepper2 = 0;
 #define SERVO6 9
 #define SERVO7 10       //backup: 11
 
+// ========== motor functions ==========
+
 //sets servo to pos 0
-void homeServo(Servo servo) {
+void homeServo(Servo &servo) {
     servo.write(0);
 }
 
@@ -52,50 +54,32 @@ void homeServos() {
 }
 
 void stepperDrive1(int newPos) {
-    bool dir;
-    if(currentPosStepper1 < newPos) {
-        digitalWrite(STEPPER1_DIR, true); //might need change
-        dir = true;
-    } else {
-        digitalWrite(STEPPER1_DIR, false);
-        dir = false;
-    }
-
+    bool dir = (currentPosStepper1 < newPos);
+    digitalWrite(STEPPER1_DIR, dir);
     delay(10);
-    for (unsigned int i = 0; i < (newPos - currentPosStepper1); i++) {
+
+    int steps = abs(newPos - currentPosStepper1);
+    for (unsigned int i = 0; i < steps; i++) {
         digitalWrite(STEPPER1_STEP, HIGH);
-        delayMicroseconds(timePerStep);
+        delayMicroseconds(tPerStep);
         digitalWrite(STEPPER1_STEP, LOW);
-        delayMicroseconds(timePerStep);
-        if(dir) {
-            currentPosStepper1++;
-        } else {
-            currentPosStepper1--;
-        }
+        delayMicroseconds(tPerStep);
+        currentPosStepper1 += dir ? 1 : -1;
     }
 }
 
 void stepperDrive2(int newPos) {
-    bool dir;
-    if(currentPosStepper2 < newPos) {
-        digitalWrite(STEPPER2_DIR, true); //might need change
-        dir = true;
-    } else {
-        digitalWrite(STEPPER2_DIR, false);
-        dir = false;
-    }
-
+    bool dir = (currentPosStepper2 < newPos);
+    digitalWrite(STEPPER2_DIR, dir);
     delay(10);
-    for (unsigned int i = 0; i < (newPos - currentPosStepper2); i++) {
+
+    int steps = abs(newPos - currentPosStepper2);
+    for (unsigned int i = 0; i < steps; i++) {
         digitalWrite(STEPPER2_STEP, HIGH);
-        delayMicroseconds(timePerStep);
+        delayMicroseconds(tPerStep);
         digitalWrite(STEPPER2_STEP, LOW);
-        delayMicroseconds(timePerStep);
-        if(dir) {
-            currentPosStepper2++;
-        } else {
-            currentPosStepper2--;
-        }
+        delayMicroseconds(tPerStep);
+        currentPosStepper2 += dir ? 1 : -1; 
     }
 }
 
@@ -104,9 +88,9 @@ void homeStepper1() {
     digitalWrite(STEPPER1_DIR, HIGH); //might need change
     while(digitalRead(SWITCH1) == LOW) { //solange nicht ausgelöst
         digitalWrite(STEPPER1_STEP, HIGH);
-        delayMicroseconds(timePerStep);
+        delayMicroseconds(tPerStep);
         digitalWrite(STEPPER1_STEP, LOW);
-        delayMicroseconds(timePerStep);
+        delayMicroseconds(tPerStep);
     }
 }
 
@@ -114,9 +98,9 @@ void homeStepper2() {
     digitalWrite(STEPPER2_DIR, HIGH); //might need change
     while(digitalRead(SWITCH2) == LOW) { //solange nicht ausgelöst
         digitalWrite(STEPPER2_STEP, HIGH);
-        delayMicroseconds(timePerStep);
+        delayMicroseconds(tPerStep);
         digitalWrite(STEPPER2_STEP, LOW);
-        delayMicroseconds(timePerStep);
+        delayMicroseconds(tPerStep);
     }
 }
 
