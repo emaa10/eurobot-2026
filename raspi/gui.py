@@ -4,6 +4,8 @@ import subprocess
 from PyQt5 import QtWidgets, QtCore, QtGui
 import random
 
+# hilfe: https://chatgpt.com/share/680cd025-864c-8000-8271-5632adeeb5b3
+
 class MainScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
