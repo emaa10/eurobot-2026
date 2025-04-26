@@ -237,6 +237,7 @@ class TestCodesScene(QtWidgets.QWidget):
 
         for text, handler in [
             ("Drive 100 →", lambda: None),
+            # ("Drive 100 →", self.on_drive_forward),
             ("Drive 100 ←", lambda: None),
             ("Turn 90°", lambda: None),
             ("Turn -90°", lambda: None)
@@ -298,7 +299,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initUI()
         self.showFullScreen()
         self.timer = QtCore.QTimer()
-        # self.timer.timeout.connect(self.update_status)
+        # self.timer.timeout.connect(self.update_pullcord)
+        # des an für pullcord
+        
         self.timer.start(500)
 
     def initUI(self):
@@ -321,6 +324,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def show_waiting_screen(self):
         self.stacked.setCurrentIndex(2)
         self.drive_scene.setStyleSheet("background-color: white;")
+        # hier taktik start button
 
     def return_to_main(self):
         self.stacked.setCurrentIndex(0)
