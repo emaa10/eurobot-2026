@@ -6,11 +6,11 @@ from modules.camera import Camera
 
 import math
 import asyncio
-from time import time
+from time import time, sleep
 import logging
 
 LIDAR = False
-CAM = False
+CAM = True
 
 class RobotController:
     def __init__(self):
@@ -26,8 +26,10 @@ class RobotController:
         self.motor_controller = MotorController()
                         
         self.lidar = Lidar('/dev/ttyUSB0') if LIDAR else None
+
+        self.camera = Camera() if CAM else None
         
-        self.task = Task(motor_controller=self.motor_controller, action_set=[['dp500;250;0', 'dp0;0;0']])
+        self.task = Task(motor_controller=self.motor_controller, action_set=[['dp0;0;0']])
         
     def add_task(self, actions: list[str]):
         task = Task(actions=actions)
@@ -75,6 +77,22 @@ class RobotController:
             if LIDAR and not self.lidar.start_scanning():
                 self.logger.info("Failed to start Lidar")
                 return
+
+            if CAM:
+                self.camera.start()
+                self.logger.info("Camera started")
+                sleep(5)
+                angle, distance = self.camera.get_distance()
+                await self.motor_controller.turn_angle(int(angle))
+                print("1")
+                sleep(2)
+                angle, distance = self.camera.get_distance()
+                sleep(2)
+                print(distance*1000)
+                await self.motor_controller.drive_distance(int(distance*1000))
+                self.logger.info(f"[TEST] Camera: angle={angle:.1f}°, dist={distance:.2f}m")
+                sleep(100)
+
             
             self.task = await self.task.next_action()
             

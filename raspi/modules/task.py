@@ -129,7 +129,8 @@ class Task():
     
 
 def main():
-    task = Task(None, [['d500', 't50'], ['d340', 't50'], ['d650', 't76']])
+    # task = Task(None, [['d500', 't50'], ['d340', 't50'], ['d650', 't76']])
+    task = Task(None, [])
     
 if __name__ == '__main__':
     main()
