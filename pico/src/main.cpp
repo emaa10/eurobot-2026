@@ -52,10 +52,13 @@ void homeServos() {
 }
 
 void stepperDrive1(int newPos) {
+    bool dir;
     if(currentPosStepper1 < newPos) {
         digitalWrite(STEPPER1_DIR, true); //might need change
+        dir = true;
     } else {
         digitalWrite(STEPPER1_DIR, false);
+        dir = false;
     }
 
     delay(10);
@@ -64,17 +67,35 @@ void stepperDrive1(int newPos) {
         delayMicroseconds(timePerStep);
         digitalWrite(STEPPER1_STEP, LOW);
         delayMicroseconds(timePerStep);
+        if(dir) {
+            currentPosStepper1++;
+        } else {
+            currentPosStepper1--;
+        }
     }
 }
 
 void stepperDrive2(int newPos) {
-    digitalWrite(pinDir, dir ? 0 : 1);
+    bool dir;
+    if(currentPosStepper2 < newPos) {
+        digitalWrite(STEPPER2_DIR, true); //might need change
+        dir = true;
+    } else {
+        digitalWrite(STEPPER2_DIR, false);
+        dir = false;
+    }
+
     delay(10);
-    for (unsigned int i = 0; i < steps; i++) {
-        digitalWrite(pinStep, HIGH);
+    for (unsigned int i = 0; i < (newPos - currentPosStepper2); i++) {
+        digitalWrite(STEPPER2_STEP, HIGH);
         delayMicroseconds(timePerStep);
-        digitalWrite(pinStep, LOW);
+        digitalWrite(STEPPER2_STEP, LOW);
         delayMicroseconds(timePerStep);
+        if(dir) {
+            currentPosStepper2++;
+        } else {
+            currentPosStepper2--;
+        }
     }
 }
 
