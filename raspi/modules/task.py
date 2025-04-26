@@ -45,6 +45,7 @@ class Task():
         self.logger.info(self.motor_controller.theta)
         
         delta_t = (delta_y/dist) - self.motor_controller.theta * math.pi / 180
+        self.logger.info(f'ta{delta_t}, dd{int(dist)}')
         
         # normalize theta
         while (delta_t > math.pi): delta_t -= 2 * math.pi
@@ -52,7 +53,6 @@ class Task():
         
         delta_t *= 180 / math.pi
         
-        self.logger.info(f'ta{delta_t}, dd{int(dist)}')
         
         return [f'ta{delta_t}', f'dd{int(dist)}']
 
