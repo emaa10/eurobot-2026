@@ -219,7 +219,7 @@ class DebugScene(QtWidgets.QWidget):
     def on_show_camera(self): pass
     def on_log_tail(self):
         """Open new terminal with log tail command"""
-        log_path = "/path/to/your/log.log"  # Update this path to your actual log file
+        log_path = "/dev/null"  # Update this path to your actual log file
         subprocess.Popen(
             ['lxterminal', '-e', f'tail -f {log_path}'],
             env=dict(os.environ)
