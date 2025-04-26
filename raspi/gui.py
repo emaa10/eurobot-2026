@@ -79,20 +79,20 @@ class MainScene(QtWidgets.QWidget):
         field_status_layout.addWidget(self.field_container)
 
         # Status neben Spielfeld
-        status_layout = QtWidgets.QVBoxLayout()
-        status_layout.setContentsMargins(0, 0, 0, 0)
-        self.lbl_pullcord = QtWidgets.QLabel("Pullcord: false")
-        self.lbl_pullcord.setStyleSheet("color: red; font-weight: bold; font-size: 18px;")
-        self.lbl_pullcord.setAlignment(QtCore.Qt.AlignCenter)
-        self.lbl_status = QtWidgets.QLabel("X: 0.0\nY: 0.0\nWinkel: 0.0°")
-        self.lbl_status.setStyleSheet("font-size: 16px;")
-        self.lbl_status.setAlignment(QtCore.Qt.AlignCenter)
-        status_layout.addWidget(self.lbl_pullcord)
-        status_layout.addWidget(self.lbl_status)
-        status_layout.addStretch()
-        field_status_layout.addLayout(status_layout)
+        # status_layout = QtWidgets.QVBoxLayout()
+        # status_layout.setContentsMargins(0, 0, 0, 0)
+        # self.lbl_pullcord = QtWidgets.QLabel("Pullcord: false")
+        # self.lbl_pullcord.setStyleSheet("color: red; font-weight: bold; font-size: 18px;")
+        # self.lbl_pullcord.setAlignment(QtCore.Qt.AlignCenter)
+        # self.lbl_status = QtWidgets.QLabel("X: 0.0\nY: 0.0\nWinkel: 0.0°")
+        # self.lbl_status.setStyleSheet("font-size: 16px;")
+        # self.lbl_status.setAlignment(QtCore.Qt.AlignCenter)
+        # status_layout.addWidget(self.lbl_pullcord)
+        # status_layout.addWidget(self.lbl_status)
+        # status_layout.addStretch()
+        # field_status_layout.addLayout(status_layout)
 
-        self.layout.addLayout(field_status_layout)
+        # self.layout.addLayout(field_status_layout)
 
         # Taktik Buttons
         tactics_layout = QtWidgets.QHBoxLayout()
