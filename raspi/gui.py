@@ -352,7 +352,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initUI()
         self.showFullScreen()
         self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.update_status)
+        # self.timer.timeout.connect(self.update_status)
         self.timer.start(500)
 
     def initUI(self):
@@ -382,9 +382,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drive_scene.value_label.setText("Waiting for pullcord...")
         self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
     
-    def update_status(self):
-        status_text = f"X: {random.uniform(0,3000):.1f} mm\nY: {random.uniform(0,2000):.1f} mm\nWinkel: {random.uniform(0,360):.1f}°"
-        self.main_scene.lbl_status.setText(status_text)
+    # def update_status(self):
+    #     status_text = f"X: {random.uniform(0,3000):.1f} mm\nY: {random.uniform(0,2000):.1f} mm\nWinkel: {random.uniform(0,360):.1f}°"
+    #     self.main_scene.lbl_status.setText(status_text)
 
     def activate_pullcord(self):
         self.drive_scene.show_points()
