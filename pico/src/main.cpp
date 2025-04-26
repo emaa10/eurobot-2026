@@ -11,6 +11,8 @@ Servo servo7;
 
 /*              GLOBALS            */
 const int tPerStep = 800;
+int currentPosStepper1 = 0;
+int currentPosStepper2 = 0;
 
 
 /*              PINS            */
@@ -49,7 +51,23 @@ void homeServos() {
     servo7.write(0);
 }
 
-void stepperDrive(unsigned int steps, bool dir, int pinDir, int pinStep) {
+void stepperDrive1(int newPos) {
+    if(currentPosStepper1 < newPos) {
+        digitalWrite(STEPPER1_DIR, true); //might need change
+    } else {
+        digitalWrite(STEPPER1_DIR, false);
+    }
+
+    delay(10);
+    for (unsigned int i = 0; i < (newPos - currentPosStepper1); i++) {
+        digitalWrite(STEPPER1_STEP, HIGH);
+        delayMicroseconds(timePerStep);
+        digitalWrite(STEPPER1_STEP, LOW);
+        delayMicroseconds(timePerStep);
+    }
+}
+
+void stepperDrive2(int newPos) {
     digitalWrite(pinDir, dir ? 0 : 1);
     delay(10);
     for (unsigned int i = 0; i < steps; i++) {
@@ -79,6 +97,14 @@ void homeStepper2() {
         digitalWrite(STEPPER2_STEP, LOW);
         delayMicroseconds(timePerStep);
     }
+}
+
+// run if ready
+void startupRoutine() {
+    homeServos();
+    homeStepper1();
+    homeStepper2();
+    Serial.println("ok");
 }
 
 // nur serial init, warten dann auf setup command von raspi
