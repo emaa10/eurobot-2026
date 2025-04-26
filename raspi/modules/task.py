@@ -42,6 +42,8 @@ class Task():
                 
         dist = math.sqrt(delta_x**2+delta_y**2)
         
+        self.logger.info(self.motor_controller.theta)
+        
         delta_t = (delta_y/dist) - self.motor_controller.theta * math.pi / 180
         
         # normalize theta
@@ -49,6 +51,8 @@ class Task():
         while (delta_t < -math.pi): delta_t += 2 * math.pi
         
         delta_t *= 180 / math.pi
+        
+        self.logger.info(f'ta{delta_t}, dd{int(dist)}')
         
         return [f'ta{delta_t}', f'dd{int(dist)}']
 
@@ -101,7 +105,6 @@ class Task():
                 points = self.pathfinder.proccess(start=Position(self.motor_controller.x//10, self.motor_controller.y//10), target=Position(int(target_x)//10, int(target_y)//10))
                 actions = []
                 for point in points:
-                    print('test')
                     actions.extend(self.drive_to(point.x*10, point.y*10))
                 actions.append(f'tt{target_theta}')
                 actions.extend(self.actions)

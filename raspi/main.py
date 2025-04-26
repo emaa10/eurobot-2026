@@ -27,7 +27,7 @@ class RobotController:
                         
         self.lidar = Lidar('/dev/ttyUSB0') if LIDAR else None
         
-        self.task = Task(motor_controller=self.motor_controller, action_set=[['dp500;250;0']])
+        self.task = Task(motor_controller=self.motor_controller, action_set=[['dp500;250;0', 'dp0;0;0']])
         
     def add_task(self, actions: list[str]):
         task = Task(actions=actions)
@@ -79,13 +79,12 @@ class RobotController:
             self.task = await self.task.next_action()
             
             self.time_started = time()
-            self.logger.info(f'Started at {self.time_started}')
+            self.logger.info(f'Started')
             
             while True:
                 latest_scan = self.lidar.get_latest_scan() if LIDAR else None
                 state = await self.task.control_loop(self.time_started)
                 if state.finished: 
-                    self.logger.info(f'theta: {state.theta}')
                     break
                 
                 self.x = state.x
