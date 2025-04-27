@@ -151,6 +151,7 @@ class MainScene(QtWidgets.QWidget):
                 btn.style().polish(btn)
             self.sender().setProperty("selected", True)
             self.sender().style().polish(self.sender())
+            print(position)
             self.selected_position = position
             self.check_selections()
         return handler
