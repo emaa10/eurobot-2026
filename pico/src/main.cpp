@@ -92,73 +92,6 @@ void processSteppers() {
 }
 
 
-void stepperDrive1(int newPos) {
-    bool dir = (currentPosStepper1 < newPos);
-    digitalWrite(STEPPER1_DIR, dir);
-    delay(10);
-
-    int steps = abs(newPos - currentPosStepper1);
-    for (unsigned int i = 0; i < steps; i++) {
-        digitalWrite(STEPPER1_STEP, HIGH);
-        delayMicroseconds(tPerStep);
-        digitalWrite(STEPPER1_STEP, LOW);
-        delayMicroseconds(tPerStep);
-        currentPosStepper1 += dir ? 1 : -1;
-    }
-}
-
-void stepperDrive2(int newPos) {
-    bool dir = (currentPosStepper2 < newPos);
-    digitalWrite(STEPPER2_DIR, dir);
-    delay(10);
-
-    int steps = abs(newPos - currentPosStepper2);
-    for (unsigned int i = 0; i < steps; i++) {
-        digitalWrite(STEPPER2_STEP, HIGH);
-        delayMicroseconds(tPerStep);
-        digitalWrite(STEPPER2_STEP, LOW);
-        delayMicroseconds(tPerStep);
-        currentPosStepper2 += dir ? 1 : -1; 
-    }
-}
-
-void driveSteppersTogether(int newPos1, int newPos2) {
-    bool dir1 = (currentPosStepper1 < newPos1);
-    bool dir2 = (currentPosStepper2 < newPos2);
-
-    digitalWrite(STEPPER1_DIR, dir1); //might need change
-    digitalWrite(STEPPER2_DIR, dir2); //might need change
-
-    delay(10);
-
-    int steps1 = abs(newPos1 - currentPosStepper1);
-    int steps2 = abs(newPos2 - currentPosStepper2);
-
-    int maxSteps = max(steps1, steps2);
-    
-    for (int i = 0; i < maxSteps; i++) {
-        if (i < steps1) {
-            digitalWrite(STEPPER1_STEP, HIGH);
-        }
-        if (i < steps2) {
-            digitalWrite(STEPPER2_STEP, HIGH);
-        }
-        delayMicroseconds(tPerStep);
-
-        digitalWrite(STEPPER1_STEP, LOW);
-        digitalWrite(STEPPER2_STEP, LOW);
-        delayMicroseconds(tPerStep);
-
-        if (i < steps1) {
-            currentPosStepper1 += dir1 ? 1 : -1;
-        }
-        if (i < steps2) {
-            currentPosStepper2 += dir2 ? 1 : -1;
-        }
-    }
-}
-
-
 //drives one direction until switch 1 activates
 void homeStepper1() {
     digitalWrite(STEPPER1_DIR, HIGH); //might need change
@@ -201,7 +134,6 @@ void setup() {
     pinMode(STEPPER1_STEP, OUTPUT);
     pinMode(STEPPER2_DIR, OUTPUT);
     pinMode(STEPPER2_EN, OUTPUT);
-    pinMode(STEPPER2_STEP, OUTPUT);
     pinMode(STEPPER2_STEP, OUTPUT);
 
     pinMode(SWITCH1, INPUT_PULLUP);
