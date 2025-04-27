@@ -3,6 +3,7 @@ import os
 import subprocess
 from PyQt5 import QtWidgets, QtCore, QtGui
 import random
+from main import RobotController
 
 # hilfe: https://chatgpt.com/share/680cd025-864c-8000-8271-5632adeeb5b3
 
@@ -10,7 +11,7 @@ class MainScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.selected_color = None
-        self.selected_position = None
+        self.selected_position : int | None = None
         self.selected_tactic = None
         self.pullcord_active = False
         self.initUI()
@@ -334,7 +335,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def show_waiting_screen(self):
         self.stacked.setCurrentIndex(2)
         self.drive_scene.setStyleSheet("background-color: white;")
-        # hier taktik start button
+        self.controller.set_tactic(self.selected_position, self.selected_tactic)
 
     def return_to_main(self):
         self.stacked.setCurrentIndex(0)
@@ -342,9 +343,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drive_scene.value_label.setText("Waiting for pullcord...")
         self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
     
-    def activate_pullcord(self):
+    async def activate_pullcord(self):
         self.drive_scene.show_points()
         self.main_scene.update_pullcord_status(True)
+        await controller.run()
+        # pullcord gezogen
 
 # Positionsangaben für das Spielfeld
 yellow_positions = [
@@ -359,8 +362,8 @@ blue_positions = [
 ]
 
 if __name__ == '__main__':
+    controller = RobotController()
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
-
