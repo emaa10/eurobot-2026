@@ -17,8 +17,8 @@ class Camera:
     GROUP_DISTANCE = 0.04  # meters
 
     def __init__(self,
-                 matrix_path: str = "camera_matrix.npy",
-                 dist_path: str = "dist_coeffs.npy",
+                 matrix_path: str = "camera/camera_matrix.npy",
+                 dist_path: str = "camera/dist_coeffs.npy",
                  rotate: int = 180):
         # Load camera calibration data
         self.camera_matrix = np.load(matrix_path)
@@ -84,6 +84,8 @@ class Camera:
         """
         frame = self._get_frame()
         display, angle, distance = self._process_distance(frame)
+        
+        distance *= 1000
 
         # cv2.imshow("Distance Analysis", display)
         # cv2.waitKey(3000)

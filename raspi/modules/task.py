@@ -4,19 +4,21 @@ from time import time
 import logging
 
 from modules.motor_controller import MotorController
+from modules.camera import Camera
 from modules.pathfinding import Pathfinder
 from modules.position import Position
-from modules.drive_state import  DriveState
+from modules.drive_state import DriveState
 
 import asyncio
 
 class Task():
-    def __init__(self, motor_controller: MotorController | None, action_set: list[list[str]]):
+    def __init__(self, motor_controller: MotorController | None, camera: Camera | None, action_set: list[list[str]]):
         self.motor_controller = motor_controller
+        self.camera = camera
         self.initial_actions = action_set[0]# if we abort and want to add task to end
         self.actions = action_set.pop(0)
         self.current_action = None
-        self.successor = None 
+        self.successor = None
         
         self.stopped_since = None
         self.abortable = True
@@ -116,10 +118,19 @@ class Task():
             case 'tt':
                 await self.motor_controller.turn_to(float(value))
                 await asyncio.sleep(0.2)
-            case 'gl':
-                self.abortable = False  # after gripperaction lift not abortable
-            case 'gr':
-                self.abortable = True  # after gripperaction release abortable again
+            case 'cc':
+                if not self.camera.check_cans:
+                    await asyncio.sleep(0.5)
+                    if not self.camera.check_cans:
+                        return await self.next_task()
+                
+                angle, distance = self.camera.get_distance()
+                distance -= 100
+                
+                actions = [f'dd{distance}'].extend(self.actions)
+                self.actions = actions
+                
+                
                 
         return self
     

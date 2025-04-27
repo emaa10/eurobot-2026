@@ -41,7 +41,7 @@ class RobotController:
         }
         
         self.tactix = {
-            1: [[]]
+            1: [['rt']]
         }
         
     def set_tactic(self, start_pos: int, tactic: int):
@@ -87,58 +87,41 @@ class RobotController:
                 break
                 
         self.motor_controller.set_stop = stop   
+        
+    async def start(self):
+        if LIDAR and not self.lidar.start_scanning():
+            self.logger.info("Failed to start Lidar")
+            return
 
-    async def run(self):
-        try:
-            if LIDAR and not self.lidar.start_scanning():
-                self.logger.info("Failed to start Lidar")
-                return
+        if CAM:
+            self.camera.start()
+            self.logger.info("Camera started")
 
-            if CAM:
-                self.camera.start()
-                self.logger.info("Camera started")
-                sleep(5)
-                angle, distance = self.camera.get_distance()
-                await self.motor_controller.turn_angle(int(angle))
-                print("1")
-                sleep(2)
-                angle, distance = self.camera.get_distance()
-                sleep(2)
-                print(distance*1000)
-                await self.motor_controller.drive_distance(int(distance*1000))
-                self.logger.info(f"[TEST] Camera: angle={angle:.1f}°, dist={distance:.2f}m")
-                sleep(100)
-
-            
-            self.task = await self.task.next_action()
-            
-            self.time_started = time()
-            self.logger.info(f'Started')
-            
-            while True:
-                latest_scan = self.lidar.get_latest_scan() if LIDAR else None
-                state = await self.task.control_loop(self.time_started)
-                if state.finished: 
-                    break
-                
-                self.x = state.x
-                self.y = state.y
-                self.theta = state.theta
-                self.task = state.task
-                
-                await self.control_loop(state, latest_scan)
-                
-                if LIDAR and not self.lidar.is_running():
-                    self.logger.info("Lidar thread stopped unexpectedly")
-                    break        
-    
-        except KeyboardInterrupt:
-            self.logger.info("Interrupted by user")
-    
-        finally:
-            self.logger.info("Stopping ...")
-            await self.motor_controller.set_stop()
-            if LIDAR: self.lidar.stop()
+        
+        self.task = await self.task.next_action()
+        
+        self.time_started = time()
+        self.logger.info(f'Started')
+        
+    async def run(self) -> bool:
+        latest_scan = self.lidar.get_latest_scan() if LIDAR else None
+        state = await self.task.control_loop(self.time_started)
+        
+        if state.finished: 
+            return False
+        
+        self.x = state.x
+        self.y = state.y
+        self.theta = state.theta
+        self.task = state.task
+        
+        await self.control_loop(state, latest_scan)
+        
+        if LIDAR and not self.lidar.is_running():
+            self.logger.info("Lidar thread stopped unexpectedly")
+            return False
+        
+        return True
 
 async def main():
     controller = RobotController()
