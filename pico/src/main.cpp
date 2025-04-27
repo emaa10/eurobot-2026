@@ -13,6 +13,9 @@ Servo servo7;
 const int tPerStep = 800;
 int currentPosStepper1 = 0;
 int currentPosStepper2 = 0;
+int targetPosStepper1 = 0;
+int targetPosStepper2 = 0;
+bool stepperMoveActive = false;
 
 
 /*              PINS            */
@@ -53,6 +56,42 @@ void homeServos() {
     servo7.write(0);
 }
 
+void processSteppers() {
+    static unsigned long lastStepTime = 0;
+    if (!stepperMoveActive) return;
+
+    unsigned long now = micros();
+    if (now - lastStepTime < tPerStep * 2) return;
+    lastStepTime = now;
+
+    if (currentPosStepper1 != targetPosStepper1) {
+        bool dir = currentPosStepper1 < targetPosStepper1;
+        digitalWrite(STEPPER1_DIR, dir);
+        digitalWrite(STEPPER1_STEP, HIGH);
+        delayMicroseconds(tPerStep);
+        digitalWrite(STEPPER1_STEP, LOW);
+        delayMicroseconds(tPerStep);
+        currentPosStepper1 += dir ? 1 : -1;
+    }
+
+    if (currentPosStepper2 != targetPosStepper2) {
+        bool dir = currentPosStepper2 < targetPosStepper2;
+        digitalWrite(STEPPER2_DIR, dir);
+        digitalWrite(STEPPER2_STEP, HIGH);
+        delayMicroseconds(tPerStep);
+        digitalWrite(STEPPER2_STEP, LOW);
+        delayMicroseconds(tPerStep);
+        currentPosStepper2 += dir ? 1 : -1;
+    }
+
+    // Beide Stepper fertig?
+    if (currentPosStepper1 == targetPosStepper1 && currentPosStepper2 == targetPosStepper2) {
+        stepperMoveActive = false;
+        Serial.println("ok");
+    }
+}
+
+
 void stepperDrive1(int newPos) {
     bool dir = (currentPosStepper1 < newPos);
     digitalWrite(STEPPER1_DIR, dir);
@@ -89,6 +128,7 @@ void driveSteppersTogether(int newPos1, int newPos2) {
 
     digitalWrite(STEPPER1_DIR, dir1); //might need change
     digitalWrite(STEPPER2_DIR, dir2); //might need change
+
     delay(10);
 
     int steps1 = abs(newPos1 - currentPosStepper1);
@@ -198,8 +238,16 @@ void loop() {
         bool success = false;
 
         switch (device) {
-            case 'a': stepperDrive1(value); success = true; break;
-            case 'b': stepperDrive2(value); success = true; break;
+            case 'a': 
+                targetPosStepper1 = value;
+                stepperMoveActive = true;
+                success = true; 
+                break;
+            case 'b': 
+                targetPosStepper2 = value;
+                stepperMoveActive = true;
+                success = true; 
+            break;
             case 's': servo1.write(value); success = true; break;
             case 't': servo2.write(value); success = true; break;
             case 'u': servo3.write(value); success = true; break;
@@ -211,10 +259,11 @@ void loop() {
             default: success = false;
         }
 
-        if (success) {
-            Serial.println("ok");
-        } else {
+        if (!success) {
             Serial.println("f");
+        } else {
+            Serial.println("ok");
         }
     }
+    processSteppers();
 }
