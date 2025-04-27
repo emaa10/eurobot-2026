@@ -29,7 +29,7 @@ class RobotController:
 
         self.camera = Camera() if CAM else None
         
-        self.task = Task(motor_controller=self.motor_controller, action_set=[['tt90']])
+        self.task = Task(motor_controller=self.motor_controller, action_set=[['d500']])
         
     def add_task(self, actions: list[str]):
         task = Task(actions=actions)
