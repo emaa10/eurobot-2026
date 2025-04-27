@@ -51,11 +51,6 @@ class SerialManager():
         theta = float(str_list[2])
         
         return x, y, theta
-    
-    def reset_pos(self) -> None:
-        reset_string = "r\n"
-        byte_string = str.encode(reset_string)
-        self.ser.write(byte_string)
         
     def set_pos(self, x: int, y: int, theta: int) -> None:
         set_string = f"s{x};{y};{theta}\n"

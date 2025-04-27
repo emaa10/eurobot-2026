@@ -31,9 +31,24 @@ class RobotController:
         
         self.task = Task(motor_controller=self.motor_controller, action_set=[['d500']])
         
-    def add_task(self, actions: list[str]):
-        task = Task(actions=actions)
-        self.task.add_task(task)
+        self.color = False # True blau, False gelb
+        
+        self.start_positions = {
+            1: [25, 25, 0],
+            2: [25, 25, 0],
+            3: [25, 25, 0],
+            4: [25, 25, 0],
+            5: [25, 25, 0],
+            6: [25, 25, 0],
+        }
+        
+        self.tactix = {
+            1: [[]]
+        }
+        
+    def set_tactic(self, start_pos: int, taktik: int):
+        self.x, self.y, self.theta = self.start_positions[start_pos]
+        self.motor_controller.set_pos(self.x, self.y, self.theta)
         
     async def control_loop(self, state: DriveState, latest_scan: list[tuple] | None = None):
         # update pos
