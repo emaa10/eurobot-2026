@@ -77,6 +77,15 @@ class Camera:
                 raise RuntimeError("Frame not ready yet. Call start() and wait.")
             return self.frame.copy()
 
+            
+    def get_angle(self):
+        """
+        Liefert [left_angle, left_distance, right_angle, right_distance]
+        für die äußersten beiden Dosen.
+        """
+        frame = self._get_frame()
+        left_angle, left_distance, right_angle, right_distance = self._process_angle(frame)
+
     def get_distance(self) -> list:
         """
         Use latest frame, detect cans, show analysis for 3s,
@@ -156,18 +165,18 @@ class Camera:
                 all_centers.append((avg_px, 0))
                 all_distances.append(dist_m)
 
-                cv2.circle(display, (avg_px, int(self.IMAGE_HEIGHT/2)), 10, (0, 255, 0), -1)
-                cv2.putText(display, f"{dist_m:.2f}m", (avg_px+15, int(self.IMAGE_HEIGHT/2)-5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 1)
+                # cv2.circle(display, (avg_px, int(self.IMAGE_HEIGHT/2)), 10, (0, 255, 0), -1)
+                # cv2.putText(display, f"{dist_m:.2f}m", (avg_px+15, int(self.IMAGE_HEIGHT/2)-5),
+                #             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 1)
 
             if all_centers:
                 mx = int(np.mean([c[0] for c in all_centers]))
                 distance = np.mean(all_distances)
                 angle = ((mx - self.IMAGE_WIDTH//2) / (self.IMAGE_WIDTH//2)) * self.MAX_ANGLE
 
-                cv2.circle(display, (mx, int(self.IMAGE_HEIGHT/2)), 15, (255, 0, 0), -1)
-                cv2.putText(display, f"Gesamt: {angle:.1f}\u00b0 | {distance:.2f}m",
-                            (mx-100, int(self.IMAGE_HEIGHT/2)-20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
+                # cv2.circle(display, (mx, int(self.IMAGE_HEIGHT/2)), 15, (255, 0, 0), -1)
+                # cv2.putText(display, f"Gesamt: {angle:.1f}\u00b0 | {distance:.2f}m",
+                #             (mx-100, int(self.IMAGE_HEIGHT/2)-20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
 
         return display, angle, distance
 
@@ -239,4 +248,76 @@ class Camera:
         color = (0,255,0) if ok else (0,0,255)
         cv2.putText(display, f"Check Cans: {ok}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
         return ok, display
+        
+    def _process_angle(self, frame: np.ndarray):
+        """
+        Interne Verarbeitung: erkennt Dosen, gruppiert sie, ermittelt
+        die äußersten links & rechts und berechnet Winkel + Abstand.
+        Gibt zurück: (l_angle, l_dist, r_angle, r_dist)
+        """
+        # 1) Graustufen + CLAHE
+        gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+        processed = clahe.apply(gray)
+
+        # 2) Marker erkennen
+        corners, ids, _ = aruco.detectMarkers(
+            processed, self.aruco_dict, parameters=self.parameters
+        )
+        if ids is None or len(ids) < 2:
+            return None, None, None, None
+
+        # 3) Pose schätzen
+        _, tvecs, _ = aruco.estimatePoseSingleMarkers(
+            corners, self.TAG_SIZE, self.camera_matrix, self.dist_coeffs
+        )
+
+        # 4) Gruppenbildung
+        groups, visited = [], [False] * len(ids)
+        for i in range(len(ids)):
+            if not visited[i]:
+                group = [i]
+                visited[i] = True
+                for j in group:
+                    for k in range(len(ids)):
+                        if not visited[k] and np.linalg.norm(tvecs[j][0] - tvecs[k][0]) <= self.GROUP_DISTANCE:
+                            group.append(k)
+                            visited[k] = True
+                groups.append(group)
+
+        # 5) Für jede Gruppe mittleren Pixel-x und Abstand sammeln
+        px_list, dist_list = [], []
+        for grp in groups:
+            vecs = [tvecs[i][0] for i in grp]
+            avg_t = np.mean(vecs, axis=0)
+            dist_m = avg_t[2] * self.CALIB_FACTOR
+
+            # Bild-Mittelpunkt in x
+            pts = []
+            for i in grp:
+                M = cv2.moments(corners[i][0])
+                if M["m00"]:
+                    pts.append((M["m10"]/M["m00"], M["m01"]/M["m00"]))
+            if not pts:
+                continue
+            avg_px = float(np.mean([p[0] for p in pts]))
+
+            px_list.append(avg_px)
+            dist_list.append(dist_m)
+
+        if len(px_list) < 2:
+            return None, None, None, None
+
+        # 6) äußerste links/rechts finden
+        left_idx, right_idx = int(np.argmin(px_list)), int(np.argmax(px_list))
+
+        # 7) Winkel berechnen
+        center = self.IMAGE_WIDTH / 2.0
+        left_angle  = ((px_list[left_idx]  - center) / center) * self.MAX_ANGLE
+        right_angle = ((px_list[right_idx] - center) / center) * self.MAX_ANGLE
+
+        # 8) Abstände
+        left_dist, right_dist = dist_list[left_idx], dist_list[right_idx]
+
+        return left_angle, left_dist, right_angle, right_dist
 
