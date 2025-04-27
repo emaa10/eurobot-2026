@@ -119,19 +119,26 @@ class Task():
                 await self.motor_controller.turn_to(float(value))
                 await asyncio.sleep(0.2)
             case 'cc':
-                if not self.camera.check_cans:
+                if not self.camera.check_cans():
                     await asyncio.sleep(0.5)
-                    if not self.camera.check_cans:
+                    if not self.camera.check_cans():
                         return await self.next_task()
                 
                 angle, distance = self.camera.get_distance()
-                distance -= 100
+                angle_cans = self.camera.get_angle()
                 
-                actions = [f'dd{distance}'].extend(self.actions)
+                dist = math.sqrt(distance**2-40**2)
+                
+                actions = [f'ta{angle_cans}'].extend(self.actions)
                 self.actions = actions
+                # actions = [f'ta{angle_cans}', f'dd{dist}', f'ta{90}']
                 
                 
                 
+                # actions = [f'dd{distance}'].extend(self.actions)
+                # self.actions = actions
+
+
         return self
     
     async def next_task(self):

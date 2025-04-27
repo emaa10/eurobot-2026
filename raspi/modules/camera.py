@@ -5,6 +5,7 @@ from picamera2 import Picamera2
 import cv2.aruco as aruco
 import libcamera
 import threading
+import math
 
 
 class Camera:
@@ -80,11 +81,19 @@ class Camera:
             
     def get_angle(self):
         """
-        Liefert [left_angle, left_distance, right_angle, right_distance]
+        Liefert angle_cans
         für die äußersten beiden Dosen.
         """
         frame = self._get_frame()
         left_angle, left_distance, right_angle, right_distance = self._process_angle(frame)
+        left_x = left_distance * math.sin(left_angle)
+        left_y = left_distance * math.cos(left_angle)
+        right_x = right_distance * math.sin(right_angle)
+        right_y = right_distance * math.cos(right_angle)
+        dx = abs(left_x - right_x)
+        dy = abs(left_y - right_y)
+        angle_cans = math.atan2(dy, dx)
+        return angle_cans
 
     def get_distance(self) -> list:
         """
