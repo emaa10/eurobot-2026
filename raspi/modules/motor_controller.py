@@ -204,6 +204,13 @@ class MotorController():
         self.stop = False
         self.direction = 0
         
+    def set_pos(self, x, y, theta):
+        self.x = x
+        self.y = y
+        self.theta = theta
+        
+        self.serial_manager.set_pos(self.x, self.y, self.theta)
+        
     async def set_stop(self) -> None:
         [await controller.set_stop() for controller in self.controllers.values()]
         
@@ -235,10 +242,9 @@ class MotorController():
                 watchdog_timeout=math.nan
             )
             
-    async def set_pos(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0) -> None:
+    async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0) -> None:
         self.target_positions = {1: pos1, 2: -pos2}
         await self.set_target(velocity_limit, accel_limit)
-        
         
     async def drive_distance(self, dist:int) -> None:
         self.direction = 1 if dist > 0 else -1
@@ -246,7 +252,7 @@ class MotorController():
         pulses_per_mm = 0.066
         pulses = dist * pulses_per_mm
         
-        await self.set_pos(pulses, pulses)
+        await self.drive_to_target(pulses, pulses)
         
     async def turn_angle(self, angle: int) -> None:
         self.direction = 0
@@ -255,7 +261,7 @@ class MotorController():
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
-        await self.set_pos(-pulses, pulses, velocity_limit=35.0, accel_limit=30.0)
+        await self.drive_to_target(-pulses, pulses, velocity_limit=35.0, accel_limit=30.0)
         
     async def turn_to(self, theta: float):
         delta_t = theta - self.theta
