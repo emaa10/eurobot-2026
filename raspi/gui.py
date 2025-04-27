@@ -170,10 +170,11 @@ class MainScene(QtWidgets.QWidget):
 
 
 class DebugScene(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, main_controller):
         super().__init__()
         self.robot_data = {'x': 0.0, 'y': 0.0, 'angle': 0.0, 'goal_x': 100.0, 'goal_y': 200.0}
         self.initUI()
+        self.main_controller = main_controller
 
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
@@ -196,7 +197,8 @@ class DebugScene(QtWidgets.QWidget):
             ("Show Keyboard", self.on_show_keyboard),
             ("Clean Wheels", self.on_clean_wheels),
             ("Show Camera Stream", self.on_show_camera),
-            ("Log Tail", self.on_log_tail)
+            ("Log Tail", self.on_log_tail),
+            ("STOP", self.on_stop)
         ]
         for text, handler in btns:
             btn = QtWidgets.QPushButton(text)
@@ -218,6 +220,7 @@ class DebugScene(QtWidgets.QWidget):
     def on_test_codes(self): window.stacked.setCurrentIndex(3)
     def on_show_keyboard(self): subprocess.Popen(['wvkbd'], env=dict(os.environ, WVKBD_HEIGHT='250'))
     def on_clean_wheels(self): pass
+    def on_stop(self): pass
     def on_show_camera(self): pass
     def on_log_tail(self):
         """Open new terminal with log tail command"""
@@ -229,11 +232,12 @@ class DebugScene(QtWidgets.QWidget):
 
 
 class TestCodesScene(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, main_controller):
         super().__init__()
         self.initUI()
+        self.main_controller = main_controller
 
-    def initUI(self):
+    async def initUI(self):
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(50, 50, 50, 50)
 
@@ -248,8 +252,7 @@ class TestCodesScene(QtWidgets.QWidget):
         layout.addLayout(close_layout)
 
         for text, handler in [
-            ("Drive 100 →", lambda: None),
-            # ("Drive 100 →", self.on_drive_forward),
+            ("Drive 100 →", await self.main_controller.motor_controller.drive_distance(100)),
             ("Drive 100 ←", lambda: None),
             ("Turn 90°", lambda: None),
             ("Turn -90°", lambda: None)
@@ -306,11 +309,12 @@ class DriveScene(QtWidgets.QWidget):
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self):
+    def __init__(self, main_controller):
         super().__init__()
         self.initUI()
         self.showFullScreen()
         self.timer = QtCore.QTimer()
+        self.main_controller = main_controller
         # self.timer.timeout.connect(self.update_pullcord)
         # des an für pullcord
         
@@ -318,10 +322,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def initUI(self):
         self.stacked = QtWidgets.QStackedWidget()
-        self.main_scene = MainScene()
-        self.debug_scene = DebugScene()
-        self.drive_scene = DriveScene()
-        self.testcodes_scene = TestCodesScene()
+        self.main_scene = MainScene(self.main_controller)
+        self.debug_scene = DebugScene(self.main_controller)
+        self.drive_scene = DriveScene(self.main_controller)
+        self.testcodes_scene = TestCodesScene(self.main_controller)
         
         self.stacked.addWidget(self.main_scene)
         self.stacked.addWidget(self.debug_scene)
@@ -365,6 +369,6 @@ blue_positions = [
 if __name__ == '__main__':
     controller = RobotController()
     app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
+    window = MainWindow(controller)
     window.show()
     sys.exit(app.exec_())
