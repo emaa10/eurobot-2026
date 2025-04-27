@@ -222,9 +222,9 @@ class DebugScene(QtWidgets.QWidget):
     def on_shutdown(self): os.system("sudo shutdown now")
     def on_test_codes(self): window.stacked.setCurrentIndex(3)
     def on_show_keyboard(self): subprocess.Popen(['wvkbd'], env=dict(os.environ, WVKBD_HEIGHT='250'))
-    def on_clean_wheels(self): pass
-    def on_stop(self): pass
-    def on_show_camera(self): pass
+    async def on_clean_wheels(self): await self.main_controller.motor_controller.clean_wheels()
+    async def on_stop(self): await self.main_controller.motor_controller.set_stop()
+    def on_show_camera(self): os.system("python3 /home/eurobot/main-bot/raspi/camera_window.py")
     def on_log_tail(self):
         """Open new terminal with log tail command"""
         log_path = "/home/eurobot/main-bot/raspi/eurobot.log"  # Update this path to your actual log file
@@ -256,9 +256,9 @@ class TestCodesScene(QtWidgets.QWidget):
 
         for text, handler in [
             ("Drive 100 →", await self.main_controller.motor_controller.drive_distance(100)),
-            ("Drive 100 ←", lambda: None),
-            ("Turn 90°", lambda: None),
-            ("Turn -90°", lambda: None)
+            ("Drive 100 ←", await self.main_controller.motor_controller.drive_distance(-100)),
+            ("Turn 90°", await self.main_controller.motor_controller.turn_angle(90)),
+            ("Turn -90°", await self.main_controller.motor_controller.turn_angle(-90))
         ]:
             btn = QtWidgets.QPushButton(text)
             btn.setFixedHeight(80)
