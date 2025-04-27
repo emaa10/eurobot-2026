@@ -29,7 +29,7 @@ class RobotController:
 
         self.camera = Camera() if CAM else None
                     
-        self.task: Task | None = Task(self.motor_controller, None, [['dp-', 'dd-500']])
+        self.task: Task | None = Task(self.motor_controller, None, [['dp500;200;-30']])
         
         self.start_positions = {
             1: [25, 25, 0],
