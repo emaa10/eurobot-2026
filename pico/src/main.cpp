@@ -91,11 +91,10 @@ void processSteppers() {
     }
 }
 
-
 //drives one direction until switch 1 activates
 void homeStepper1() {
     digitalWrite(STEPPER1_DIR, HIGH); //might need change
-    while(digitalRead(SWITCH1) == LOW) { //solange nicht ausgelöst
+    while(digitalRead(SWITCH1) == LOW) {
         digitalWrite(STEPPER1_STEP, HIGH);
         delayMicroseconds(tPerStep);
         digitalWrite(STEPPER1_STEP, LOW);
@@ -106,13 +105,28 @@ void homeStepper1() {
 
 void homeStepper2() {
     digitalWrite(STEPPER2_DIR, HIGH); //might need change
-    while(digitalRead(SWITCH2) == LOW) { //solange nicht ausgelöst
+    while(digitalRead(SWITCH2) == LOW) {
         digitalWrite(STEPPER2_STEP, HIGH);
         delayMicroseconds(tPerStep);
         digitalWrite(STEPPER2_STEP, LOW);
         delayMicroseconds(tPerStep);
     }
     currentPosStepper2 = 0;
+}
+
+// Emergency Stop: stop all motors immediately
+void emergencyStop() {
+    stepperMoveActive = false;
+    digitalWrite(STEPPER1_EN, HIGH);
+    digitalWrite(STEPPER2_EN, HIGH);
+    servo1.detach();
+    servo2.detach();
+    servo3.detach();
+    servo4.detach();
+    servo5.detach();
+    servo6.detach();
+    servo7.detach();
+    Serial.println("stopped");
 }
 
 // ========== setup / loop ==========
@@ -139,9 +153,9 @@ void setup() {
     pinMode(SWITCH1, INPUT_PULLUP);
     pinMode(SWITCH2, INPUT_PULLUP);
 
+    // Enable steppers (LOW = enabled)
     digitalWrite(STEPPER1_EN, LOW);
     digitalWrite(STEPPER2_EN, LOW);
-
 
     servo1.attach(SERVO1);
     servo2.attach(SERVO2);
@@ -171,30 +185,36 @@ void loop() {
 
         switch (device) {
             case 'a': 
+                digitalWrite(STEPPER1_EN, LOW);
                 targetPosStepper1 = value;
                 stepperMoveActive = true;
                 success = true; 
                 break;
             case 'b': 
+                digitalWrite(STEPPER2_EN, LOW);
                 targetPosStepper2 = value;
                 stepperMoveActive = true;
                 success = true; 
-            break;
-            case 's': servo1.write(value); success = true; break;
-            case 't': servo2.write(value); success = true; break;
-            case 'u': servo3.write(value); success = true; break;
-            case 'v': servo4.write(value); success = true; break;
-            case 'w': servo5.write(value); success = true; break;
-            case 'x': servo6.write(value); success = true; break;
-            case 'y': servo7.write(value); success = true; break;
+                break;
+            case 's': servo1.attach(SERVO1); servo1.write(value); success = true; break;
+            case 't': servo2.attach(SERVO2); servo2.write(value); success = true; break;
+            case 'u': servo3.attach(SERVO3); servo3.write(value); success = true; break;
+            case 'v': servo4.attach(SERVO4); servo4.write(value); success = true; break;
+            case 'w': servo5.attach(SERVO5); servo5.write(value); success = true; break;
+            case 'x': servo6.attach(SERVO6); servo6.write(value); success = true; break;
+            case 'y': servo7.attach(SERVO7); servo7.write(value); success = true; break;
             case 'h': startupRoutine(); success = true; break;
+            case 'e': // Emergency stop command: send "e0"
+                emergencyStop(); 
+                success = true;
+                break;
             default: success = false;
         }
 
         if (!success) {
             Serial.println("f");
         } else {
-            Serial.println("ok");
+            if (device != 'e') Serial.println("ok");
         }
     }
     processSteppers();
