@@ -3,6 +3,7 @@ import os
 import subprocess
 from PyQt5 import QtWidgets, QtCore, QtGui
 import random
+from main import RobotController
 
 # hilfe: https://chatgpt.com/share/680cd025-864c-8000-8271-5632adeeb5b3
 
@@ -359,8 +360,8 @@ blue_positions = [
 ]
 
 if __name__ == '__main__':
+    controller = RobotController()
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
-
