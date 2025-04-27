@@ -301,6 +301,8 @@ class MotorController():
             self.x, self.y, self.theta = self.serial_manager.get_pos()
         except:
             self.logger.info("Could not read new pos data")
+            
+        print('test')
 
         if self.stop:
             self.finished = False

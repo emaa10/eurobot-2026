@@ -61,6 +61,8 @@ class Task():
         
     async def control_loop(self, time_started) -> DriveState:
         state = await self.motor_controller.control_loop()
+        
+        
         state.task = self
         
         if state.stopped and not self.stopped_since: self.stopped_since = time()

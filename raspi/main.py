@@ -10,7 +10,7 @@ from time import time, sleep
 import logging
 
 LIDAR = False
-CAM = True
+CAM = False
 
 class RobotController:
     def __init__(self):
@@ -29,7 +29,7 @@ class RobotController:
 
         self.camera = Camera() if CAM else None
                     
-        self.tactic: Task | None = None
+        self.task: Task | None = Task(self.motor_controller, None, [['dp-', 'dd-500']])
         
         self.start_positions = {
             1: [25, 25, 0],
@@ -49,7 +49,7 @@ class RobotController:
         self.motor_controller.set_pos(self.x, self.y, self.theta)
         
         tactic = self.tactix[tactic]
-        self.tactic = Task(self.motor_controller, tactic)
+        self.task = Task(self.motor_controller, tactic)
         
     async def control_loop(self, state: DriveState, latest_scan: list[tuple] | None = None):
         # update pos
@@ -115,17 +115,24 @@ class RobotController:
         self.theta = state.theta
         self.task = state.task
         
+        
         await self.control_loop(state, latest_scan)
         
         if LIDAR and not self.lidar.is_running():
             self.logger.info("Lidar thread stopped unexpectedly")
             return False
         
+        print(self.x)
+        
         return True
 
 async def main():
     controller = RobotController()
-    await controller.run()
+    await controller.start()
+    not_done = True
+    while not_done:
+        not_done = await controller.run()
+    
 
 if __name__ == '__main__':
     asyncio.run(main())

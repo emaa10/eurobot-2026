@@ -6,7 +6,7 @@ from datetime import datetime
 import logging
 
 class SerialManager():
-    def __init__(self, port="/dev/ttyACM1", baud_rate=115200) -> None:
+    def __init__(self, port="/dev/serial/by-id/usb-Arduino__www.arduino.cc__0042_5583931353835111C0B1-if00", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=3)
         
         self.ser.setDTR(False)
@@ -49,7 +49,7 @@ class SerialManager():
         x = int(str_list[0])
         y = int(str_list[1])
         theta = float(str_list[2])
-        
+                
         return x, y, theta
         
     def set_pos(self, x: int, y: int, theta: int) -> None:
