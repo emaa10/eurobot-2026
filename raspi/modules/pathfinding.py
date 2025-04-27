@@ -5,7 +5,7 @@ import numpy as np
 import random
 import logging
 
-from modules.position import Position
+from position import Position
 
 def time_ms():
     return time_ns() // 1000000
@@ -215,4 +215,4 @@ class Pathfinder():
         
 if __name__ == "__main__":
     pathfinder = Pathfinder(start=Position(25, 10), target=Position(30, 135))
-    pathfinder.proccess(False)
+    pathfinder.proccess(Position(25, 10), Position(30, 135), True)

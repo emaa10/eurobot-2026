@@ -72,12 +72,12 @@ void updatePos(){
 
     // global position change
     float dtheta = (distanceLeft - distanceRight) / WHEELBASE_ENC;
-    float dx = distance * cos(theta + dtheta);
-    float dy = distance * sin(theta + dtheta);
+    float dx = distance * sin(theta + dtheta);
+    float dy = distance * cos(theta + dtheta);
 
     // update global pos
     x = x - dx;
-    y = y - dy;
+    y = y + dy;
     theta = theta + dtheta;
     while (theta > 2 * M_PI) theta -= 2 * M_PI;
     while (theta < 0) theta += 2 * M_PI;
