@@ -11,12 +11,12 @@ from modules.drive_state import  DriveState
 import asyncio
 
 class Task():
-    def __init__(self, motor_controller: MotorController | None, action_set: list[list[str]], successor: Self | None = None, ):
+    def __init__(self, motor_controller: MotorController | None, action_set: list[list[str]]):
         self.motor_controller = motor_controller
         self.initial_actions = action_set[0]# if we abort and want to add task to end
         self.actions = action_set.pop(0)
         self.current_action = None
-        self.successor = successor
+        self.successor = None 
         
         self.stopped_since = None
         self.abortable = True

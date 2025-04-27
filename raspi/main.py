@@ -28,10 +28,8 @@ class RobotController:
         self.lidar = Lidar('/dev/ttyUSB0') if LIDAR else None
 
         self.camera = Camera() if CAM else None
-        
-        self.task = Task(motor_controller=self.motor_controller, action_set=[['d500']])
-        
-        self.color = False # True blau, False gelb
+                    
+        self.tactic: Task | None = None
         
         self.start_positions = {
             1: [25, 25, 0],
@@ -46,9 +44,12 @@ class RobotController:
             1: [[]]
         }
         
-    def set_tactic(self, start_pos: int, taktik: int):
+    def set_tactic(self, start_pos: int, tactic: int):
         self.x, self.y, self.theta = self.start_positions[start_pos]
         self.motor_controller.set_pos(self.x, self.y, self.theta)
+        
+        tactic = self.tactix[tactic]
+        self.tactic = Task(self.motor_controller, tactic)
         
     async def control_loop(self, state: DriveState, latest_scan: list[tuple] | None = None):
         # update pos
