@@ -8,12 +8,15 @@ from main import RobotController
 # hilfe: https://chatgpt.com/share/680cd025-864c-8000-8271-5632adeeb5b3
 
 class MainScene(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, main_controller: RobotController):
         super().__init__()
         self.selected_color = None
         self.selected_position : int | None = None
         self.selected_tactic = None
         self.pullcord_active = False
+        
+        self.main_controller = main_controller
+        
         self.initUI()
 
     def initUI(self):
@@ -170,11 +173,11 @@ class MainScene(QtWidgets.QWidget):
 
 
 class DebugScene(QtWidgets.QWidget):
-    def __init__(self, main_controller):
+    def __init__(self, main_controller: RobotController):
         super().__init__()
         self.robot_data = {'x': 0.0, 'y': 0.0, 'angle': 0.0, 'goal_x': 100.0, 'goal_y': 200.0}
-        self.initUI()
         self.main_controller = main_controller
+        self.initUI()
 
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
@@ -232,10 +235,10 @@ class DebugScene(QtWidgets.QWidget):
 
 
 class TestCodesScene(QtWidgets.QWidget):
-    def __init__(self, main_controller):
+    async def __init__(self, main_controller: RobotController):
         super().__init__()
-        self.initUI()
         self.main_controller = main_controller
+        await self.initUI()
 
     async def initUI(self):
         layout = QtWidgets.QVBoxLayout()
@@ -273,10 +276,11 @@ class TestCodesScene(QtWidgets.QWidget):
 
 
 class DriveScene(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, main_controller: RobotController):
         super().__init__()
         self.initUI()
         self.points_visible = False
+        self.main_controller = main_controller
 
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
@@ -309,7 +313,7 @@ class DriveScene(QtWidgets.QWidget):
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, main_controller):
+    def __init__(self, main_controller: RobotController):
         super().__init__()
         self.initUI()
         self.showFullScreen()

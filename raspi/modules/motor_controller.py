@@ -211,6 +211,15 @@ class MotorController():
         
         self.serial_manager.set_pos(self.x, self.y, self.theta)
         
+    async def clean_wheels(self) -> None:
+        for motor_id, controller in self.controllers.items():
+            await controller.set_position(
+                position=math.nan, 
+                velocity_limit=10, 
+                accel_limit=50, 
+                watchdog_timeout=math.nan
+            )
+        
     async def set_stop(self) -> None:
         [await controller.set_stop() for controller in self.controllers.values()]
         
