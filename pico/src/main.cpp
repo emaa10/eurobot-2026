@@ -158,6 +158,7 @@ void setup() {
 
     pinMode(SWITCH1, INPUT_PULLUP);
     pinMode(SWITCH2, INPUT_PULLUP);
+    pinMode(SWITCH3, INPUT_PULLUP);
 
     // Enable steppers (LOW = enabled)
     digitalWrite(STEPPER1_EN, HIGH);
@@ -226,27 +227,11 @@ void loop() {
     }
     processSteppers();
     */
-   for(int i = 0; i <= 180; i++) {
-    delay(10);
-    servo1.write(i);
-    servo2.write(i);
-    servo3.write(i);
-    servo4.write(i);
-    servo5.write(i);
-    servo6.write(i);
-    servo7.write(i);
-    servo8.write(i);
-   }
    if(digitalRead(SWITCH1) == HIGH) {
-    digitalWrite(25, LOW);
-   }
-   if(digitalRead(SWITCH2) == HIGH) {
-    digitalWrite(25, LOW);
-   }
-   if(digitalRead(SWITCH3) == HIGH) {
     digitalWrite(25, LOW);
    }
    else{
     digitalWrite(25, HIGH);
    }
+   delay(10);
 }
