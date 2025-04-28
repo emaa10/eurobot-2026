@@ -19,12 +19,12 @@ bool stepperMoveActive = false;
 
 
 /*              PINS            */
-#define STEPPER1_EN 17
+#define STEPPER1_EN 18
 #define STEPPER1_DIR 16
-#define STEPPER1_STEP 27
-#define STEPPER2_EN 21   //backup: 16
-#define STEPPER2_DIR 20  //backup: 17
-#define STEPPER2_STEP 19 //backup: 18
+#define STEPPER1_STEP 17
+#define STEPPER2_EN 21   
+#define STEPPER2_DIR 19  
+#define STEPPER2_STEP 20 
 
 #define SWITCH1 15 // -> stepper1
 #define SWITCH2 14 // -> stepper2
@@ -142,6 +142,8 @@ void startupRoutine() {
 // nur serial init, warten dann auf setup command von raspi
 void setup() {
     Serial.begin(115200);
+    
+    pinMode(25, OUTPUT);
 
     pinMode(STEPPER1_DIR, OUTPUT);
     pinMode(STEPPER1_EN, OUTPUT);
@@ -219,7 +221,7 @@ void loop() {
     }
     processSteppers();
     */
-   for (int i = 0; i <= 20; i++) {
+   for (int i = 0; i <= 100; i++) {
     digitalWrite(STEPPER1_STEP, HIGH);
     digitalWrite(STEPPER1_STEP, HIGH);
     delayMicroseconds(600);
@@ -229,7 +231,7 @@ void loop() {
    }
    digitalWrite(STEPPER1_DIR, HIGH);
    digitalWrite(STEPPER2_DIR, HIGH);
-   for (int i = 0; i <= 20; i++) {
+   for (int i = 0; i <= 100; i++) {
     digitalWrite(STEPPER1_STEP, HIGH);
     digitalWrite(STEPPER1_STEP, HIGH);
     delayMicroseconds(600);
@@ -237,14 +239,15 @@ void loop() {
     digitalWrite(STEPPER1_STEP, LOW);
     delayMicroseconds(600);
    }
-   for(int i = 0; i <= 180; i++) {
+   digitalWrite(25, HIGH);
+   /*for(int i = 0; i <= 180; i++) {
     delay(10);
     servo1.write(i);
     servo2.write(i);
     servo3.write(i);
     servo4.write(i);
     servo5.write(i);
-   }
+   }*/
    while (true)
    {
     delay(10);
