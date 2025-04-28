@@ -11,7 +11,7 @@ Servo servo7;
 Servo servo8;
 
 /*              GLOBALS            */
-const int tPerStep = 1200;//800
+const int tPerStep = 450;//800
 int RIGHT_currentPosStepper = 0;
 int MID_currentPosStepper = 0;
 int RIGHT_targetPosStepper = 0;
@@ -173,7 +173,7 @@ void setup() {
 
     // Enable steppers (LOW = enabled)
     digitalWrite(RIGHT_STEPPER_EN, HIGH);
-    digitalWrite(MID_STEPPER_EN, HIGH);
+    digitalWrite(MID_STEPPER_EN, LOW);
 
     servo_DRIVE_LEFT.attach(SERVO_DRIVE_LEFT, 700, 2600);
     servo_PLATE_GRIPPER.attach(SERVO_PLATE_GRIPPER, 700, 2600);
@@ -185,6 +185,16 @@ void setup() {
     servo8.attach(SERVO8);
 
     startupRoutine();
+
+    servo_PLATE_GRIPPER.write(80);
+
+    digitalWrite(MID_STEPPER_DIR, LOW);
+    for(int i = 0; i < 1400;i++){
+        digitalWrite(MID_STEPPER_STEP, HIGH);
+        delayMicroseconds(tPerStep);
+        digitalWrite(MID_STEPPER_STEP, LOW);
+        delayMicroseconds(tPerStep);
+    }
 
 }
 
@@ -245,7 +255,5 @@ void loop() {
 //    delay(1000);
 //    servo_PLATE_GRIPPER.write(180);
 //    delay(1000);
-   servo_PLATE_GRIPPER.write(180);
-   delay(1000);
 
 }
