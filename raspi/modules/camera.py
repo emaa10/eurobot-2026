@@ -22,6 +22,8 @@ class Camera:
                  dist_path: str = "camera/dist_coeffs.npy",
                  rotate: int = 180):
         # Load camera calibration data
+        cv2.setUseOptimized(False)
+        cv2.ocl.setUseOpenCL(False)
         self.camera_matrix = np.load(matrix_path)
         self.dist_coeffs = np.load(dist_path)
 

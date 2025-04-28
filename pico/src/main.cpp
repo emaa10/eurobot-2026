@@ -169,7 +169,7 @@ void setup() {
 }
 
 void loop() {
-    if (Serial.available()) {
+    /*if (Serial.available()) {
         String command = Serial.readStringUntil('\n'); 
         command.trim();
 
@@ -218,4 +218,29 @@ void loop() {
         }
     }
     processSteppers();
+    */
+   for (int i = 0; i <= 20; i++) {
+    digitalWrite(STEPPER1_STEP, HIGH);
+    digitalWrite(STEPPER1_STEP, HIGH);
+    delayMicroseconds(600);
+    digitalWrite(STEPPER1_STEP, LOW);
+    digitalWrite(STEPPER1_STEP, LOW);
+    delayMicroseconds(600);
+   }
+   digitalWrite(STEPPER1_DIR, HIGH);
+   digitalWrite(STEPPER2_DIR, HIGH);
+   for (int i = 0; i <= 20; i++) {
+    digitalWrite(STEPPER1_STEP, HIGH);
+    digitalWrite(STEPPER1_STEP, HIGH);
+    delayMicroseconds(600);
+    digitalWrite(STEPPER1_STEP, LOW);
+    digitalWrite(STEPPER1_STEP, LOW);
+    delayMicroseconds(600);
+   }
+   while (true)
+   {
+    delay(10);
+    /* code */
+   }
+   
 }
