@@ -20,7 +20,7 @@ bool stepperMoveActive = false;
 
 /*              PINS            */
 #define STEPPER1_EN 17
-#define STEPPER1_DIR 26
+#define STEPPER1_DIR 16
 #define STEPPER1_STEP 27
 #define STEPPER2_EN 21   //backup: 16
 #define STEPPER2_DIR 20  //backup: 17
@@ -236,6 +236,14 @@ void loop() {
     digitalWrite(STEPPER1_STEP, LOW);
     digitalWrite(STEPPER1_STEP, LOW);
     delayMicroseconds(600);
+   }
+   for(int i = 0; i <= 180; i++) {
+    delay(10);
+    servo1.write(i);
+    servo2.write(i);
+    servo3.write(i);
+    servo4.write(i);
+    servo5.write(i);
    }
    while (true)
    {

@@ -322,13 +322,14 @@ class DriveScene(QtWidgets.QWidget):
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, main_controller: RobotController):
         super().__init__()
+        self.main_controller = controller
         self.initUI()
         self.showFullScreen()
         self.timer = QtCore.QTimer()
         self.main_controller = main_controller
         self.timer.timeout.connect(self.update_pullcord)
+
         # des an für pullcord
-        
         self.timer.start(500)
 
     def initUI(self):
