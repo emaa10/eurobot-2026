@@ -45,6 +45,7 @@ class RobotController:
         }
         
     def set_tactic(self, start_pos: int, tactic: int):
+        sleep(100)
         self.x, self.y, self.theta = self.start_positions[start_pos]
         self.motor_controller.set_pos(self.x, self.y, self.theta)
         

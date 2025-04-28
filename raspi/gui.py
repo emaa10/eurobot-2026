@@ -420,7 +420,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.timer.timeout.connect(self.update_pullcord)
 
         # Start checking for pullcord
-        self.timer.start(500)
+        self.timer.start(50)
 
     def initUI(self):
         self.stacked = QtWidgets.QStackedWidget()
@@ -441,7 +441,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def update_pullcord(self):
         if GPIO.input(pullcord) == GPIO.LOW and not self.main_scene.pullcord_active:
-            print("Pullcord losgelassen")
+            #print("Pullcord losgelassen")
             self.main_scene.pullcord_active = True
             self.drive_scene.show_points()
             # Start the robot controller in the asyncio thread

@@ -227,12 +227,12 @@ void loop() {
     }
     processSteppers();
     */
-   servo_PLATE_GRIPPER.write(180);
+   servo_PLATE_GRIPPER.write(170);
    delay(1000);
-   servo_PLATE_GRIPPER.write(65);
-   delay(1000);
-   servo_PLATE_GRIPPER.write(180);
-   delay(1000);
-   servo_PLATE_GRIPPER.write(0);
-   delay(1000);
+//    servo_PLATE_GRIPPER.write(65);
+//    delay(1000);
+//    servo_PLATE_GRIPPER.write(180);
+//    delay(1000);
+//    servo_PLATE_GRIPPER.write(0);
+//    delay(1000);
 }
