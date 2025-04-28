@@ -86,7 +86,7 @@ class RobotController:
                 self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                 break
                 
-        self.motor_controller.set_stop() = stop   
+        if(stop): self.motor_controller.set_stop()  
         
     async def start(self):
         if LIDAR and not self.lidar.start_scanning():
