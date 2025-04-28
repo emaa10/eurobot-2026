@@ -5,6 +5,7 @@ import RPi.GPIO as GPIO
 from PyQt5 import QtWidgets, QtCore, QtGui
 import random
 from main import RobotController
+import asyncio
 
 # hilfe: https://chatgpt.com/share/680cd025-864c-8000-8271-5632adeeb5b3
 
