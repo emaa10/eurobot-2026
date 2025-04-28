@@ -8,6 +8,7 @@ Servo servo4;
 Servo servo5;
 Servo servo6;
 Servo servo7;
+Servo servo8;
 
 /*              GLOBALS            */
 const int tPerStep = 800;
@@ -37,6 +38,7 @@ bool stepperMoveActive = false;
 #define SERVO5 8
 #define SERVO6 9
 #define SERVO7 10       //backup: 11
+#define SERVO8 11
 
 // ========== motor functions ==========
 
@@ -54,6 +56,7 @@ void homeServos() {
     servo5.write(0);
     servo6.write(0);
     servo7.write(0);
+    servo8.write(0);
 }
 
 void processSteppers() {
@@ -126,6 +129,7 @@ void emergencyStop() {
     servo5.detach();
     servo6.detach();
     servo7.detach();
+    servo8.detach();
     Serial.println("stopped");
 }
 
@@ -156,8 +160,8 @@ void setup() {
     pinMode(SWITCH2, INPUT_PULLUP);
 
     // Enable steppers (LOW = enabled)
-    digitalWrite(STEPPER1_EN, LOW);
-    digitalWrite(STEPPER2_EN, LOW);
+    digitalWrite(STEPPER1_EN, HIGH);
+    digitalWrite(STEPPER2_EN, HIGH);
 
     servo1.attach(SERVO1);
     servo2.attach(SERVO2);
@@ -166,6 +170,7 @@ void setup() {
     servo5.attach(SERVO5);
     servo6.attach(SERVO6);
     servo7.attach(SERVO7);
+    servo8.attach(SERVO8);
     delay(1000);
     //startupRoutine();
 }
@@ -221,37 +226,27 @@ void loop() {
     }
     processSteppers();
     */
-   for (int i = 0; i <= 100; i++) {
-    digitalWrite(STEPPER1_STEP, HIGH);
-    digitalWrite(STEPPER2_STEP, HIGH);
-    delayMicroseconds(1200);
-    digitalWrite(STEPPER1_STEP, LOW);
-    digitalWrite(STEPPER2_STEP, LOW);
-    delayMicroseconds(1200);
-   }
-   digitalWrite(STEPPER1_DIR, HIGH);
-   digitalWrite(STEPPER2_DIR, HIGH);
-   for (int i = 0; i <= 100; i++) {
-    digitalWrite(STEPPER1_STEP, HIGH);
-    digitalWrite(STEPPER2_STEP, HIGH);
-    delayMicroseconds(1200);
-    digitalWrite(STEPPER1_STEP, LOW);
-    digitalWrite(STEPPER2_STEP, LOW);
-    delayMicroseconds(1200);
-   }
-   digitalWrite(25, HIGH);
-   /*for(int i = 0; i <= 180; i++) {
+   for(int i = 0; i <= 180; i++) {
     delay(10);
     servo1.write(i);
     servo2.write(i);
     servo3.write(i);
     servo4.write(i);
     servo5.write(i);
-   }*/
-   while (true)
-   {
-    delay(10);
-    /* code */
+    servo6.write(i);
+    servo7.write(i);
+    servo8.write(i);
    }
-   
+   if(digitalRead(SWITCH1) == HIGH) {
+    digitalWrite(25, LOW);
+   }
+   if(digitalRead(SWITCH2) == HIGH) {
+    digitalWrite(25, LOW);
+   }
+   if(digitalRead(SWITCH3) == HIGH) {
+    digitalWrite(25, LOW);
+   }
+   else{
+    digitalWrite(25, HIGH);
+   }
 }
