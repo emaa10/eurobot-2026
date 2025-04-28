@@ -227,8 +227,10 @@ class DebugScene(QtWidgets.QWidget):
     def on_shutdown(self): os.system("sudo shutdown now")
     def on_test_codes(self): window.stacked.setCurrentIndex(3)
     def on_show_keyboard(self): subprocess.Popen(['wvkbd'], env=dict(os.environ, WVKBD_HEIGHT='250'))
-    async def on_clean_wheels(self): await self.main_controller.motor_controller.clean_wheels()
-    async def on_stop(self): await self.main_controller.motor_controller.set_stop()
+    def on_clean_wheels(self): pass
+    def on_stop(self): pass
+    #async def on_clean_wheels(self): await self.main_controller.motor_controller.clean_wheels()
+    #async def on_stop(self): await self.main_controller.motor_controller.set_stop()
     def on_show_camera(self): os.system("python3 /home/eurobot/main-bot/raspi/camera_window.py")
     def on_log_tail(self):
         """Open new terminal with log tail command"""
@@ -245,7 +247,7 @@ class TestCodesScene(QtWidgets.QWidget):
         self.main_controller = main_controller
         self.initUI()
 
-    async def initUI(self):
+    def initUI(self):
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(50, 50, 50, 50)
 
@@ -346,12 +348,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_scene.start_btn.clicked.connect(self.show_waiting_screen)
         self.drive_scene.stop_btn.clicked.connect(self.return_to_main)
 
-    async def update_pullcord(self):
+    def update_pullcord(self):
         if GPIO.input(pullcord) == GPIO.LOW and not self.main_scene.pullcord_active:
             print("Pullcord losgelassen")
             self.main_scene.pullcord_active = True
             self.drive_scene.show_points()
-            await controller.run()
+            #controller.run() - fixen mit async !!!
 
     def show_waiting_screen(self):
         self.stacked.setCurrentIndex(2)
