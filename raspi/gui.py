@@ -1,11 +1,14 @@
 import sys
 import os
 import subprocess
+import RPi.GPIO as GPIO
 from PyQt5 import QtWidgets, QtCore, QtGui
 import random
 from main import RobotController
 
 # hilfe: https://chatgpt.com/share/680cd025-864c-8000-8271-5632adeeb5b3
+
+pullcord = 22
 
 class MainScene(QtWidgets.QWidget):
     def __init__(self, main_controller: RobotController):
@@ -17,6 +20,8 @@ class MainScene(QtWidgets.QWidget):
         
         self.main_controller = main_controller
         
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         self.initUI()
 
     def initUI(self):
@@ -235,10 +240,10 @@ class DebugScene(QtWidgets.QWidget):
 
 
 class TestCodesScene(QtWidgets.QWidget):
-    async def __init__(self, main_controller: RobotController):
+    def __init__(self, main_controller: RobotController):
         super().__init__()
         self.main_controller = main_controller
-        await self.initUI()
+        self.initUI()
 
     async def initUI(self):
         layout = QtWidgets.QVBoxLayout()
@@ -254,16 +259,16 @@ class TestCodesScene(QtWidgets.QWidget):
         close_layout.addWidget(close_btn)
         layout.addLayout(close_layout)
 
-        for text, handler in [
-            ("Drive 100 →", await self.main_controller.motor_controller.drive_distance(100)),
-            ("Drive 100 ←", await self.main_controller.motor_controller.drive_distance(-100)),
-            ("Turn 90°", await self.main_controller.motor_controller.turn_angle(90)),
-            ("Turn -90°", await self.main_controller.motor_controller.turn_angle(-90))
+        for text, action in [
+            ("Drive 100 →", lambda: self.main_controller.motor_controller.drive_distance(100)),
+            ("Drive 100 ←", lambda: self.main_controller.motor_controller.drive_distance(-100)),
+            ("Turn 90°", lambda: self.main_controller.motor_controller.turn_angle(90)),
+            ("Turn -90°", lambda: self.main_controller.motor_controller.turn_angle(-90))
         ]:
             btn = QtWidgets.QPushButton(text)
             btn.setFixedHeight(80)
             btn.setStyleSheet("font-size: 24px; border-radius: 10px;")
-            btn.clicked.connect(handler)
+            btn.clicked.connect(lambda _, a=action: asyncio.create_task(a()))
             layout.addWidget(btn)
 
         back_btn = QtWidgets.QPushButton("Back")
@@ -319,7 +324,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.showFullScreen()
         self.timer = QtCore.QTimer()
         self.main_controller = main_controller
-        # self.timer.timeout.connect(self.update_pullcord)
+        self.timer.timeout.connect(self.update_pullcord)
         # des an für pullcord
         
         self.timer.start(500)
@@ -341,22 +346,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_scene.start_btn.clicked.connect(self.show_waiting_screen)
         self.drive_scene.stop_btn.clicked.connect(self.return_to_main)
 
+    async def update_pullcord(self):
+        if GPIO.input(pullcord) == GPIO.LOW and not self.main_scene.pullcord_active:
+            print("Pullcord losgelassen")
+            self.main_scene.pullcord_active = True
+            self.drive_scene.show_points()
+            await controller.run()
+
     def show_waiting_screen(self):
         self.stacked.setCurrentIndex(2)
         self.drive_scene.setStyleSheet("background-color: white;")
-        self.controller.set_tactic(self.selected_position, self.selected_tactic)
+        selected_position = self.main_scene.selected_position
+        selected_tactic = self.main_scene.selected_tactic
+        self.main_controller.set_tactic(selected_position, selected_tactic)
 
     def return_to_main(self):
         self.stacked.setCurrentIndex(0)
         self.drive_scene.points_label.hide()
         self.drive_scene.value_label.setText("Waiting for pullcord...")
         self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
-    
-    async def activate_pullcord(self):
-        self.drive_scene.show_points()
-        self.main_scene.update_pullcord_status(True)
-        await controller.run()
-        # pullcord gezogen
+        self.main_scene.pullcord_active = False
 
 # Positionsangaben für das Spielfeld
 yellow_positions = [
