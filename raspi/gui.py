@@ -7,12 +7,56 @@ import random
 from main import RobotController
 import asyncio
 import threading
+import time
 
 # pin
 pullcord = 22
 
+# Create a global event loop for the asyncio tasks
+event_loop = None
+thread = None
+
+def run_async_task(task):
+    """Helper function to run async tasks in the existing event loop"""
+    if event_loop is not None:
+        return asyncio.run_coroutine_threadsafe(task, event_loop)
+    else:
+        print("Event loop not initialized!")
+        return None
+
+class AsyncRunner:
+    """Manages the asyncio event loop in a separate thread"""
+    def __init__(self):
+        self.loop = None
+        self.thread = None
+        self.running = False
+        
+    def start(self):
+        def run_event_loop():
+            self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
+            self.running = True
+            self.loop.run_forever()
+        
+        if not self.running:
+            self.thread = threading.Thread(target=run_event_loop, daemon=True)
+            self.thread.start()
+            # Wait a moment for the loop to start
+            time.sleep(0.1)
+    
+    def stop(self):
+        if self.running and self.loop:
+            self.loop.call_soon_threadsafe(self.loop.stop)
+            self.thread.join(timeout=1.0)
+            self.running = False
+    
+    def run_task(self, coro):
+        if self.running and self.loop:
+            return asyncio.run_coroutine_threadsafe(coro, self.loop)
+        return None
+
 class MainScene(QtWidgets.QWidget):
-    def __init__(self, main_controller: RobotController):
+    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
         super().__init__()
         self.selected_color = None
         self.selected_position : int | None = None
@@ -20,6 +64,7 @@ class MainScene(QtWidgets.QWidget):
         self.pullcord_active = False
         
         self.main_controller = main_controller
+        self.async_runner = async_runner
         
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
@@ -179,10 +224,11 @@ class MainScene(QtWidgets.QWidget):
 
 
 class DebugScene(QtWidgets.QWidget):
-    def __init__(self, main_controller: RobotController):
+    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
         super().__init__()
         self.robot_data = {'x': 0.0, 'y': 0.0, 'angle': 0.0, 'goal_x': 100.0, 'goal_y': 200.0}
         self.main_controller = main_controller
+        self.async_runner = async_runner
         self.initUI()
 
     def initUI(self):
@@ -232,10 +278,10 @@ class DebugScene(QtWidgets.QWidget):
             ['lxterminal', '-e', f'wvkbd-mobintl -H 150 -L 250'],
             env=dict(os.environ)
         )
-    def on_clean_wheels(self): pass
-    def on_stop(self): pass
-    #async def on_clean_wheels(self): await self.main_controller.motor_controller.clean_wheels()
-    #async def on_stop(self): await self.main_controller.motor_controller.set_stop()
+    def on_clean_wheels(self): 
+        self.async_runner.run_task(self.main_controller.motor_controller.clean_wheels())
+    def on_stop(self): 
+        self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
     def on_show_camera(self):
         subprocess.Popen(
             ['lxterminal', '-e', f'python3 /home/eurobot/main-bot/raspi/camera_window.py'],
@@ -251,9 +297,10 @@ class DebugScene(QtWidgets.QWidget):
 
 
 class TestCodesScene(QtWidgets.QWidget):
-    def __init__(self, main_controller: RobotController):
+    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
         super().__init__()
         self.main_controller = main_controller
+        self.async_runner = async_runner
         self.initUI()
 
     def initUI(self):
@@ -279,7 +326,7 @@ class TestCodesScene(QtWidgets.QWidget):
             btn = QtWidgets.QPushButton(text)
             btn.setFixedHeight(80)
             btn.setStyleSheet("font-size: 24px; border-radius: 10px;")
-            btn.clicked.connect(lambda _, a=action: asyncio.create_task(a()))
+            btn.clicked.connect(lambda _, a=action: self.async_runner.run_task(a()))
             layout.addWidget(btn)
 
         back_btn = QtWidgets.QPushButton("Back")
@@ -292,11 +339,14 @@ class TestCodesScene(QtWidgets.QWidget):
 
 
 class DriveScene(QtWidgets.QWidget):
-    def __init__(self, main_controller: RobotController):
+    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
         super().__init__()
+        self.main_controller = main_controller
+        self.async_runner = async_runner
+        self.points = 0
+        self.robot_running = False
         self.initUI()
         self.points_visible = False
-        self.main_controller = main_controller
 
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
@@ -305,7 +355,7 @@ class DriveScene(QtWidgets.QWidget):
         self.stop_btn = QtWidgets.QPushButton("STOP")
         self.stop_btn.setFixedSize(120, 60)
         self.stop_btn.setStyleSheet("background-color: red; font-size: 24px; color: white; border-radius: 10px;")
-        self.stop_btn.clicked.connect(lambda: os.system("killall python3"))
+        self.stop_btn.clicked.connect(self.stop_robot)
         layout.addWidget(self.stop_btn, alignment=QtCore.Qt.AlignTop | QtCore.Qt.AlignRight)
 
         self.value_label = QtWidgets.QLabel("Waiting for pullcord...")
@@ -326,27 +376,58 @@ class DriveScene(QtWidgets.QWidget):
         self.value_label.setText("Points")
         self.points_label.show()
         self.value_label.setStyleSheet("font-size: 60px; font-weight: bold;")
+        
+    def start_robot(self):
+        if not self.robot_running:
+            self.robot_running = True
+            self.async_runner.run_task(self.run_robot_controller())
+            
+    def stop_robot(self):
+        self.robot_running = False
+        
+    async def run_robot_controller(self):
+        """Run the robot controller asynchronously"""
+        await self.main_controller.start()
+        
+        while self.robot_running:
+            try:
+                not_done = await self.main_controller.run()
+                if not not_done:
+                    self.robot_running = False
+                    break
+                # Update points in the UI
+                self.points = self.points + 1  # Replace with actual points logic
+                QtCore.QMetaObject.invokeMethod(
+                    self.points_label, "setText", 
+                    QtCore.Qt.QueuedConnection,
+                    QtCore.Q_ARG(str, str(self.points))
+                )
+                await asyncio.sleep(0.1)  # Small delay to not overload the CPU
+            except Exception as e:
+                print(f"Error in robot controller: {e}")
+                self.robot_running = False
+                break
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, main_controller: RobotController):
+    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
         super().__init__()
-        self.main_controller = controller
+        self.main_controller = main_controller
+        self.async_runner = async_runner
         self.initUI()
         self.showFullScreen()
         self.timer = QtCore.QTimer()
-        self.main_controller = main_controller
         self.timer.timeout.connect(self.update_pullcord)
 
-        # des an für pullcord
+        # Start checking for pullcord
         self.timer.start(500)
 
     def initUI(self):
         self.stacked = QtWidgets.QStackedWidget()
-        self.main_scene = MainScene(self.main_controller)
-        self.debug_scene = DebugScene(self.main_controller)
-        self.drive_scene = DriveScene(self.main_controller)
-        self.testcodes_scene = TestCodesScene(self.main_controller)
+        self.main_scene = MainScene(self.main_controller, self.async_runner)
+        self.debug_scene = DebugScene(self.main_controller, self.async_runner)
+        self.drive_scene = DriveScene(self.main_controller, self.async_runner)
+        self.testcodes_scene = TestCodesScene(self.main_controller, self.async_runner)
         
         self.stacked.addWidget(self.main_scene)
         self.stacked.addWidget(self.debug_scene)
@@ -363,7 +444,8 @@ class MainWindow(QtWidgets.QMainWindow):
             print("Pullcord losgelassen")
             self.main_scene.pullcord_active = True
             self.drive_scene.show_points()
-            #controller.run() - fixen mit async !!!
+            # Start the robot controller in the asyncio thread
+            self.drive_scene.start_robot()
 
     def show_waiting_screen(self):
         self.stacked.setCurrentIndex(2)
@@ -373,6 +455,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_controller.set_tactic(selected_position, selected_tactic)
 
     def return_to_main(self):
+        self.drive_scene.stop_robot()
         self.stacked.setCurrentIndex(0)
         self.drive_scene.points_label.hide()
         self.drive_scene.value_label.setText("Waiting for pullcord...")
@@ -392,8 +475,19 @@ blue_positions = [
 ]
 
 if __name__ == '__main__':
+    # Initialize the asyncio runner in a separate thread
+    async_runner = AsyncRunner()
+    async_runner.start()
+    
+    # Initialize robot controller
     controller = RobotController()
+    
+    # Start PyQt application
     app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow(controller)
+    window = MainWindow(controller, async_runner)
     window.show()
-    sys.exit(app.exec_())
+    
+    # Clean up on exit
+    result = app.exec_()
+    async_runner.stop()
+    sys.exit(result)
