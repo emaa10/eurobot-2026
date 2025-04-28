@@ -223,20 +223,20 @@ void loop() {
     */
    for (int i = 0; i <= 100; i++) {
     digitalWrite(STEPPER1_STEP, HIGH);
-    digitalWrite(STEPPER1_STEP, HIGH);
+    digitalWrite(STEPPER2_STEP, HIGH);
     delayMicroseconds(1200);
     digitalWrite(STEPPER1_STEP, LOW);
-    digitalWrite(STEPPER1_STEP, LOW);
+    digitalWrite(STEPPER2_STEP, LOW);
     delayMicroseconds(1200);
    }
    digitalWrite(STEPPER1_DIR, HIGH);
    digitalWrite(STEPPER2_DIR, HIGH);
    for (int i = 0; i <= 100; i++) {
     digitalWrite(STEPPER1_STEP, HIGH);
-    digitalWrite(STEPPER1_STEP, HIGH);
+    digitalWrite(STEPPER2_STEP, HIGH);
     delayMicroseconds(1200);
     digitalWrite(STEPPER1_STEP, LOW);
-    digitalWrite(STEPPER1_STEP, LOW);
+    digitalWrite(STEPPER2_STEP, LOW);
     delayMicroseconds(1200);
    }
    digitalWrite(25, HIGH);
