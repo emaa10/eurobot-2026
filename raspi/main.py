@@ -18,7 +18,7 @@ class RobotController:
         self.y = 0
         self.theta = 0.0
         
-        logging.basicConfig(filename='eurobot.log', level=logging.INFO)
+        logging.basicConfig(filename='/home/eurobot/main-bot/raspi/eurobot.log', level=logging.INFO)
         self.logger = logging.getLogger(__name__)
         
         self.time_started = time()

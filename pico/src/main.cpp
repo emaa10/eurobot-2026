@@ -178,8 +178,10 @@ void setup() {
 }
 
 void loop() {
-    servo_drive_left.write(0);
-    servo_drive_left.write(180);
+    servo_plate_gripper.write(0);
+    delay(1000);
+    servo_plate_gripper.write(180);
+    delay(1000);
     // if (Serial.available()) {
     //     String command = Serial.readStringUntil('\n'); 
     //     command.trim();
