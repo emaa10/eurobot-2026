@@ -6,9 +6,9 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 import random
 from main import RobotController
 import asyncio
+import threading
 
-# hilfe: https://chatgpt.com/share/680cd025-864c-8000-8271-5632adeeb5b3
-
+# pin
 pullcord = 22
 
 class MainScene(QtWidgets.QWidget):
@@ -227,12 +227,20 @@ class DebugScene(QtWidgets.QWidget):
     ###############################################################
     def on_shutdown(self): os.system("sudo shutdown now")
     def on_test_codes(self): window.stacked.setCurrentIndex(3)
-    def on_show_keyboard(self): subprocess.Popen(['wvkbd'], env=dict(os.environ, WVKBD_HEIGHT='250'))
+    def on_show_keyboard(self):
+        subprocess.Popen(
+            ['lxterminal', '-e', f'wvkbd-mobintl -H 150 -L 250'],
+            env=dict(os.environ)
+        )
     def on_clean_wheels(self): pass
     def on_stop(self): pass
     #async def on_clean_wheels(self): await self.main_controller.motor_controller.clean_wheels()
     #async def on_stop(self): await self.main_controller.motor_controller.set_stop()
-    def on_show_camera(self): os.system("python3 /home/eurobot/main-bot/raspi/camera_window.py")
+    def on_show_camera(self):
+        subprocess.Popen(
+            ['lxterminal', '-e', f'python3 /home/eurobot/main-bot/raspi/camera_window.py'],
+            env=dict(os.environ)
+        )
     def on_log_tail(self):
         """Open new terminal with log tail command"""
         log_path = "/home/eurobot/main-bot/raspi/eurobot.log"  # Update this path to your actual log file

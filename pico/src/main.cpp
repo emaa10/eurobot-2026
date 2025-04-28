@@ -1,9 +1,8 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-
-Servo servo_drive_left;
-Servo servo_plate_gripper;
+Servo servo_DRIVE_LEFT;
+Servo servo_PLATE_GRIPPER;
 Servo servo3;
 Servo servo4;
 Servo servo5;
@@ -12,7 +11,7 @@ Servo servo7;
 Servo servo8;
 
 /*              GLOBALS            */
-const int tPerStep = 1200;
+const int tPerStep = 800;
 int currentPosStepper1 = 0;
 int currentPosStepper2 = 0;
 int targetPosStepper1 = 0;
@@ -33,7 +32,7 @@ bool stepperMoveActive = false;
 #define SWITCH3 13 // backup
 
 #define SERVO_DRIVE_LEFT 2
-#define SERVO_plate_gripper 3
+#define SERVO_PLATE_GRIPPER 3
 #define SERVO3 6
 #define SERVO4 7
 #define SERVO5 8
@@ -50,8 +49,8 @@ void homeServo(Servo &servo) {
 
 //homes all servos
 void homeServos() {
-    servo_drive_left.write(0);
-    servo_plate_gripper.write(0);
+    servo_DRIVE_LEFT.write(0);
+    servo_PLATE_GRIPPER.write(0);
     servo3.write(0);
     servo4.write(0);
     servo5.write(0);
@@ -123,8 +122,8 @@ void emergencyStop() {
     stepperMoveActive = false;
     digitalWrite(STEPPER1_EN, HIGH);
     digitalWrite(STEPPER2_EN, HIGH);
-    servo_drive_left.detach();
-    servo_plate_gripper.detach();
+    servo_DRIVE_LEFT.detach();
+    servo_PLATE_GRIPPER.detach();
     servo3.detach();
     servo4.detach();
     servo5.detach();
@@ -165,8 +164,8 @@ void setup() {
     digitalWrite(STEPPER1_EN, HIGH);
     digitalWrite(STEPPER2_EN, HIGH);
 
-    servo_drive_left.attach(SERVO_DRIVE_LEFT);
-    servo_plate_gripper.attach(SERVO_plate_gripper);
+    servo_DRIVE_LEFT.attach(SERVO_DRIVE_LEFT, 700, 2600);
+    servo_PLATE_GRIPPER.attach(SERVO_PLATE_GRIPPER, 700, 2600);
     servo3.attach(SERVO3);
     servo4.attach(SERVO4);
     servo5.attach(SERVO5);
@@ -178,57 +177,58 @@ void setup() {
 }
 
 void loop() {
-    servo_plate_gripper.write(0);
-    delay(1000);
-    servo_plate_gripper.write(180);
-    delay(1000);
-    // if (Serial.available()) {
-    //     String command = Serial.readStringUntil('\n'); 
-    //     command.trim();
+    /*if (Serial.available()) {
+        String command = Serial.readStringUntil('\n'); 
+        command.trim();
 
-    //     if (command.length() < 2) {
-    //         Serial.println("f");
-    //         return;
-    //     }
+        if (command.length() < 2) {
+            Serial.println("f");
+            return;
+        }
 
-    //     char device = command.charAt(0);
-    //     int value = command.substring(1).toInt();
+        char device = command.charAt(0);
+        int value = command.substring(1).toInt();
 
-    //     bool success = false;
+        bool success = false;
 
-    //     switch (device) {
-    //         case 'a': 
-    //             digitalWrite(STEPPER1_EN, LOW);
-    //             targetPosStepper1 = value;
-    //             stepperMoveActive = true;
-    //             success = true; 
-    //             break;
-    //         case 'b': 
-    //             digitalWrite(STEPPER2_EN, LOW);
-    //             targetPosStepper2 = value;
-    //             stepperMoveActive = true;
-    //             success = true; 
-    //             break;
-    //         case 's': servo_drive_left.attach(SERVO_DRIVE_LEFT); servo_drive_left.write(value); success = true; break;
-    //         case 't': servo_plate_gripper.attach(SERVO_plate_gripper); servo_plate_gripper.write(value); success = true; break;
-    //         case 'u': servo3.attach(SERVO3); servo3.write(value); success = true; break;
-    //         case 'v': servo4.attach(SERVO4); servo4.write(value); success = true; break;
-    //         case 'w': servo5.attach(SERVO5); servo5.write(value); success = true; break;
-    //         case 'x': servo6.attach(SERVO6); servo6.write(value); success = true; break;
-    //         case 'y': servo7.attach(SERVO7); servo7.write(value); success = true; break;
-    //         case 'h': startupRoutine(); success = true; break;
-    //         case 'e': // Emergency stop command: send "e0"
-    //             emergencyStop(); 
-    //             success = true;
-    //             break;
-    //         default: success = false;
-    //     }
+        switch (device) {
+            case 'a': 
+                digitalWrite(STEPPER1_EN, LOW);
+                targetPosStepper1 = value;
+                stepperMoveActive = true;
+                success = true; 
+                break;
+            case 'b': 
+                digitalWrite(STEPPER2_EN, LOW);
+                targetPosStepper2 = value;
+                stepperMoveActive = true;
+                success = true; 
+                break;
+            case 's': servo_DRIVE_LEFT.attach(SERVO_DRIVE_LEFT); servo_DRIVE_LEFT.write(value); success = true; break;
+            case 't': servo_PLATE_GRIPPER.attach(SERVO_PLATE_GRIPPER); servo_PLATE_GRIPPER.write(value); success = true; break;
+            case 'u': servo3.attach(SERVO3); servo3.write(value); success = true; break;
+            case 'v': servo4.attach(SERVO4); servo4.write(value); success = true; break;
+            case 'w': servo5.attach(SERVO5); servo5.write(value); success = true; break;
+            case 'x': servo6.attach(SERVO6); servo6.write(value); success = true; break;
+            case 'y': servo7.attach(SERVO7); servo7.write(value); success = true; break;
+            case 'h': startupRoutine(); success = true; break;
+            case 'e': // Emergency stop command: send "e0"
+                emergencyStop(); 
+                success = true;
+                break;
+            default: success = false;
+        }
 
-    //     if (!success) {
-    //         Serial.println("f");
-    //     } else {
-    //         if (device != 'e') Serial.println("ok");
-    //     }
-    // }
-    // processSteppers();
+        if (!success) {
+            Serial.println("f");
+        } else {
+            if (device != 'e') Serial.println("ok");
+        }
+    }
+    processSteppers();
+    */
+   servo_PLATE_GRIPPER.write(0);
+   delay(1000);
+//    servo_PLATE_GRIPPER.write(180);
+//    delay(1000);
 }
