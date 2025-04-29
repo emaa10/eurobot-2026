@@ -87,11 +87,11 @@ void servoDriveFlagDown(){
 }
 
 void servoGripRightClosed(){
-    servo_GRIP_RIGHT.write(0);
+    servo_GRIP_RIGHT.write(20);
 }
 
 void servoGripRightOpen(){
-    servo_GRIP_RIGHT.write(80);
+    servo_GRIP_RIGHT.write(60);
 }
 
 void servoRotateRightOutwards(){
@@ -103,11 +103,11 @@ void servoRotateRightInwards(){
 }
 
 void servoRotateRightDeposit(){
-    servo_ROTATE_RIGHT.write(130);
+    servo_ROTATE_RIGHT.write(165);
 }
 
 void servoRotateRightMid(){
-    servo_ROTATE_RIGHT.write(90);
+    servo_ROTATE_RIGHT.write(100);
 }
 
 // ========== motor functions ==========
@@ -297,9 +297,8 @@ void setup() {
     midStepper.setAcceleration(ACCELERATION);
     
     //startupRoutine();
-
-    servoRotateRightMid();
-    servoGripRightOpen();
+    servoGripRightClosed();
+    servoRotateRightDeposit();
 }
 
 void loop() {

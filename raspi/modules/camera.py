@@ -29,6 +29,7 @@ class Camera:
         self.camera_matrix = np.load(matrix_path)
         self.dist_coeffs = np.load(dist_path)
 
+        logging.basicConfig(filename='/home/eurobot/main-bot/raspi/eurobot.log', level=logging.INFO)
         self.logger = logging.getLogger(__name__)
 
         # Initialize Picamera2
@@ -128,7 +129,7 @@ class Camera:
         return True if OK, else False.
         """
         frame = self._get_frame()
-        print("got frame")
+        self.logger.info("Camera: got frame")
         ok, display = self._process_check(frame)
 
         return ok
@@ -165,7 +166,7 @@ class Camera:
                         j += 1
                     groups.append(group)
 
-            print(f"len groups: {len(groups)}")
+            self.logger.info(f"Detected groups: {len(groups)}")
             for group in groups:
                 vecs = [tvecs[i][0] for i in group]
                 avg_t = np.mean(vecs, axis=0)
@@ -249,11 +250,10 @@ class Camera:
             dist_ok = all(
                 0.6 >= np.mean([tvecs[i][0][2]*self.CALIB_FACTOR for i in g]) >= 0.02
                 for g in groups)
-            print(tvecs[0][0][2]*self.CALIB_FACTOR)
             rot_ok = any(-10 < r[2] < 10 for r in rots)
             ok = correct_count and dist_ok and rot_ok
-            print(f"correct count: {correct_count} - dist_ok: {dist_ok} - rot_ok - {rot_ok}")
-            print(f"len groups: {len(groups)}")
+            self.logger.info(f"correct count: {correct_count} - dist_ok: {dist_ok} - rot_ok - {rot_ok}")
+            self.logger.info(f"len groups: {len(groups)}")
 
             for group in groups:
                 pts = []
@@ -341,3 +341,12 @@ class Camera:
         left_dist, right_dist = dist_list[left_idx], dist_list[right_idx]
 
         return left_angle, left_dist, right_angle, right_dist
+
+
+def main():
+    # task = Task(None, [['d500', 't50'], ['d340', 't50'], ['d650', 't76']])
+    # task = Task(None, [])
+    print("started main")
+    
+if __name__ == '__main__':
+    main()
