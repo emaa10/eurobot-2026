@@ -5,7 +5,7 @@ import csv
 from datetime import datetime
 import logging
 
-class SerialManager():
+class Arduino():
     def __init__(self, port="/dev/serial/by-id/usb-Arduino__www.arduino.cc__0042_5583931353835111C0B1-if00", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=3)
         
@@ -58,7 +58,7 @@ class SerialManager():
         self.ser.write(byte_string)
         
 def main():
-    serial_manager = SerialManager()
+    serial_manager = Arduino()
     
     while True:
         serial_manager.logger.info(serial_manager.read_input())

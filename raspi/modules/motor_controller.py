@@ -11,7 +11,7 @@ import time
 import logging
 
 from modules.drive_state import DriveState
-from modules.arduino_com import SerialManager
+from modules.arduino_com import Arduino
 
 class ServoClock:
     '''This class can be used to keep a controller's time base
@@ -186,7 +186,7 @@ class MotorController():
 
         self.poller = Poller(self.controllers, args)
         
-        self.serial_manager = SerialManager()
+        self.serial_manager = Arduino()
         
         self.logger = logging.getLogger(__name__)
         

@@ -176,6 +176,29 @@ class MainScene(QtWidgets.QWidget):
 
         self.setLayout(self.layout)
 
+    def add_close_and_stop_buttons(self, layout, stop_callback):
+        button_layout = QtWidgets.QHBoxLayout()
+        stop_btn = QtWidgets.QPushButton("STOP")
+        stop_btn.setFixedSize(100, 40)
+        stop_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        stop_btn.clicked.connect(stop_callback)
+
+        close_btn = QtWidgets.QPushButton("X")
+        close_btn.setFixedSize(40, 40)
+        close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        close_btn.clicked.connect(QtWidgets.QApplication.quit)
+
+        button_layout.addWidget(stop_btn)
+        button_layout.addStretch()
+        button_layout.addWidget(close_btn)
+        layout.addLayout(button_layout)
+
+    def stop_everything(self):
+        # e0
+        self.main_controller.stop_motors()
+        sys.exit(0)  # stop motors und kill python
+
+
     def on_color_changed(self, button, checked):
         if checked:
             self.selected_color = button.text()
@@ -249,6 +272,7 @@ class DebugScene(QtWidgets.QWidget):
         btns = [
             ("Shutdown", self.on_shutdown),
             ("Test Codes", self.on_test_codes),
+            ("Pico Codes", self.on_pico_codes),
             ("Show Keyboard", self.on_show_keyboard),
             ("Clean Wheels", self.on_clean_wheels),
             ("Show Camera Stream", self.on_show_camera),
@@ -262,7 +286,7 @@ class DebugScene(QtWidgets.QWidget):
             btn.clicked.connect(handler)
             layout.addWidget(btn)
 
-        back_btn = QtWidgets.QPushButton("Zurück")
+        back_btn = QtWidgets.QPushButton("Back")
         back_btn.setFixedHeight(50)
         back_btn.setStyleSheet("font-size: 20px; background-color: #ff4444; border-radius: 8px;")
         back_btn.clicked.connect(lambda: window.stacked.setCurrentIndex(0))
@@ -270,9 +294,32 @@ class DebugScene(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
+    def add_close_and_stop_buttons(self, layout, stop_callback):
+        button_layout = QtWidgets.QHBoxLayout()
+        stop_btn = QtWidgets.QPushButton("STOP")
+        stop_btn.setFixedSize(100, 40)
+        stop_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        stop_btn.clicked.connect(stop_callback)
+
+        close_btn = QtWidgets.QPushButton("X")
+        close_btn.setFixedSize(40, 40)
+        close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        close_btn.clicked.connect(QtWidgets.QApplication.quit)
+
+        button_layout.addWidget(stop_btn)
+        button_layout.addStretch()
+        button_layout.addWidget(close_btn)
+        layout.addLayout(button_layout)
+
+    def stop_everything(self):
+        # e0
+        self.main_controller.stop_motors()
+        sys.exit(0)  # stop motors und kill python
+
     ###############################################################
     def on_shutdown(self): os.system("sudo shutdown now")
     def on_test_codes(self): window.stacked.setCurrentIndex(3)
+    def on_pico_codes(self): window.stacked.setCurrentIndex(4)
     def on_show_keyboard(self):
         subprocess.Popen(
             ['lxterminal', '-e', f'wvkbd-mobintl -H 150 -L 250'],
@@ -337,6 +384,97 @@ class TestCodesScene(QtWidgets.QWidget):
 
         self.setLayout(layout)
 
+    def add_close_and_stop_buttons(self, layout, stop_callback):
+        button_layout = QtWidgets.QHBoxLayout()
+        stop_btn = QtWidgets.QPushButton("STOP")
+        stop_btn.setFixedSize(100, 40)
+        stop_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        stop_btn.clicked.connect(stop_callback)
+
+        close_btn = QtWidgets.QPushButton("X")
+        close_btn.setFixedSize(40, 40)
+        close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        close_btn.clicked.connect(QtWidgets.QApplication.quit)
+
+        button_layout.addWidget(stop_btn)
+        button_layout.addStretch()
+        button_layout.addWidget(close_btn)
+        layout.addLayout(button_layout)
+
+    def stop_everything(self):
+        # e0
+        self.main_controller.stop_motors()
+        sys.exit(0)  # stop motors und kill python
+
+class PicoScene(QtWidgets.QWidget):
+    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
+        super().__init__()
+        self.main_controller = main_controller
+        self.async_runner = async_runner
+        self.initUI()
+
+    def initUI(self):
+        layout = QtWidgets.QVBoxLayout()
+        layout.setContentsMargins(50, 50, 50, 50)
+
+        # Close Button
+        close_layout = QtWidgets.QHBoxLayout()
+        close_layout.addStretch()
+        close_btn = QtWidgets.QPushButton("X")
+        close_btn.setFixedSize(40, 40)
+        close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        close_btn.clicked.connect(QtWidgets.QApplication.quit)
+        close_layout.addWidget(close_btn)
+        layout.addLayout(close_layout)
+
+        stop_btn = QtWidgets.QPushButton("STOP")
+        stop_btn.setFixedHeight(60)
+        stop_btn.setStyleSheet("font-size: 24px; background-color: #FE4F58; border-radius: 10px;")
+        stop_btn.clicked.connect(lambda: window.stacked.setCurrentIndex(1))
+        layout.addWidget(stop_btn)
+
+        for text, action in [
+            ("Button 1", lambda: None),
+            ("Button 2", lambda: None),
+            ("Button 3", lambda: None),
+            ("Button 4", lambda: None),
+            ("Button 5", lambda: None)
+        ]:
+            btn = QtWidgets.QPushButton(text)
+            btn.setFixedHeight(80)
+            btn.setStyleSheet("font-size: 24px; border-radius: 10px;")
+            btn.clicked.connect(lambda _, a=action: self.async_runner.run_task(a()))
+            layout.addWidget(btn)
+
+        back_btn = QtWidgets.QPushButton("Back")
+        back_btn.setFixedHeight(60)
+        back_btn.setStyleSheet("font-size: 24px; background-color: #ff4444; border-radius: 10px;")
+        back_btn.clicked.connect(lambda: window.stacked.setCurrentIndex(1))
+        layout.addWidget(back_btn)
+
+        self.setLayout(layout)
+
+    def add_close_and_stop_buttons(self, layout, stop_callback):
+        button_layout = QtWidgets.QHBoxLayout()
+        stop_btn = QtWidgets.QPushButton("STOP")
+        stop_btn.setFixedSize(100, 40)
+        stop_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        stop_btn.clicked.connect(stop_callback)
+
+        close_btn = QtWidgets.QPushButton("X")
+        close_btn.setFixedSize(40, 40)
+        close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        close_btn.clicked.connect(QtWidgets.QApplication.quit)
+
+        button_layout.addWidget(stop_btn)
+        button_layout.addStretch()
+        button_layout.addWidget(close_btn)
+        layout.addLayout(button_layout)
+
+    def stop_everything(self):
+        # e0
+        self.main_controller.stop_motors()
+        sys.exit(0)  # stop motors und kill python
 
 class DriveScene(QtWidgets.QWidget):
     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
@@ -371,6 +509,28 @@ class DriveScene(QtWidgets.QWidget):
         layout.addWidget(self.points_label)
 
         self.setLayout(layout)
+
+    def add_close_and_stop_buttons(self, layout, stop_callback):
+        button_layout = QtWidgets.QHBoxLayout()
+        stop_btn = QtWidgets.QPushButton("STOP")
+        stop_btn.setFixedSize(100, 40)
+        stop_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        stop_btn.clicked.connect(stop_callback)
+
+        close_btn = QtWidgets.QPushButton("X")
+        close_btn.setFixedSize(40, 40)
+        close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        close_btn.clicked.connect(QtWidgets.QApplication.quit)
+
+        button_layout.addWidget(stop_btn)
+        button_layout.addStretch()
+        button_layout.addWidget(close_btn)
+        layout.addLayout(button_layout)
+
+    def stop_everything(self):
+        # e0
+        self.main_controller.stop_motors()
+        sys.exit(0)  # stop motors und kill python
     
     def show_points(self):
         self.value_label.setText("Points")
@@ -430,23 +590,45 @@ class MainWindow(QtWidgets.QMainWindow):
         self.debug_scene = DebugScene(self.main_controller, self.async_runner)
         self.drive_scene = DriveScene(self.main_controller, self.async_runner)
         self.testcodes_scene = TestCodesScene(self.main_controller, self.async_runner)
+        self.picocodes_scene = PicoScene(self.main_controller, self.async_runner)
         
         self.stacked.addWidget(self.main_scene)
         self.stacked.addWidget(self.debug_scene)
         self.stacked.addWidget(self.drive_scene)
         self.stacked.addWidget(self.testcodes_scene)
+        self.stacked.addWidget(self.picocodes_scene)
 
         self.setCentralWidget(self.stacked)
         self.main_scene.debug_btn.clicked.connect(lambda: self.stacked.setCurrentIndex(1))
         self.main_scene.start_btn.clicked.connect(self.show_waiting_screen)
         self.drive_scene.stop_btn.clicked.connect(self.return_to_main)
 
+    def add_close_and_stop_buttons(self, layout, stop_callback):
+        button_layout = QtWidgets.QHBoxLayout()
+        stop_btn = QtWidgets.QPushButton("STOP")
+        stop_btn.setFixedSize(100, 40)
+        stop_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        stop_btn.clicked.connect(stop_callback)
+
+        close_btn = QtWidgets.QPushButton("X")
+        close_btn.setFixedSize(40, 40)
+        close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+        close_btn.clicked.connect(QtWidgets.QApplication.quit)
+
+        button_layout.addWidget(stop_btn)
+        button_layout.addStretch()
+        button_layout.addWidget(close_btn)
+        layout.addLayout(button_layout)
+
+    def stop_everything(self):
+        # e0
+        self.main_controller.stop_motors()
+        sys.exit(0)  # stop motors und kill python
+
     def update_pullcord(self):
         if GPIO.input(pullcord) == GPIO.HIGH and not self.main_scene.pullcord_active and self.setup_complete:
-            #print("Pullcord losgelassen")
             self.main_scene.pullcord_active = True
             self.drive_scene.show_points()
-            # Start the robot controller in the asyncio thread
             self.drive_scene.start_robot()
 
     def show_waiting_screen(self):
