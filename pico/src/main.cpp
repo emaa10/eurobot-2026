@@ -11,9 +11,9 @@
 #define MID_STEPPER_STEP 20 
 
 // Define the limit switches
-#define SWITCH1 13 // backup
+#define SWITCH1 15 // backup
 #define SWITCH2 14 // -> MID_stepper
-#define SWITCH3 15 // -> RIGHT_stepper
+#define SWITCH3 13 // -> RIGHT_stepper
 
 // Define servo pins
 #define SERVO_DRIVE_LEFT 2
@@ -47,8 +47,8 @@ bool stepperMoveActive = false;
 
 // Stepper parameters
 const float MAX_SPEED = 1000;      // Maximum speed in steps/second
-const float ACCELERATION = 500;    // Acceleration in steps/second^2
-const float HOMING_SPEED = 400;    // Speed during homing
+const float ACCELERATION = 10000;    // Acceleration in steps/second^2
+const float HOMING_SPEED = 1000;    // Speed during homing
 
 // ========== motor functions ==========
 
@@ -74,31 +74,22 @@ bool steppersRunning() {
     return rightStepper.isRunning() || midStepper.isRunning();
 }
 
-// Check if limit switch is activated
-bool isLimitSwitchActivated(int pin) {
-    return digitalRead(pin) == LOW; // LOW means switch is pressed (normally open)
-}
-
-// Home both stepper motors simultaneously
 void homeSteppers() {
-    // Set homing speeds and accelerations
     rightStepper.setMaxSpeed(HOMING_SPEED);
     rightStepper.setAcceleration(ACCELERATION);
     midStepper.setMaxSpeed(HOMING_SPEED);
     midStepper.setAcceleration(ACCELERATION);
     
-    // Set homing direction (negative for right, positive for mid)
     rightStepper.setSpeed(-HOMING_SPEED);
-    midStepper.setSpeed(HOMING_SPEED);
+    midStepper.setSpeed(-HOMING_SPEED);
     
     bool rightHomed = false;
     bool midHomed = false;
     
-    // Run both steppers until both hit their limit switches
     while (!rightHomed || !midHomed) {
-        // Check right stepper
+        
         if (!rightHomed) {
-            if (isLimitSwitchActivated(SWITCH3)) {
+            if (!digitalRead(SWITCH3)) {
                 rightStepper.stop();
                 rightStepper.setCurrentPosition(0);
                 rightHomed = true;
@@ -108,9 +99,8 @@ void homeSteppers() {
             }
         }
         
-        // Check mid stepper
         if (!midHomed) {
-            if (isLimitSwitchActivated(SWITCH2)) {
+            if (!digitalRead(SWITCH2)) {
                 midStepper.stop();
                 midStepper.setCurrentPosition(0);
                 midHomed = true;
@@ -123,41 +113,28 @@ void homeSteppers() {
         yield(); // Allow other processes to run
     }
     
-    // Both steppers have hit their limit switches
-    // Now back off from switches slightly
-    rightStepper.moveTo(50);  // Move 50 steps away from limit switch
-    midStepper.moveTo(-50);   // Move 50 steps away from limit switch
+    rightStepper.moveTo(50); 
+    midStepper.moveTo(50); 
     
-    // Run both steppers simultaneously until they complete their moves
     while (rightStepper.isRunning() || midStepper.isRunning()) {
         rightStepper.run();
         midStepper.run();
         yield();
     }
     
-    // Set current positions as zero
-    rightStepper.setCurrentPosition(0);
-    midStepper.setCurrentPosition(0);
-    
-    // Reset to normal speeds and accelerations
     rightStepper.setMaxSpeed(MAX_SPEED);
     rightStepper.setAcceleration(ACCELERATION);
     midStepper.setMaxSpeed(MAX_SPEED);
     midStepper.setAcceleration(ACCELERATION);
     
-    Serial.println("Both steppers homed");
 }
 
-// Process stepper movements
 void processSteppers() {
-    // Run both steppers simultaneously
     rightStepper.run();
     midStepper.run();
     
-    // Check if both steppers have completed their movement
     if (stepperMoveActive && !steppersRunning()) {
         stepperMoveActive = false;
-        Serial.println("ok");
     }
 }
 
