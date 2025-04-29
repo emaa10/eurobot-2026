@@ -11,8 +11,8 @@ import asyncio
 from time import time
 import logging
 
-LIDAR = False
-CAM = False
+LIDAR = True
+CAM = True
 
 class RobotController:
     def __init__(self):
@@ -29,11 +29,19 @@ class RobotController:
                 
         self.motor_controller = MotorController()
                         
-        self.lidar = Lidar('/dev/ttyUSB0') if LIDAR else None
+        self.lidar = Lidar() if LIDAR else None
 
         self.camera = Camera() if CAM else None
+        
+        if LIDAR and not self.lidar.start_scanning():
+            self.logger.info("Failed to start Lidar")
+            return
+
+        if CAM:
+            self.camera.start()
+            self.logger.info("Camera started")
                     
-        self.task: Task | None = Task(self.motor_controller, self.camera, [['dp200;500;-30']])
+        self.task: Task | None = Task(self.motor_controller, self.camera, self.pico_controller, [['dp200;500;-30']])
         
         self.start_positions = {
             1: [25, 25, 0],
@@ -48,7 +56,7 @@ class RobotController:
             1: [['dd300']],
             2: [['dp200;500;-30']],
             3: [['dd100']],
-            4: [['dd100']],
+            4: [['cc']],
         }
         
     def set_tactic(self, start_pos: int, tactic: int):
@@ -56,7 +64,7 @@ class RobotController:
         self.motor_controller.set_pos(self.x, self.y, self.theta)
         
         tactic = self.tactix[tactic]
-        self.task = Task(self.motor_controller, self.camera, tactic)
+        self.task = Task(self.motor_controller, self.camera, self.pico_controller, tactic)
         
     async def control_loop(self, state: DriveState, latest_scan: list[tuple] | None = None):
         # update pos
@@ -96,15 +104,6 @@ class RobotController:
         self.motor_controller.stop = stop
         
     async def start(self):
-        if LIDAR and not self.lidar.start_scanning():
-            self.logger.info("Failed to start Lidar")
-            return
-
-        if CAM:
-            self.camera.start()
-            self.logger.info("Camera started")
-
-        
         self.task = await self.task.next_action()
         
         self.time_started = time()

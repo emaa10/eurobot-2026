@@ -5,7 +5,7 @@ import queue
 from rplidar import RPLidar
 
 class Lidar:
-    def __init__(self, port: str):
+    def __init__(self, port: str = '/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0'):
         self.port = port
         self.lidar = None
         
@@ -135,34 +135,19 @@ class Lidar:
 
 # Example usage
 def main():
-    lidar = Lidar('/dev/tty.usbserial-0001')  # Update with your port
-    
-    try:
-        self.logger.info("Starting Lidar scanning")
-        if not lidar.start_scanning():
-            self.logger.info("Failed to start Lidar")
-            return
+    lidar = Lidar()  # Update with your port
         
-        # Main loop
-        count = 0
-        while count < 1000:
-            # Get the latest scan with timeout
-            path_clear = lidar.get_latest_scan()
-            
-            if path_clear is not None:
-                self.logger.info(f"Path clear: {path_clear}")
-                count += 1
-            
-            # Check if Lidar thread is still running
-            if not lidar.is_running():
-                self.logger.info("Lidar thread stopped unexpectedly")
-                break
+    try:
+        print("Starting Lidar scanning")
+        if not lidar.start_scanning():
+            print("Failed to start Lidar")
+            return
     
     except KeyboardInterrupt:
-        self.logger.info("Interrupted by user")
+        print("Interrupted by user")
     
     finally:
-        self.logger.info("Stopping Lidar...")
+        print("Stopping Lidar...")
         lidar.stop()
 
 if __name__ == "__main__":

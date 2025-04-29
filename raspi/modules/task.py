@@ -8,13 +8,15 @@ from modules.camera import Camera
 from modules.pathfinding import Pathfinder
 from modules.position import Position
 from modules.drive_state import DriveState
+from modules.pico_com import Pico
 
 import asyncio
 
 class Task():
-    def __init__(self, motor_controller: MotorController | None, camera: Camera | None, action_set: list[list[str]]):
+    def __init__(self, motor_controller: MotorController | None, camera: Camera | None, pico_controller: Pico | None, action_set: list[list[str]]):
         self.motor_controller = motor_controller
         self.camera = camera
+        self.pico_controller = pico_controller
         self.initial_actions = action_set[0]# if we abort and want to add task to end
         self.actions = action_set.pop(0)
         self.current_action = None
@@ -121,13 +123,20 @@ class Task():
                 await self.motor_controller.turn_to(float(value))
                 await asyncio.sleep(0.2)
             case 'cc':
+                print("vor check")
+                print(self.camera.check_cans())
+                print("nach check")
                 if not self.camera.check_cans():
                     await asyncio.sleep(0.5)
                     if not self.camera.check_cans():
+                        self.logger.info("skip")
                         return await self.next_task()
+                    
                 
                 angle, distance = self.camera.get_distance()
                 angle_cans = self.camera.get_angle()
+                
+                self.logger.info(angle_cans)
                 
                 dist = math.sqrt(distance**2-40**2)
                 

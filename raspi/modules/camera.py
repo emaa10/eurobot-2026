@@ -121,10 +121,6 @@ class Camera:
         frame = self._get_frame()
         ok, display = self._process_check(frame)
 
-        # cv2.imshow("Check Cans", display)
-        # cv2.waitKey(3000)
-        # cv2.destroyWindow("Check Cans")
-
         return ok
 
     # Internal: process for distance

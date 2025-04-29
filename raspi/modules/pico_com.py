@@ -41,7 +41,7 @@ def main():
     # serial_manager.set_command('s', 0)
     
     # serial_manager.set_command('s', 130)
-    serial_manager.set_command('b', 0)
+    serial_manager.set_command('h', 0)
     serial_manager.wait_for_ok()
     print('done')
         

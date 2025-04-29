@@ -219,6 +219,17 @@ class MotorController():
                 accel_limit=50, 
                 watchdog_timeout=math.nan
             )
+            
+    async def home(self) -> None:
+        for motor_id, controller in self.controllers.items():
+            await controller.make_position(
+                position=math.nan,  # Don't care about position
+                velocity=0,
+                maximum_torque=max_torque,
+                feedforward_torque=motor1_torque,
+                kp_scale=0.0,  # No position control
+                kd_scale=0.0   # No velocity control
+            )
         
     async def set_stop(self) -> None:
         [await controller.set_stop() for controller in self.controllers.values()]
