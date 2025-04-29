@@ -17,7 +17,7 @@ class Camera:
     IMAGE_WIDTH = 1280
     IMAGE_HEIGHT = 960
     MAX_ANGLE = 32
-    GROUP_DISTANCE = 0.04  # meters
+    GROUP_DISTANCE = 0.04
 
     def __init__(self,
                  matrix_path: str = "camera/camera_matrix.npy",
@@ -165,6 +165,7 @@ class Camera:
                         j += 1
                     groups.append(group)
 
+            print(f"len groups: {len(groups)}")
             for group in groups:
                 vecs = [tvecs[i][0] for i in group]
                 avg_t = np.mean(vecs, axis=0)
@@ -243,14 +244,16 @@ class Camera:
                                 visited[k] = True
                         j += 1
                     groups.append(group)
-
-            correct_count = len(groups) == 4
+            
+            correct_count = len(groups) >= 3
             dist_ok = all(
-                self.GROUP_DISTANCE*5 >= np.mean([tvecs[i][0][2]*self.CALIB_FACTOR for i in g]) >= self.GROUP_DISTANCE
+                0.6 >= np.mean([tvecs[i][0][2]*self.CALIB_FACTOR for i in g]) >= 0.02
                 for g in groups)
+            print(tvecs[0][0][2]*self.CALIB_FACTOR)
             rot_ok = any(-10 < r[2] < 10 for r in rots)
             ok = correct_count and dist_ok and rot_ok
-            self.logging.info(f"correct count: {correct_count} - dist_ok: {dist_ok} - rot_ok - {rot_ok}")
+            print(f"correct count: {correct_count} - dist_ok: {dist_ok} - rot_ok - {rot_ok}")
+            print(f"len groups: {len(groups)}")
 
             for group in groups:
                 pts = []
@@ -261,10 +264,10 @@ class Camera:
                 if pts:
                     cx = int(np.mean([p[0] for p in pts]))
                     cy = int(np.mean([p[1] for p in pts]))
-                    cv2.circle(display, (cx, cy), 10, (0,255,0), -1)
+                    # cv2.circle(display, (cx, cy), 10, (0,255,0), -1)
 
         color = (0,255,0) if ok else (0,0,255)
-        cv2.putText(display, f"Check Cans: {ok}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+        # cv2.putText(display, f"Check Cans: {ok}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
         return ok, display
         
     def _process_angle(self, frame: np.ndarray):

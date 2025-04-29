@@ -86,6 +86,30 @@ void servoDriveFlagDown(){
     servo_DRIVE_FLAG.write(180);
 }
 
+void servoGripRightClosed(){
+    servo_GRIP_RIGHT.write(0);
+}
+
+void servoGripRightOpen(){
+    servo_GRIP_RIGHT.write(80);
+}
+
+void servoRotateRightOutwards(){
+    servo_ROTATE_RIGHT.write(20);
+}
+
+void servoRotateRightInwards(){
+    servo_ROTATE_RIGHT.write(180);
+}
+
+void servoRotateRightDeposit(){
+    servo_ROTATE_RIGHT.write(130);
+}
+
+void servoRotateRightMid(){
+    servo_ROTATE_RIGHT.write(90);
+}
+
 // ========== motor functions ==========
 
 //refer to look up table for servo positions
@@ -274,19 +298,12 @@ void setup() {
     
     //startupRoutine();
 
-    servo_GRIP_RIGHT.write(20);
-
-    servo_ROTATE_RIGHT.write(20);
-
-    // servo_GRIP_RIGHT.write(130);
-
+    servoRotateRightMid();
+    servoGripRightOpen();
 }
 
 void loop() {
     processSteppers();
-
-    // servo_ROTATE_RIGHT.write(90);
-
 }
 
 void setup1(){
