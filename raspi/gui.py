@@ -187,6 +187,7 @@ class MainScene(QtWidgets.QWidget):
     def stop_everything(self):
         self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
         self.main_controller.motor_controller.set_stop()
+        time.sleep(1)
         os.system("pkill python3")
 
     def on_color_changed(self, button, checked):
@@ -294,6 +295,7 @@ class DebugScene(QtWidgets.QWidget):
     def stop_everything(self):
         self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
         self.main_controller.motor_controller.set_stop()
+        time.sleep(1)
         os.system("pkill python3")
 
     ###############################################################
@@ -374,6 +376,7 @@ class TestCodesScene(QtWidgets.QWidget):
     def stop_everything(self):
         self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
         self.main_controller.motor_controller.set_stop()
+        time.sleep(1)
         os.system("pkill python3")
 
 class PicoScene(QtWidgets.QWidget):
@@ -430,6 +433,7 @@ class PicoScene(QtWidgets.QWidget):
     def stop_everything(self):
         self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
         self.main_controller.motor_controller.set_stop()
+        time.sleep(1)
         os.system("pkill python3")
 
 class DriveScene(QtWidgets.QWidget):
@@ -482,6 +486,7 @@ class DriveScene(QtWidgets.QWidget):
     def stop_everything(self):
         self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
         self.main_controller.motor_controller.set_stop()
+        time.sleep(1)
         os.system("pkill python3")
     
     def show_points(self):
