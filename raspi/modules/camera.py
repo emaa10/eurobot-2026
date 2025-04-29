@@ -6,6 +6,8 @@ import cv2.aruco as aruco
 import libcamera
 import threading
 import math
+import os
+import logging
 
 
 class Camera:
@@ -26,6 +28,8 @@ class Camera:
         cv2.ocl.setUseOpenCL(False)
         self.camera_matrix = np.load(matrix_path)
         self.dist_coeffs = np.load(dist_path)
+
+        self.logger = logging.getLogger(__name__)
 
         # Initialize Picamera2
         self.picam2 = Picamera2()
@@ -52,8 +56,8 @@ class Camera:
         self.picam2.start()
         time.sleep(2)  # warm-up
         self.running = True
-        self._thread = threading.Thread(target=self._update_frame, daemon=True)
-        self._thread.start()
+        # self._thread = threading.Thread(target=self._update_frame, daemon=True)
+        # self._thread.start()
 
     def stop(self) -> None:
         """
@@ -75,10 +79,15 @@ class Camera:
         """
         Retrieve the latest frame. Raises if no frame available yet.
         """
-        with self._lock:
-            if self.frame is None:
-                raise RuntimeError("Frame not ready yet. Call start() and wait.")
-            return self.frame.copy()
+        # with self._lock:
+        #     if self.frame is None:
+        #         raise RuntimeError("Frame not ready yet. Call start() and wait.")
+        #     return self.frame.copy()
+
+        frame = self.picam2.capture_array()
+        threading.Thread(target=cv2.imwrite, args=(f"/home/eurobot/Desktop/camera/{time.strftime('%Y%m%d_%H%M%S')}.png", frame)).start()
+        # threading.Thread(target=cv2.imwrite, args=("/home/eurobot/Desktop/image.png", frame)).start()
+        return frame
 
             
     def get_angle(self):
@@ -119,6 +128,7 @@ class Camera:
         return True if OK, else False.
         """
         frame = self._get_frame()
+        print("got frame")
         ok, display = self._process_check(frame)
 
         return ok
@@ -240,6 +250,7 @@ class Camera:
                 for g in groups)
             rot_ok = any(-10 < r[2] < 10 for r in rots)
             ok = correct_count and dist_ok and rot_ok
+            self.logging.info(f"correct count: {correct_count} - dist_ok: {dist_ok} - rot_ok - {rot_ok}")
 
             for group in groups:
                 pts = []
@@ -327,4 +338,3 @@ class Camera:
         left_dist, right_dist = dist_list[left_idx], dist_list[right_idx]
 
         return left_angle, left_dist, right_angle, right_dist
-

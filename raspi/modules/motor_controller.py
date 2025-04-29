@@ -219,17 +219,6 @@ class MotorController():
                 accel_limit=50, 
                 watchdog_timeout=math.nan
             )
-            
-    async def home(self) -> None:
-        for motor_id, controller in self.controllers.items():
-            await controller.make_position(
-                position=math.nan,  # Don't care about position
-                velocity=0,
-                maximum_torque=max_torque,
-                feedforward_torque=motor1_torque,
-                kp_scale=0.0,  # No position control
-                kd_scale=0.0   # No velocity control
-            )
         
     async def set_stop(self) -> None:
         [await controller.set_stop() for controller in self.controllers.values()]
@@ -238,6 +227,20 @@ class MotorController():
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
                 
         return all(data.values[moteus.Register.TRAJECTORY_COMPLETE] for data in servo_data.values())
+    
+    async def get_torque(self):
+        servo_data = {x.id: await x.query() for x in self.controllers.values()}
+        
+        torque = max(data.values[moteus.Register.TORQUE] for data in servo_data.values())
+            
+        return torque
+    
+    async def get_velocity(self):
+        servo_data = {x.id: await x.query() for x in self.controllers.values()}
+        
+        velocity = max(data.values[moteus.Register.VELOCITY] for data in servo_data.values())
+            
+        return velocity
 
     async def override_target(self) -> None:
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
@@ -245,7 +248,7 @@ class MotorController():
         for i, data in enumerate(servo_data.values()):
             self.target_positions[i+1] = self.target_positions[i+1] - data.values[moteus.Register.POSITION]
     
-    async def set_target(self, velocity_limit=60.0, accel_limit=30.0) -> None:
+    async def set_target(self, velocity_limit=60.0, accel_limit=30.0, maximum_torque=0.5) -> None:
         await self.set_stop()
         
         await asyncio.sleep(0.2)
@@ -259,12 +262,28 @@ class MotorController():
                 position=self.target_positions.get(motor_id, 0), 
                 velocity_limit=velocity_limit, 
                 accel_limit=accel_limit, 
+                maximum_torque=maximum_torque,
                 watchdog_timeout=math.nan
             )
             
-    async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0) -> None:
+    async def home(self):
+        [await controller.set_output_exact(position=0.0)
+        for motor_id, controller in self.controllers.items()]
+        
+        await self.drive_to_target(-999, -999, 5, 5, 0.08)
+        
+                
+        while True:
+            torque = await self.get_torque()
+            velocity = await self.get_velocity()
+            print(velocity)
+            if torque > 0.07 and velocity > 4.9: break
+            
+        await self.set_stop()
+            
+    async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0, maximum_torque=0.5) -> None:
         self.target_positions = {1: pos1, 2: -pos2}
-        await self.set_target(velocity_limit, accel_limit)
+        await self.set_target(velocity_limit, accel_limit, maximum_torque)
         
     async def drive_distance(self, dist:int) -> None:
         self.direction = 1 if dist > 0 else -1
@@ -307,6 +326,8 @@ class MotorController():
     async def control_loop(self) -> DriveState:
         
         self.finished = await self.get_finished()
+        
+        self.finished = False
         
         try:
             self.x, self.y, self.theta = self.serial_manager.get_pos()

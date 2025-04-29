@@ -29,7 +29,7 @@ class Task():
                 
         for actions in action_set:
             # self.logger.info(actions)
-            self.add_task(Task(self.motor_controller, [actions]))
+            self.add_task(Task(self.motor_controller, None, None, [actions]))
         
         self.pathfinder = Pathfinder()
         
@@ -72,8 +72,8 @@ class Task():
         if not state.stopped and self.stopped_since: self.stopped_since = None
             
         if self.stopped_since and self.stopped_since + 5 < time() and self.abortable:
-            self.add_task(Task(self.motor_controller, [self.initial_actions]))
-            state.task = await self.next_task(state.x, state.y)
+            self.add_task(Task(self.motor_controller, None, None, [self.initial_actions]))
+            state.task = await self.next_task()
         
         if state.finished:
             self.logger.info(f'x: {state.x}, y: {state.y}, theta: {state.theta}')
@@ -122,16 +122,23 @@ class Task():
             case 'tt':
                 await self.motor_controller.turn_to(float(value))
                 await asyncio.sleep(0.2)
+            case 'dt':
+                await self.motor_controller.home()
+                await asyncio.sleep(0.2)
             case 'cc':
                 print("vor check")
                 print(self.camera.check_cans())
                 print("nach check")
+                print(self.camera.get_distance())
+                print("nach dist")
                 if not self.camera.check_cans():
-                    await asyncio.sleep(0.5)
-                    if not self.camera.check_cans():
-                        self.logger.info("skip")
-                        return await self.next_task()
+                    print("not checkcans")
+                    # await asyncio.sleep(0.5)
+                    # if not self.camera.check_cans():
+                    #     self.logger.info("skip")
+                    #     return await self.next_task()
                     
+                asyncio.sleep(2)
                 
                 angle, distance = self.camera.get_distance()
                 angle_cans = self.camera.get_angle()

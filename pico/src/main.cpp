@@ -16,8 +16,8 @@
 #define SERVO_DRIVE_LEFT 2
 #define SERVO_PLATE_GRIPPER 3
 #define SERVO_DRIVE_FLAG 6
-#define SERVO4 7
-#define SERVO5 8
+#define SERVO_GRIP_RIGHT 7
+#define SERVO_ROTATE_RIGHT 8
 #define SERVO6 9
 #define SERVO7 10       //backup: 11
 #define SERVO8 11
@@ -25,8 +25,8 @@
 Servo servo_DRIVE_LEFT;
 Servo servo_PLATE_GRIPPER;
 Servo servo_DRIVE_FLAG;
-Servo servo4;
-Servo servo5;
+Servo servo_GRIP_RIGHT;
+Servo servo_ROTATE_RIGHT;
 Servo servo6;
 Servo servo7;
 Servo servo8;
@@ -93,8 +93,8 @@ void colisionFreeServos() {
     servoDriveLeftDown();
     servoPlateGripperColisionAvoidence(); // weit vor sodass arm nicht aufsetzt
     servoDriveFlagUP(); // ganz hoch, dann muss später nichtmehr gehomed werden
-    servo4.write(0);
-    servo5.write(0);
+    servo_GRIP_RIGHT.write(0);
+    servo_ROTATE_RIGHT.write(0);
     servo6.write(0);
     servo7.write(0);
     servo8.write(0);
@@ -102,8 +102,8 @@ void colisionFreeServos() {
 
 void positionServos() {
     servoPlateGripperClosed();// weit vor sodass arm nicht aufsetzt
-    servo4.write(0);
-    servo5.write(0);
+    servo_GRIP_RIGHT.write(0);
+    servo_ROTATE_RIGHT.write(0);
     servo6.write(0);
     servo7.write(0);
     servo8.write(0);
@@ -227,8 +227,8 @@ void emergencyStop() {
     servo_DRIVE_LEFT.detach();
     servo_PLATE_GRIPPER.detach();
     servo_DRIVE_FLAG.detach();
-    servo4.detach();
-    servo5.detach();
+    servo_GRIP_RIGHT.detach();
+    servo_ROTATE_RIGHT.detach();
     servo6.detach();
     servo7.detach();
     servo8.detach();
@@ -261,8 +261,8 @@ void setup() {
     servo_DRIVE_LEFT.attach(SERVO_DRIVE_LEFT, 700, 2600);
     servo_PLATE_GRIPPER.attach(SERVO_PLATE_GRIPPER, 700, 2600);
     servo_DRIVE_FLAG.attach(SERVO_DRIVE_FLAG, 700, 2600);
-    servo4.attach(SERVO4);
-    servo5.attach(SERVO5);
+    servo_GRIP_RIGHT.attach(SERVO_GRIP_RIGHT, 700, 2600);
+    servo_ROTATE_RIGHT.attach(SERVO_ROTATE_RIGHT, 700, 2600);
     servo6.attach(SERVO6);
     servo7.attach(SERVO7);
     servo8.attach(SERVO8);
@@ -273,10 +273,20 @@ void setup() {
     midStepper.setAcceleration(ACCELERATION);
     
     //startupRoutine();
+
+    servo_GRIP_RIGHT.write(20);
+
+    servo_ROTATE_RIGHT.write(20);
+
+    // servo_GRIP_RIGHT.write(130);
+
 }
 
 void loop() {
     processSteppers();
+
+    // servo_ROTATE_RIGHT.write(90);
+
 }
 
 void setup1(){
@@ -318,8 +328,8 @@ void loop1(){
             case 's': servo_PLATE_GRIPPER.write(value); success = true; break;
             case 't': servo_DRIVE_FLAG.write(value); success = true; break;
             case 'u': servo_DRIVE_FLAG.write(value); success = true; break;
-            case 'v': servo4.write(value); success = true; break;
-            case 'w': servo5.write(value); success = true; break;
+            case 'v': servo_GRIP_RIGHT.write(value); success = true; break;
+            case 'w': servo_ROTATE_RIGHT.write(value); success = true; break;
             case 'x': servo6.write(value); success = true; break;
             case 'y': servo7.write(value); success = true; break;
             case 'h': startupRoutineBool = true; success = true; break;

@@ -11,7 +11,7 @@ import asyncio
 from time import time
 import logging
 
-LIDAR = True
+LIDAR = False
 CAM = True
 
 class RobotController:
@@ -55,7 +55,7 @@ class RobotController:
         self.tactix = {
             1: [['dd300']],
             2: [['dp200;500;-30']],
-            3: [['dd100']],
+            3: [['dt']],
             4: [['cc']],
         }
         
@@ -121,7 +121,6 @@ class RobotController:
         self.theta = state.theta
         self.task = state.task
         
-        
         await self.control_loop(state, latest_scan)
         
         if LIDAR and not self.lidar.is_running():
@@ -131,11 +130,15 @@ class RobotController:
         return True
 
 async def main():
-    controller = RobotController()
-    await controller.start()
-    not_done = True
-    while not_done:
-        not_done = await controller.run()
+    try:
+        controller = RobotController()
+        await controller.motor_controller.home()
+        
+        while True:
+            await asyncio.sleep(0.5)
+    finally:
+        await controller.motor_controller.set_stop()
+        await asyncio.sleep(0.5)
     
 
 if __name__ == '__main__':
