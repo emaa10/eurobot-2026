@@ -298,7 +298,7 @@ void setup() {
     
     //startupRoutine();
     servoGripRightClosed();
-    servoRotateRightDeposit();
+    servoRotateRightOutwards();
 }
 
 void loop() {

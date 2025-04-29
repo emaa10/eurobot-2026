@@ -530,12 +530,12 @@ class DriveScene(QtWidgets.QWidget):
         
         while self.robot_running:
             try:
-                not_done = await self.main_controller.run()
+                not_done, self.points = await self.main_controller.run()
                 if not not_done:
                     self.robot_running = False
                     break
                     
-                self.points = 0
+                # self.points = 0
                 # Update points display logic
                 if self.points_visible:
                     QtCore.QMetaObject.invokeMethod(

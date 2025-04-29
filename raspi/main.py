@@ -120,6 +120,8 @@ class RobotController:
         self.y = state.y
         self.theta = state.theta
         self.task = state.task
+
+        points = 2
         
         await self.control_loop(state, latest_scan)
         
@@ -127,7 +129,7 @@ class RobotController:
             self.logger.info("Lidar thread stopped unexpectedly")
             return False
                 
-        return True
+        return True, points
 
 async def main():
     try:
