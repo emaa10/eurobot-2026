@@ -37,6 +37,7 @@ AccelStepper midStepper(AccelStepper::DRIVER, MID_STEPPER_STEP, MID_STEPPER_DIR)
 
 bool isHoming = false;    // Flag to indicate homing is in progress
 bool stepperMoveActive = false;
+bool pendingStepperResponse = false;  // Flag to track if we need to send "ok" after steppers finish
 
 const float MAX_SPEED = 1300;      
 const float ACCELERATION = 100000;   
@@ -48,7 +49,7 @@ int MID_stepperTargetPos = 0;
 int RIGHT_stepperStartPos = 350;
 int MID_stepperStartPos = 1500;
 
-bool startupRoutineBool = true;
+bool startupRoutineBool = false;
 
 
 // ========== motor position functions ==========
@@ -202,8 +203,15 @@ void processSteppers() {
     rightStepper.run();
     midStepper.run();
     
+    // Check if steppers were running and now have stopped
     if (stepperMoveActive && !steppersRunning()) {
         stepperMoveActive = false;
+        
+        // Send "ok" only when steppers have finished their movement
+        if (pendingStepperResponse) {
+            Serial.println("ok");
+            pendingStepperResponse = false;
+        }
     }
 }
 
@@ -211,6 +219,7 @@ void emergencyStop() {
     rightStepper.stop();
     midStepper.stop();
     stepperMoveActive = false;
+    pendingStepperResponse = false;
     
     digitalWrite(RIGHT_STEPPER_EN, HIGH);
     digitalWrite(MID_STEPPER_EN, HIGH);
@@ -234,7 +243,6 @@ void setup() {
     
     pinMode(25, OUTPUT);
 
-    // Configure stepper pins
     pinMode(RIGHT_STEPPER_DIR, OUTPUT);
     pinMode(RIGHT_STEPPER_EN, OUTPUT);
     pinMode(RIGHT_STEPPER_STEP, OUTPUT);
@@ -242,7 +250,6 @@ void setup() {
     pinMode(MID_STEPPER_EN, OUTPUT);
     pinMode(MID_STEPPER_STEP, OUTPUT);
 
-    // Configure limit switch pins
     pinMode(SWITCH1, INPUT_PULLUP);
     pinMode(SWITCH2, INPUT_PULLUP);
     pinMode(SWITCH3, INPUT_PULLUP);
@@ -251,7 +258,6 @@ void setup() {
     digitalWrite(RIGHT_STEPPER_EN, HIGH); // Start disabled
     digitalWrite(MID_STEPPER_EN, HIGH);   // Start disabled
 
-    // Attach servos
     servo_DRIVE_LEFT.attach(SERVO_DRIVE_LEFT, 700, 2600);
     servo_PLATE_GRIPPER.attach(SERVO_PLATE_GRIPPER, 700, 2600);
     servo_DRIVE_FLAG.attach(SERVO_DRIVE_FLAG, 700, 2600);
@@ -261,13 +267,12 @@ void setup() {
     servo7.attach(SERVO7);
     servo8.attach(SERVO8);
 
-    // Configure stepper parameters
     rightStepper.setMaxSpeed(MAX_SPEED);
     rightStepper.setAcceleration(ACCELERATION);
     midStepper.setMaxSpeed(MAX_SPEED);
     midStepper.setAcceleration(ACCELERATION);
     
-    startupRoutine();
+    //startupRoutine();
 }
 
 void loop() {
@@ -299,12 +304,14 @@ void loop1(){
                 digitalWrite(RIGHT_STEPPER_EN, LOW);
                 RIGHT_stepperTargetPos = value;
                 stepperMoveActive = true;
+                pendingStepperResponse = true;  // Set flag to indicate response should be sent after movement
                 success = true; 
                 break;
             case 'b': 
                 digitalWrite(MID_STEPPER_EN, LOW);
                 MID_stepperTargetPos = value;
                 stepperMoveActive = true;
+                pendingStepperResponse = true;  // Set flag to indicate response should be sent after movement
                 success = true; 
                 break;
             case 'r': servo_DRIVE_LEFT.write(value); success = true; break;
@@ -325,8 +332,6 @@ void loop1(){
 
         if (!success) {
             Serial.println("f");
-        } else {
-            if (device != 'e') Serial.println("ok");
-        }
+        } 
     }
 }

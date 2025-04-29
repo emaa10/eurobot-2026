@@ -185,11 +185,9 @@ class MainScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        # e0
-        # self.main_controller.stop_motors()
-        # killall python3 noch machen
-        print()
-
+        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
+        self.main_controller.motor_controller.set_stop()
+        os.system("pkill python3")
 
     def on_color_changed(self, button, checked):
         if checked:
@@ -294,9 +292,9 @@ class DebugScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        # e0
-        self.main_controller.stop_motors()
-        sys.exit(0)  # stop motors und kill python
+        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
+        self.main_controller.motor_controller.set_stop()
+        os.system("pkill python3")
 
     ###############################################################
     def on_shutdown(self): os.system("sudo shutdown now")
@@ -374,9 +372,9 @@ class TestCodesScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        # e0
-        self.main_controller.stop_motors()
-        sys.exit(0)  # stop motors und kill python
+        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
+        self.main_controller.motor_controller.set_stop()
+        os.system("pkill python3")
 
 class PicoScene(QtWidgets.QWidget):
     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):

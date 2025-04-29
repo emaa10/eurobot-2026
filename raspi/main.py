@@ -3,6 +3,8 @@ from modules.motor_controller import MotorController
 from modules.drive_state import DriveState
 from modules.lidar import Lidar
 from modules.camera import Camera
+from modules.pico_com import Pico
+from modules.arduino_com import Arduino
 
 import math
 import asyncio
@@ -23,6 +25,8 @@ class RobotController:
         
         self.time_started = time()
         
+        self.pico_controller = Pico()
+                
         self.motor_controller = MotorController()
                         
         self.lidar = Lidar('/dev/ttyUSB0') if LIDAR else None
@@ -127,13 +131,13 @@ class RobotController:
                 
         return True
 
-# async def main():
-#     # controller = RobotController()
-#     # await controller.start()
-#     # not_done = True
-#     # while not_done:
-#     #     not_done = await controller.run()
+async def main():
+    controller = RobotController()
+    await controller.start()
+    not_done = True
+    while not_done:
+        not_done = await controller.run()
     
 
-# if __name__ == '__main__':
-#     asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())
