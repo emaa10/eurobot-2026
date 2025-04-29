@@ -42,7 +42,9 @@ class RobotController:
         
         self.tactix = {
             1: [['dd300']],
-            2: [['dp200;500;-30']]
+            2: [['dp200;500;-30']],
+            3: [['dd100']],
+            4: [['dd100']],
         }
         
     def set_tactic(self, start_pos: int, tactic: int):

@@ -23,6 +23,12 @@ class Pico():
         if line:
             return line[:-2]
         
+    def wait_for_ok(self):
+        while True:
+            status = self.get_status()
+            if status == 'ok': 
+                break
+        
     def set_command(self, command: str, value: int) -> None:
         command_string = f"{command}{value}\n"
         byte_string = str.encode(command_string)
@@ -32,10 +38,6 @@ def main():
     serial_manager = Pico()
     
     serial_manager.set_command('h', 2000)
-    
-    while True:
-        status = serial_manager.get_status()
-        if status != 'ok': print(status)
         
 if __name__ == '__main__':
     main()
