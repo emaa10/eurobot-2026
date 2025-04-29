@@ -67,7 +67,7 @@ class MainScene(QtWidgets.QWidget):
         self.async_runner = async_runner
         
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+        GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         self.initUI()
 
     def initUI(self):
@@ -205,7 +205,7 @@ class MainScene(QtWidgets.QWidget):
                 btn.style().polish(btn)
             self.sender().setProperty("selected", True)
             self.sender().style().polish(self.sender())
-            print(position)
+            # print(position)
             self.selected_position = position
             self.check_selections()
         return handler
@@ -318,8 +318,8 @@ class TestCodesScene(QtWidgets.QWidget):
         layout.addLayout(close_layout)
 
         for text, action in [
-            ("Drive 100 →", lambda: self.main_controller.motor_controller.drive_distance(100)),
-            ("Drive 100 ←", lambda: self.main_controller.motor_controller.drive_distance(-100)),
+            ("Drive 100 →", lambda: self.main_controller.motor_controller.drive_distance(1000)),
+            ("Drive 100 ←", lambda: self.main_controller.motor_controller.drive_distance(-1000)),
             ("Turn 90°", lambda: self.main_controller.motor_controller.turn_angle(90)),
             ("Turn -90°", lambda: self.main_controller.motor_controller.turn_angle(-90))
         ]:
@@ -396,13 +396,14 @@ class DriveScene(QtWidgets.QWidget):
                     self.robot_running = False
                     break
                 # Update points in the UI
-                self.points = self.points + 1  # Replace with actual points logic
+                self.points = 0
+                # hier punkte logik
                 QtCore.QMetaObject.invokeMethod(
                     self.points_label, "setText", 
                     QtCore.Qt.QueuedConnection,
                     QtCore.Q_ARG(str, str(self.points))
                 )
-                await asyncio.sleep(0.1)  # Small delay to not overload the CPU
+                # await asyncio.sleep(0.1)  # Small delay to not overload the CPU
             except Exception as e:
                 print(f"Error in robot controller: {e}")
                 self.robot_running = False
@@ -414,6 +415,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.main_controller = main_controller
         self.async_runner = async_runner
+        self.setup_complete = False
         self.initUI()
         self.showFullScreen()
         self.timer = QtCore.QTimer()
@@ -440,7 +442,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drive_scene.stop_btn.clicked.connect(self.return_to_main)
 
     def update_pullcord(self):
-        if GPIO.input(pullcord) == GPIO.LOW and not self.main_scene.pullcord_active:
+        if GPIO.input(pullcord) == GPIO.HIGH and not self.main_scene.pullcord_active and self.setup_complete:
             #print("Pullcord losgelassen")
             self.main_scene.pullcord_active = True
             self.drive_scene.show_points()
@@ -448,11 +450,20 @@ class MainWindow(QtWidgets.QMainWindow):
             self.drive_scene.start_robot()
 
     def show_waiting_screen(self):
+        self.setup_complete = True
         self.stacked.setCurrentIndex(2)
         self.drive_scene.setStyleSheet("background-color: white;")
         selected_position = self.main_scene.selected_position
         selected_tactic = self.main_scene.selected_tactic
-        self.main_controller.set_tactic(selected_position, selected_tactic)
+        positions = {
+            (220, 122, 84, 84) : 1, #yellow
+            (507, 2, 84, 84) : 2,
+            (665, 290, 84, 84) : 3,
+            (250, 290, 84, 84) : 4, #blue
+            (405, 2, 84, 84) : 5,
+            (695, 125, 84, 84) : 6
+        }
+        self.main_controller.set_tactic(positions[selected_position], selected_tactic)
 
     def return_to_main(self):
         self.drive_scene.stop_robot()

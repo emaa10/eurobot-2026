@@ -6,7 +6,7 @@ from modules.camera import Camera
 
 import math
 import asyncio
-from time import time, sleep
+from time import time
 import logging
 
 LIDAR = False
@@ -29,7 +29,7 @@ class RobotController:
 
         self.camera = Camera() if CAM else None
                     
-#        self.task: Task | None = Task(self.motor_controller, None, [['dp500;200;-30']])
+        self.task: Task | None = Task(self.motor_controller, self.camera, [['dp200;500;-30']])
         
         self.start_positions = {
             1: [25, 25, 0],
@@ -41,7 +41,8 @@ class RobotController:
         }
         
         self.tactix = {
-            1: [['rt']]
+            1: [['dd300']],
+            2: [['dp200;500;-30']]
         }
         
     def set_tactic(self, start_pos: int, tactic: int):
@@ -49,7 +50,7 @@ class RobotController:
         self.motor_controller.set_pos(self.x, self.y, self.theta)
         
         tactic = self.tactix[tactic]
-        self.task = Task(self.motor_controller, tactic)
+        self.task = Task(self.motor_controller, self.camera, tactic)
         
     async def control_loop(self, state: DriveState, latest_scan: list[tuple] | None = None):
         # update pos
@@ -121,18 +122,16 @@ class RobotController:
         if LIDAR and not self.lidar.is_running():
             self.logger.info("Lidar thread stopped unexpectedly")
             return False
-        
-        print(self.x)
-        
+                
         return True
 
-async def main():
-    controller = RobotController()
-    await controller.start()
-    not_done = True
-    while not_done:
-        not_done = await controller.run()
+# async def main():
+#     # controller = RobotController()
+#     # await controller.start()
+#     # not_done = True
+#     # while not_done:
+#     #     not_done = await controller.run()
     
 
-if __name__ == '__main__':
-    asyncio.run(main())
+# if __name__ == '__main__':
+#     asyncio.run(main())

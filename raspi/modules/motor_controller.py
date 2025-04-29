@@ -266,7 +266,7 @@ class MotorController():
     async def turn_angle(self, angle: int) -> None:
         self.direction = 0
         
-        turn = 10.8051
+        turn = 10.8055
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
@@ -302,8 +302,6 @@ class MotorController():
         except:
             self.logger.info("Could not read new pos data")
             
-        print('test')
-
         if self.stop:
             self.finished = False
             if not self.stopped:
