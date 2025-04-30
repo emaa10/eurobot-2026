@@ -213,7 +213,7 @@ class MotorController():
         
     async def get_finished(self) -> bool:
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
-                
+                        
         return all(data.values[moteus.Register.TRAJECTORY_COMPLETE] for data in servo_data.values())
     
     async def get_torque(self):
@@ -226,7 +226,7 @@ class MotorController():
     async def get_velocity(self):
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
         
-        velocity = max(data.values[moteus.Register.VELOCITY] for data in servo_data.values())
+        velocity = min(abs(data.values[moteus.Register.VELOCITY]) for data in servo_data.values())
             
         return velocity
 
@@ -274,13 +274,16 @@ class MotorController():
         [await controller.set_output_exact(position=0.0)
         for motor_id, controller in self.controllers.items()]
         
-        await self.drive_to_target(-999, -999, 10, 50, 0.05)
-                
+        await self.drive_to_target(-999, -999, 8, 50)
+        
+        accellerated = False
+        
         while True:
             torque = await self.get_torque()
             velocity = await self.get_velocity()
-            if torque > 0.049 and velocity > 9.9: break
-            
+            if velocity > 7.9: accellerated = True
+            if accellerated and torque > 0.049 and velocity < 0.1: break
+                        
         await self.set_stop()
         
     async def drive_distance(self, dist:int) -> None:
@@ -323,7 +326,7 @@ class MotorController():
         
     async def control_loop(self) -> DriveState:
         self.finished = await self.get_finished()
-                
+                            
         try:
             self.x, self.y, self.theta = self.serial_manager.get_pos()
         except:
@@ -351,15 +354,10 @@ class MotorController():
 async def main():
     controller = MotorController()
     
-    await controller.drive(50)
+    await controller.clean_wheels()
         
     while True:
         time.sleep(0.5)
-        
-        finished = await controller.get_finished()
-        if finished: break
-        
-    await controller.drive(-50)
 
 
 if __name__ == '__main__':

@@ -384,34 +384,116 @@ class PicoScene(QtWidgets.QWidget):
         super().__init__()
         self.main_controller = main_controller
         self.async_runner = async_runner
+        # Initial stepper positions
+        self.mid_stepper_value = 20    # "left"/mid stepper default
+        self.right_stepper_value = 100  # right stepper default
         self.initUI()
 
+        # On entering scene: send home (h0) and then move to default stepper positions
+        self.main_controller.pico_controller.set_command('h', 0)
+        self.main_controller.pico_controller.set_command('b', self.mid_stepper_value)
+        self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
+
     def initUI(self):
-        layout = QtWidgets.QVBoxLayout()
-        layout.setContentsMargins(50, 50, 50, 50)
+        main_layout = QtWidgets.QVBoxLayout()
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(3)
 
-        self.add_close_and_stop_buttons(layout, self.stop_everything)
+        self.add_close_and_stop_buttons(main_layout, self.stop_everything)
 
-        for text, action in [
-            ("Button 1", lambda: None),
-            ("Button 2", lambda: None),
-            ("Button 3", lambda: None),
-            ("Button 4", lambda: None),
-            ("Button 5", lambda: None)
-        ]:
-            btn = QtWidgets.QPushButton(text)
-            btn.setFixedHeight(80)
-            btn.setStyleSheet("font-size: 24px; border-radius: 10px;")
-            btn.clicked.connect(lambda _, a=action: self.async_runner.run_task(a()))
-            layout.addWidget(btn)
+        # --- Stepper controls: one row with four buttons ---
+        stepper_group = QtWidgets.QGroupBox()
+        stepper_layout = QtWidgets.QHBoxLayout()
 
-        back_btn = QtWidgets.QPushButton("Back")
+        self.create_command_button("Mid Stepper Up", self.step_mid_up, stepper_layout)
+        self.create_command_button("Mid Stepper Down", self.step_mid_down, stepper_layout)
+        self.create_command_button("Right Stepper Up", self.step_right_up, stepper_layout)
+        self.create_command_button("Right Stepper Down", self.step_right_down, stepper_layout)
+
+        stepper_group.setLayout(stepper_layout)
+        main_layout.addWidget(stepper_group)
+
+        # --- Other existing groups ---
+        left_servo_group = QtWidgets.QGroupBox()
+        left_servo_layout = QtWidgets.QHBoxLayout()
+        self.create_command_button("Left Servo Up", lambda: self.main_controller.pico_controller.set_command('r', 0), left_servo_layout)
+        self.create_command_button("Left Servo Down", lambda: self.main_controller.pico_controller.set_command('r', 180), left_servo_layout)
+        left_servo_group.setLayout(left_servo_layout)
+        main_layout.addWidget(left_servo_group)
+
+        plate_gripper_group = QtWidgets.QGroupBox()
+        plate_gripper_layout = QtWidgets.QHBoxLayout()
+        self.create_command_button("Fully Open", lambda: self.main_controller.pico_controller.set_command('s', 180), plate_gripper_layout)
+        self.create_command_button("Grip Plate", lambda: self.main_controller.pico_controller.set_command('s', 120), plate_gripper_layout)
+        self.create_command_button("Collision Avoid", lambda: self.main_controller.pico_controller.set_command('s', 130), plate_gripper_layout)
+        self.create_command_button("Closed", lambda: self.main_controller.pico_controller.set_command('s', 0), plate_gripper_layout)
+        plate_gripper_group.setLayout(plate_gripper_layout)
+        main_layout.addWidget(plate_gripper_group)
+
+        drive_flag_group = QtWidgets.QGroupBox()
+        drive_flag_layout = QtWidgets.QHBoxLayout()
+        self.create_command_button("Flag Up", lambda: self.main_controller.pico_controller.set_command('t', 20), drive_flag_layout)
+        self.create_command_button("Flag Down", lambda: self.main_controller.pico_controller.set_command('t', 180), drive_flag_layout)
+        drive_flag_group.setLayout(drive_flag_layout)
+        main_layout.addWidget(drive_flag_group)
+
+        right_grip_group = QtWidgets.QGroupBox()
+        right_grip_layout = QtWidgets.QHBoxLayout()
+        self.create_command_button("Grip Closed", lambda: self.main_controller.pico_controller.set_command('v', 0), right_grip_layout)
+        self.create_command_button("Grip Open", lambda: self.main_controller.pico_controller.set_command('v', 60), right_grip_layout)
+        right_grip_group.setLayout(right_grip_layout)
+        main_layout.addWidget(right_grip_group)
+
+        right_rotate_group = QtWidgets.QGroupBox()
+        right_rotate_layout = QtWidgets.QHBoxLayout()
+        self.create_command_button("Rotate Outwards", lambda: self.main_controller.pico_controller.set_command('w', 20), right_rotate_layout)
+        self.create_command_button("Rotate Inwards", lambda: self.main_controller.pico_controller.set_command('w', 180), right_rotate_layout)
+        self.create_command_button("Rotate Deposit", lambda: self.main_controller.pico_controller.set_command('w', 165), right_rotate_layout)
+        self.create_command_button("Rotate Mid", lambda: self.main_controller.pico_controller.set_command('w', 100), right_rotate_layout)
+        right_rotate_group.setLayout(right_rotate_layout)
+        main_layout.addWidget(right_rotate_group)
+
+        system_group = QtWidgets.QGroupBox()
+        system_layout = QtWidgets.QHBoxLayout()
+        home_btn = self.create_command_button("Home Everything", lambda: self.main_controller.pico_controller.set_command('h', 0), system_layout)
+        home_btn.setStyleSheet("font-size: 20px; background-color: #85c1e9; border-radius: 10px; padding: 10px;")
+        emergency_btn = self.create_command_button("EMERGENCY STOP", lambda: self.main_controller.pico_controller.set_command('e', 0), system_layout)
+        emergency_btn.setStyleSheet("font-size: 20px; background-color: #e74c3c; color: white; border-radius: 10px; padding: 10px;")
+        system_group.setLayout(system_layout)
+        main_layout.addWidget(system_group)
+
+        back_btn = QtWidgets.QPushButton("Back to Main Menu")
         back_btn.setFixedHeight(60)
         back_btn.setStyleSheet("font-size: 24px; background-color: #ff4444; border-radius: 10px;")
         back_btn.clicked.connect(lambda: window.stacked.setCurrentIndex(1))
-        layout.addWidget(back_btn)
+        main_layout.addWidget(back_btn)
 
-        self.setLayout(layout)
+        self.setLayout(main_layout)
+
+    # Stepper control callbacks
+    def step_mid_up(self):
+        self.mid_stepper_value += 250
+        self.main_controller.pico_controller.set_command('b', self.mid_stepper_value)
+
+    def step_mid_down(self):
+        self.mid_stepper_value = max(0, self.mid_stepper_value - 250)
+        self.main_controller.pico_controller.set_command('b', self.mid_stepper_value)
+
+    def step_right_down(self):
+        self.right_stepper_value += 50
+        self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
+
+    def step_right_up(self):
+        self.right_stepper_value = max(0, self.right_stepper_value - 50)
+        self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
+
+    def create_command_button(self, text, command_func, layout):
+        btn = QtWidgets.QPushButton(text)
+        btn.setFixedHeight(60)
+        btn.setStyleSheet("font-size: 16px; border-radius: 10px; background-color: #f0f0f0;")
+        btn.clicked.connect(command_func)
+        layout.addWidget(btn)
+        return btn
 
     def add_close_and_stop_buttons(self, layout, stop_callback):
         button_layout = QtWidgets.QHBoxLayout()
@@ -419,22 +501,21 @@ class PicoScene(QtWidgets.QWidget):
         stop_btn.setFixedSize(100, 40)
         stop_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
         stop_btn.clicked.connect(stop_callback)
-
         close_btn = QtWidgets.QPushButton("X")
         close_btn.setFixedSize(40, 40)
         close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
         close_btn.clicked.connect(QtWidgets.QApplication.quit)
-
         button_layout.addWidget(stop_btn)
         button_layout.addStretch()
         button_layout.addWidget(close_btn)
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
+        self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
+
 
 class DriveScene(QtWidgets.QWidget):
     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
@@ -452,10 +533,17 @@ class DriveScene(QtWidgets.QWidget):
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(20)
         
-        # Top bar with close button
         top_bar = QtWidgets.QHBoxLayout()
         top_bar.addStretch()
         
+        # Back button (gray)
+        back_btn = QtWidgets.QPushButton("Zurück")
+        back_btn.setFixedSize(60, 40)
+        back_btn.setStyleSheet("font-size: 16px; background-color: #cccccc; border: none; border-radius: 5px;")
+        back_btn.clicked.connect(self.go_back)
+        top_bar.addWidget(back_btn)
+        
+        # Close button (red)
         close_btn = QtWidgets.QPushButton("X")
         close_btn.setFixedSize(40, 40)
         close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
@@ -504,12 +592,20 @@ class DriveScene(QtWidgets.QWidget):
         
         self.setLayout(main_layout)
         
+    def go_back(self):
+        self.main_controller.pico_controller.set_command('h', 0)  # stop all pico actions
+        self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
+        subprocess.Popen(
+            ['lxterminal', '-e', '/home/eurobot/Desktop/restart-gui.sh'],
+            env=os.environ.copy()
+        )
+
     def stop_everything(self):
         self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
-    
+        
     def show_points(self):
         self.value_label.setText("Points")
         self.points_label.show()
@@ -535,7 +631,6 @@ class DriveScene(QtWidgets.QWidget):
                     self.robot_running = False
                     break
                     
-                # self.points = 0
                 # Update points display logic
                 if self.points_visible:
                     QtCore.QMetaObject.invokeMethod(
@@ -547,6 +642,7 @@ class DriveScene(QtWidgets.QWidget):
                 print(f"Error in robot controller: {e}")
                 self.robot_running = False
                 break
+
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):

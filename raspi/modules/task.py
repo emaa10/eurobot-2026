@@ -92,7 +92,7 @@ class Task():
     # 1: closed, 2: open
     async def set_grip_right(self, command: int):
         if(command == 1):
-            self.pico_controller.set_command("v", 20)
+            self.pico_controller.set_command("v", 0)
         else:
             self.pico_controller.set_command("v", 60)
 
@@ -114,9 +114,7 @@ class Task():
         
     async def control_loop(self, time_started) -> DriveState:
         state = await self.motor_controller.control_loop()
-        
-        print(state.finished)
-        
+                
         state.task = self
         
         if state.stopped and not self.stopped_since: self.stopped_since = time()
@@ -175,6 +173,8 @@ class Task():
             case 'hh':
                 await self.motor_controller.home()
                 return await self.next_action()
+            case 'cw':
+                await self.motor_controller.clean_wheels()
             case 'cc':
                 if not self.camera.check_cans():
                     await asyncio.sleep(0.5)
