@@ -213,9 +213,7 @@ class MotorController():
         
     async def get_finished(self) -> bool:
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
-        
-        print(all(data.values[moteus.Register.TRAJECTORY_COMPLETE] for data in servo_data.values()))
-                
+                        
         return all(data.values[moteus.Register.TRAJECTORY_COMPLETE] for data in servo_data.values())
     
     async def get_torque(self):
@@ -277,11 +275,14 @@ class MotorController():
         for motor_id, controller in self.controllers.items()]
         
         await self.drive_to_target(-999, -999, 8, 50, 0.07)
-                
+        
+        accellerated = False
+        
         while True:
             torque = await self.get_torque()
             velocity = await self.get_velocity()
-            if torque > 0.069 and velocity > 7.8: break
+            if velocity > 7.9: accellerated = True
+            if accellerated and torque > 0.069: break
             
         print('homing done')
             
