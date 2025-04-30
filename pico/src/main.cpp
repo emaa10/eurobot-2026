@@ -239,6 +239,17 @@ void processSteppers() {
     }
 }
 
+void reinitializeServos() {
+    servo_DRIVE_LEFT.attach(SERVO_DRIVE_LEFT, 700, 2600);
+    servo_PLATE_GRIPPER.attach(SERVO_PLATE_GRIPPER, 700, 2600);
+    servo_DRIVE_FLAG.attach(SERVO_DRIVE_FLAG, 700, 2600);
+    servo_GRIP_RIGHT.attach(SERVO_GRIP_RIGHT, 700, 2600);
+    servo_ROTATE_RIGHT.attach(SERVO_ROTATE_RIGHT, 700, 2600);
+    servo6.attach(SERVO6);
+    servo7.attach(SERVO7);
+    servo8.attach(SERVO8);
+}
+
 void emergencyStop() {
     rightStepper.stop();
     midStepper.stop();
@@ -350,7 +361,8 @@ void loop1(){
             case 'x': servo6.write(value); success = true; break;
             case 'y': servo7.write(value); success = true; break;
             case 'h': startupRoutineBool = true; success = true; break;
-            case 'e': // Emergency stop command: send "e0"
+            case 'i': reinitializeServos(); success = true; break;
+            case 'e':
                 emergencyStop(); 
                 success = true;
                 break;
