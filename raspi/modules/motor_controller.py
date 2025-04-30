@@ -234,7 +234,7 @@ class MotorController():
         for i, data in enumerate(servo_data.values()):
             self.target_positions[i+1] = self.target_positions[i+1] - data.values[moteus.Register.POSITION]
     
-    async def set_target(self, velocity_limit=60.0, accel_limit=30.0, maximum_torque=0.5) -> None:
+    async def set_target(self, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.05) -> None:
         await self.set_stop()
         
         await asyncio.sleep(0.2)
@@ -247,12 +247,12 @@ class MotorController():
             await controller.set_position(
                 position=self.target_positions.get(motor_id, 0), 
                 velocity_limit=velocity_limit, 
-                accel_limit=accel_limit+motor_id, 
+                accel_limit=accel_limit, 
                 maximum_torque=maximum_torque,
                 watchdog_timeout=math.nan
             )
             
-    async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0, maximum_torque=0.05) -> None:
+    async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.05) -> None:
         self.target_positions = {1: pos1, 2: -pos2}
         await self.set_target(velocity_limit, accel_limit, maximum_torque)
         
