@@ -323,7 +323,7 @@ void loop1(){
 
         char device = command.charAt(0);
         int value = command.substring(1).toInt();
-        // Serial.println(value);
+        Serial.println(value);
 
         bool success = false;
 

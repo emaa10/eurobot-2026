@@ -613,7 +613,7 @@ class PicoScene(QtWidgets.QWidget):
 #                 break
 
 class DriveScene(QtWidgets.QWidget):
-    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner, stacked: QtWidgets.QStackedWidget):
+    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
         super().__init__()
         self.main_controller = main_controller
         self.async_runner = async_runner
@@ -688,8 +688,8 @@ class DriveScene(QtWidgets.QWidget):
         self.setLayout(main_layout)
         
     def go_back(self):
-        # Stop all bot actions and return to default scene
-        self.stop_everything()
+        self.main_controller.pico_controller.set_command('h', 0)  # stop all pico actions
+        self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         window.stacked.setCurrentIndex(1)
         
     def stop_everything(self):
