@@ -92,7 +92,7 @@ class Task():
     # 1: closed, 2: open
     async def set_grip_right(self, command: int):
         if(command == 1):
-            self.pico_controller.set_command("v", 20)
+            self.pico_controller.set_command("v", 0)
         else:
             self.pico_controller.set_command("v", 60)
 

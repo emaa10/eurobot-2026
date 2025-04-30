@@ -434,7 +434,7 @@ class PicoScene(QtWidgets.QWidget):
         right_grip_group = QtWidgets.QGroupBox()
         right_grip_layout = QtWidgets.QHBoxLayout()
         
-        self.create_command_button("Grip Closed", lambda: self.main_controller.pico_controller.set_command('v', 20), right_grip_layout)
+        self.create_command_button("Grip Closed", lambda: self.main_controller.pico_controller.set_command('v', 0), right_grip_layout)
         self.create_command_button("Grip Open", lambda: self.main_controller.pico_controller.set_command('v', 60), right_grip_layout)
         
         right_grip_group.setLayout(right_grip_layout)
@@ -500,8 +500,120 @@ class PicoScene(QtWidgets.QWidget):
         time.sleep(1)
         os.system("pkill python3")
 
+# class DriveScene(QtWidgets.QWidget):
+#     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
+#         super().__init__()
+#         self.main_controller = main_controller
+#         self.async_runner = async_runner
+#         self.points = 0
+#         self.robot_running = False
+#         self.initUI()
+#         self.points_visible = False
+        
+#     def initUI(self):
+#         # Create main layout
+#         main_layout = QtWidgets.QVBoxLayout()
+#         main_layout.setContentsMargins(20, 20, 20, 20)
+#         main_layout.setSpacing(20)
+        
+#         # Top bar with close button
+#         top_bar = QtWidgets.QHBoxLayout()
+#         top_bar.addStretch()
+        
+#         close_btn = QtWidgets.QPushButton("X")
+#         close_btn.setFixedSize(40, 40)
+#         close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+#         close_btn.clicked.connect(QtWidgets.QApplication.quit)
+#         top_bar.addWidget(close_btn)
+        
+#         main_layout.addLayout(top_bar)
+        
+#         # Add stretch before content to push it down (vertical centering)
+#         main_layout.addStretch(1)
+        
+#         # Main content area (STOP button and points display)
+#         content_layout = QtWidgets.QHBoxLayout()
+        
+#         # Left side - STOP button (taking half the screen)
+#         stop_btn = QtWidgets.QPushButton("STOP")
+#         stop_btn.setMinimumHeight(300)
+#         stop_btn.setStyleSheet("font-size: 32px; font-weight: bold; background-color: #ff6666; border: none; border-radius: 10px;")
+#         stop_btn.clicked.connect(self.stop_everything)
+#         content_layout.addWidget(stop_btn, 1)  # 1 = stretch factor (50% of space)
+        
+#         # Right side - Points display
+#         points_container = QtWidgets.QWidget()
+#         points_layout = QtWidgets.QVBoxLayout(points_container)
+#         points_layout.setContentsMargins(0, 0, 0, 0)
+        
+#         self.value_label = QtWidgets.QLabel("Waiting for pullcord...")
+#         self.value_label.setAlignment(QtCore.Qt.AlignCenter)
+#         self.value_label.setStyleSheet("font-size: 40px;")
+        
+#         self.points_label = QtWidgets.QLabel("0")
+#         self.points_label.setAlignment(QtCore.Qt.AlignCenter)
+#         self.points_label.setStyleSheet("font-size: 80px; font-weight: bold;")
+#         self.points_label.hide()
+        
+#         points_layout.addWidget(self.value_label)
+#         points_layout.addWidget(self.points_label)
+#         points_layout.setAlignment(QtCore.Qt.AlignCenter)
+        
+#         content_layout.addWidget(points_container, 1)  # 1 = stretch factor (50% of space)
+        
+#         main_layout.addLayout(content_layout)
+        
+#         # Add stretch after content to push it up (vertical centering)
+#         main_layout.addStretch(1)
+        
+#         self.setLayout(main_layout)
+        
+#     def stop_everything(self):
+#         self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
+#         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
+#         time.sleep(1)
+#         os.system("pkill python3")
+    
+#     def show_points(self):
+#         self.value_label.setText("Points")
+#         self.points_label.show()
+#         self.points_visible = True
+#         self.value_label.setStyleSheet("font-size: 60px; font-weight: bold;")
+        
+#     def start_robot(self):
+#         if not self.robot_running:
+#             self.robot_running = True
+#             self.async_runner.run_task(self.run_robot_controller())
+            
+#     def stop_robot(self):
+#         self.robot_running = False
+        
+#     async def run_robot_controller(self):
+#         """Run the robot controller asynchronously"""
+#         await self.main_controller.start()
+        
+#         while self.robot_running:
+#             try:
+#                 not_done, self.points = await self.main_controller.run()
+#                 if not not_done:
+#                     self.robot_running = False
+#                     break
+                    
+#                 # self.points = 0
+#                 # Update points display logic
+#                 if self.points_visible:
+#                     QtCore.QMetaObject.invokeMethod(
+#                         self.points_label, "setText", 
+#                         QtCore.Qt.QueuedConnection,
+#                         QtCore.Q_ARG(str, str(self.points))
+#                     )
+#             except Exception as e:
+#                 print(f"Error in robot controller: {e}")
+#                 self.robot_running = False
+#                 break
+
 class DriveScene(QtWidgets.QWidget):
-    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
+    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner, stacked: QtWidgets.QStackedWidget):
         super().__init__()
         self.main_controller = main_controller
         self.async_runner = async_runner
@@ -516,10 +628,17 @@ class DriveScene(QtWidgets.QWidget):
         main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(20)
         
-        # Top bar with close button
         top_bar = QtWidgets.QHBoxLayout()
         top_bar.addStretch()
         
+        # Back button (gray)
+        back_btn = QtWidgets.QPushButton("Zurück")
+        back_btn.setFixedSize(60, 40)
+        back_btn.setStyleSheet("font-size: 16px; background-color: #cccccc; border: none; border-radius: 5px;")
+        back_btn.clicked.connect(self.go_back)
+        top_bar.addWidget(back_btn)
+        
+        # Close button (red)
         close_btn = QtWidgets.QPushButton("X")
         close_btn.setFixedSize(40, 40)
         close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
@@ -568,12 +687,17 @@ class DriveScene(QtWidgets.QWidget):
         
         self.setLayout(main_layout)
         
+    def go_back(self):
+        # Stop all bot actions and return to default scene
+        self.stop_everything()
+        window.stacked.setCurrentIndex(1)
+        
     def stop_everything(self):
         self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
-    
+        
     def show_points(self):
         self.value_label.setText("Points")
         self.points_label.show()
@@ -599,7 +723,6 @@ class DriveScene(QtWidgets.QWidget):
                     self.robot_running = False
                     break
                     
-                # self.points = 0
                 # Update points display logic
                 if self.points_visible:
                     QtCore.QMetaObject.invokeMethod(
@@ -611,6 +734,7 @@ class DriveScene(QtWidgets.QWidget):
                 print(f"Error in robot controller: {e}")
                 self.robot_running = False
                 break
+
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):

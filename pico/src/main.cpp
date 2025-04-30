@@ -117,8 +117,8 @@ void colisionFreeServos() {
     servoDriveLeftDown();
     servoPlateGripperColisionAvoidence(); // weit vor sodass arm nicht aufsetzt
     servoDriveFlagUP(); // ganz hoch, dann muss später nichtmehr gehomed werden
-    servo_GRIP_RIGHT.write(0);
-    servo_ROTATE_RIGHT.write(0);
+    servo_GRIP_RIGHT.write(20);
+    servo_ROTATE_RIGHT.write(50);
     servo6.write(0);
     servo7.write(0);
     servo8.write(0);
@@ -126,8 +126,8 @@ void colisionFreeServos() {
 
 void positionServos() {
     servoPlateGripperClosed();// weit vor sodass arm nicht aufsetzt
-    servo_GRIP_RIGHT.write(0);
-    servo_ROTATE_RIGHT.write(0);
+    servo_GRIP_RIGHT.write(20);
+    servo_ROTATE_RIGHT.write(50);
     servo6.write(0);
     servo7.write(0);
     servo8.write(0);
@@ -323,6 +323,7 @@ void loop1(){
 
         char device = command.charAt(0);
         int value = command.substring(1).toInt();
+        // Serial.println(value);
 
         bool success = false;
 
