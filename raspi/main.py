@@ -57,7 +57,7 @@ class RobotController:
         self.tactix = {
             1: [['dd300']],
             2: [['dp200;500;-30']],
-            3: [['dt']],
+            3: [['hh']],
             4: [['cc']],
         }
         
