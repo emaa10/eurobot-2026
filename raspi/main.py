@@ -20,6 +20,8 @@ class RobotController:
         self.y = 0
         self.theta = 0.0
         
+        self.points = 0
+        
         logging.basicConfig(filename='/home/eurobot/main-bot/raspi/eurobot.log', level=logging.INFO)
         self.logger = logging.getLogger(__name__)
         
@@ -110,26 +112,53 @@ class RobotController:
         self.logger.info(f'Started')
         
     async def run(self) -> bool:
-        latest_scan = self.lidar.get_latest_scan() if LIDAR else None
         state = await self.task.control_loop(self.time_started)
         
         if state.finished: 
             return False
-        
+                        
         self.x = state.x
         self.y = state.y
         self.theta = state.theta
         self.task = state.task
-
-        points = 2
         
-        await self.control_loop(state, latest_scan)
+        # lidar
+        latest_scan = self.lidar.get_latest_scan() if LIDAR else None
+        stop = False
+            
+        if not latest_scan:
+            return True if not self.task else False
+        
+        for angle, distance in latest_scan:
+            # point in relation to bot
+            d_x = distance * math.sin(angle * math.pi / 180)
+            d_y = distance * math.cos(angle * math.pi / 180)
+            
+            # point in arena
+            arena_angle = (-angle) + self.theta
+            arena_x = distance * math.cos(arena_angle * math.pi / 180) + self.x
+            arena_y = distance * math.sin(arena_angle * math.pi / 180) + self.y
+            
+            point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 5cm threshold
+            point_in_arena = True
+                        
+            if (state.direction >= 0 and 0 <= d_y <= 500) and abs(d_x) <= 250 and point_in_arena:
+                stop = True
+                self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
+                break
+            
+            if  (state.direction <= 0 and 0 >= d_y >= -500) and abs(d_x) <= 250 and point_in_arena:
+                stop = True
+                self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
+                break
+                
+        self.motor_controller.stop = stop
         
         if LIDAR and not self.lidar.is_running():
             self.logger.info("Lidar thread stopped unexpectedly")
             return False
                 
-        return True, points
+        return True, self.points
 
 async def main():
     try:

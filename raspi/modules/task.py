@@ -33,42 +33,42 @@ class Task():
         
         self.pathfinder = Pathfinder()
         
-    def add_task(self, task: Self) -> Self:
-        if not self.successor:
-            self.successor = task
-            return
-
-        self.successor.add_task(task)
         
     def drive_to(self, x: int, y: int) -> list[str]:
         delta_x = x - self.motor_controller.x
         delta_y = y - self.motor_controller.y
                 
         dist = math.sqrt(delta_x**2+delta_y**2)
-        
-        self.logger.info(self.motor_controller.theta)
-        
+                
         delta_t = (delta_x/dist) - self.motor_controller.theta * math.pi / 180
-        self.logger.info(f'ta{delta_t}, dd{int(dist)}')
-        
+                
         # normalize theta
         while (delta_t > math.pi): delta_t -= 2 * math.pi
         while (delta_t < -math.pi): delta_t += 2 * math.pi
         
         delta_t *= 180 / math.pi
         
-        
         return [f'ta{delta_t}', f'dd{int(dist)}']
+
+    
+    async def drive_to_point(self, value):
+        target_x, target_y, target_theta = value.split(';')
+        points = self.pathfinder.proccess(start=Position(self.motor_controller.x//10, self.motor_controller.y//10), target=Position(int(target_x)//10, int(target_y)//10))
+        actions = []
+        for point in points:
+            actions.extend(self.drive_to(point.x*10, point.y*10))
+        actions.append(f'tt{target_theta}')
+        actions.extend(self.actions)
+        self.actions = actions
+        return await self.next_action()
 
         
     async def control_loop(self, time_started) -> DriveState:
         state = await self.motor_controller.control_loop()
         
-        
         state.task = self
         
         if state.stopped and not self.stopped_since: self.stopped_since = time()
-            
         if not state.stopped and self.stopped_since: self.stopped_since = None
             
         if self.stopped_since and self.stopped_since + 5 < time() and self.abortable:
@@ -90,6 +90,16 @@ class Task():
             state.finished = True
         
         return state
+    
+    def add_task(self, task: Self) -> Self:
+        if not self.successor:
+            self.successor = task
+            return
+
+        self.successor.add_task(task)
+    
+    async def next_task(self):
+        return await self.successor.next_action()
         
     async def next_action(self) -> Self:
         if len(self.actions) <= 0:
@@ -105,34 +115,17 @@ class Task():
         match prefix:
             case 'dd':
                 await self.motor_controller.drive_distance(int(value))
-                await asyncio.sleep(0.2)
             case 'dp':
-                target_x, target_y, target_theta = value.split(';')
-                points = self.pathfinder.proccess(start=Position(self.motor_controller.x//10, self.motor_controller.y//10), target=Position(int(target_x)//10, int(target_y)//10))
-                actions = []
-                for point in points:
-                    actions.extend(self.drive_to(point.x*10, point.y*10))
-                actions.append(f'tt{target_theta}')
-                actions.extend(self.actions)
-                self.actions = actions
-                return await self.next_action()
+                return self.drive_to_point(value)
             case 'ta':
                 await self.motor_controller.turn_angle(float(value))
-                await asyncio.sleep(0.2)
             case 'tt':
                 await self.motor_controller.turn_to(float(value))
-                await asyncio.sleep(0.2)
-            case 'dt':
+            case 'hh':
                 await self.motor_controller.home()
-                await asyncio.sleep(0.2)
+                return await self.next_action()
             case 'cc':
-                # print("vor check")
-                # print(self.camera.check_cans())
-                # print("nach check")
-                # print(self.camera.get_distance())
-                # print("nach dist")
                 if not self.camera.check_cans():
-                    print("not checkcans")
                     await asyncio.sleep(0.5)
                     if not self.camera.check_cans():
                         self.logger.info("skip")
@@ -158,16 +151,7 @@ class Task():
                 # self.actions = actions
 
 
+        await asyncio.sleep(0.3)
+        
         return self
     
-    async def next_task(self):
-        successor = await self.successor.next_action()
-        return successor
-    
-
-def main():
-    # task = Task(None, [['d500', 't50'], ['d340', 't50'], ['d650', 't76']])
-    task = Task(None, [])
-    
-if __name__ == '__main__':
-    main()

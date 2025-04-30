@@ -211,18 +211,6 @@ class MotorController():
         
         self.serial_manager.set_pos(self.x, self.y, self.theta)
         
-    async def clean_wheels(self) -> None:
-        for motor_id, controller in self.controllers.items():
-            await controller.set_position(
-                position=math.nan, 
-                velocity_limit=10, 
-                accel_limit=50, 
-                watchdog_timeout=math.nan
-            )
-        
-    async def set_stop(self) -> None:
-        [await controller.set_stop() for controller in self.controllers.values()]
-        
     async def get_finished(self) -> bool:
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
                 
@@ -242,7 +230,7 @@ class MotorController():
             
         return velocity
 
-    async def override_target(self) -> None:
+    async def override_target(self):
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
         
         for i, data in enumerate(servo_data.values()):
@@ -266,24 +254,34 @@ class MotorController():
                 watchdog_timeout=math.nan
             )
             
+    async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0, maximum_torque=0.5) -> None:
+        self.target_positions = {1: pos1, 2: -pos2}
+        await self.set_target(velocity_limit, accel_limit, maximum_torque)
+        
+    async def clean_wheels(self) -> None:
+        for motor_id, controller in self.controllers.items():
+            await controller.set_position(
+                position=math.nan, 
+                velocity_limit=10, 
+                accel_limit=50, 
+                watchdog_timeout=math.nan
+            )
+        
+    async def set_stop(self) -> None:
+        [await controller.set_stop() for controller in self.controllers.values()]
+        
     async def home(self):
         [await controller.set_output_exact(position=0.0)
         for motor_id, controller in self.controllers.items()]
         
-        await self.drive_to_target(-999, -999, 5, 5, 0.08)
-        
+        await self.drive_to_target(-999, -999, 10, 50, 0.08)
                 
         while True:
             torque = await self.get_torque()
             velocity = await self.get_velocity()
-            print(velocity)
-            if torque > 0.07 and velocity > 4.9: break
+            if torque > 0.07 and velocity > 9.9: break
             
         await self.set_stop()
-            
-    async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=30.0, maximum_torque=0.5) -> None:
-        self.target_positions = {1: pos1, 2: -pos2}
-        await self.set_target(velocity_limit, accel_limit, maximum_torque)
         
     async def drive_distance(self, dist:int) -> None:
         self.direction = 1 if dist > 0 else -1
