@@ -393,9 +393,7 @@ class PicoScene(QtWidgets.QWidget):
         
         self.add_close_and_stop_buttons(main_layout, self.stop_everything)
         
-        # Stepper controls group (a, b commands)
         stepper_group = QtWidgets.QGroupBox()
-        # stepper_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
         stepper_layout = QtWidgets.QHBoxLayout()
         
         self.create_command_button("Right Stepper 500", lambda: self.main_controller.pico_controller.set_command('a', 500), stepper_layout)
@@ -404,9 +402,7 @@ class PicoScene(QtWidgets.QWidget):
         stepper_group.setLayout(stepper_layout)
         main_layout.addWidget(stepper_group)
         
-        # Left servo controls (r commands)
         left_servo_group = QtWidgets.QGroupBox()
-        # left_servo_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
         left_servo_layout = QtWidgets.QHBoxLayout()
         
         self.create_command_button("Left Servo Up", lambda: self.main_controller.pico_controller.set_command('r', 0), left_servo_layout)
@@ -415,9 +411,7 @@ class PicoScene(QtWidgets.QWidget):
         left_servo_group.setLayout(left_servo_layout)
         main_layout.addWidget(left_servo_group)
         
-        # Plate gripper controls (s commands)
         plate_gripper_group = QtWidgets.QGroupBox()
-        # plate_gripper_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
         plate_gripper_layout = QtWidgets.QHBoxLayout()
         
         self.create_command_button("Fully Open", lambda: self.main_controller.pico_controller.set_command('s', 180), plate_gripper_layout)
@@ -428,9 +422,7 @@ class PicoScene(QtWidgets.QWidget):
         plate_gripper_group.setLayout(plate_gripper_layout)
         main_layout.addWidget(plate_gripper_group)
         
-        # Drive flag controls (t commands)
         drive_flag_group = QtWidgets.QGroupBox()
-        # drive_flag_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
         drive_flag_layout = QtWidgets.QHBoxLayout()
         
         self.create_command_button("Flag Up", lambda: self.main_controller.pico_controller.set_command('t', 20), drive_flag_layout)
@@ -439,9 +431,7 @@ class PicoScene(QtWidgets.QWidget):
         drive_flag_group.setLayout(drive_flag_layout)
         main_layout.addWidget(drive_flag_group)
         
-        # Right grip controls (v commands)
         right_grip_group = QtWidgets.QGroupBox()
-        # right_grip_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
         right_grip_layout = QtWidgets.QHBoxLayout()
         
         self.create_command_button("Grip Closed", lambda: self.main_controller.pico_controller.set_command('v', 20), right_grip_layout)
@@ -450,9 +440,7 @@ class PicoScene(QtWidgets.QWidget):
         right_grip_group.setLayout(right_grip_layout)
         main_layout.addWidget(right_grip_group)
         
-        # Right rotate controls (w commands)
         right_rotate_group = QtWidgets.QGroupBox()
-        # right_rotate_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
         right_rotate_layout = QtWidgets.QHBoxLayout()
         
         self.create_command_button("Rotate Outwards", lambda: self.main_controller.pico_controller.set_command('w', 20), right_rotate_layout)
@@ -463,9 +451,7 @@ class PicoScene(QtWidgets.QWidget):
         right_rotate_group.setLayout(right_rotate_layout)
         main_layout.addWidget(right_rotate_group)
         
-        # System commands (h, e commands)
         system_group = QtWidgets.QGroupBox()
-        # system_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
         system_layout = QtWidgets.QHBoxLayout()
         
         home_btn = self.create_command_button("Home Everything", lambda: self.main_controller.pico_controller.set_command('h', 0), system_layout)
@@ -477,7 +463,6 @@ class PicoScene(QtWidgets.QWidget):
         system_group.setLayout(system_layout)
         main_layout.addWidget(system_group)
         
-        # Back button
         back_btn = QtWidgets.QPushButton("Back to Main Menu")
         back_btn.setFixedHeight(60)
         back_btn.setStyleSheet("font-size: 24px; background-color: #ff4444; border-radius: 10px;")
