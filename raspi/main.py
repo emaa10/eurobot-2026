@@ -26,7 +26,6 @@ class RobotController:
         self.logger = logging.getLogger(__name__)
         
         self.time_started = time()
-        self.pico_controller = Pico()
         self.motor_controller = MotorController()
         self.lidar = Lidar() if LIDAR else None
         self.camera = Camera() if CAM else None
@@ -39,10 +38,9 @@ class RobotController:
             self.camera.start()
             self.logger.info("Camera started")
                     
-        self.color = ''
-        self.task: Task | None = Task(self.motor_controller, self.camera, self.pico_controller, [['dp200;500;-30']])
-        self.tactic: Task | None = Task(self.motor_controller, self.camera, self.pico_controller, [['dp200;500;-30']])
-        self.home_routine: Task | None = Task(self.motor_controller, self.camera, self.pico_controller, [['dp200;500;-30']])
+        self.task: Task | None = Task(self.motor_controller, self.camera, [['dp200;500;-30']])
+        self.tactic: Task | None = Task(self.motor_controller, self.camera, [['dp200;500;-30']])
+        self.home_routine: Task | None = Task(self.motor_controller, self.camera, [['dp200;500;-30']])
         
         self.task_presets = TaskPresets()
         
@@ -70,18 +68,18 @@ class RobotController:
             1: [['dd200']],
             2: [['dp200;500;-30']],
             3: [['hh', 'dd200']],
-            4: [self.task_presets.get_flag_action_set(self.color)],
+            4: [self.task_presets.flag()],
         }
         
     def set_tactic(self, start_pos: int, tactic: int):
         self.x, self.y, self.theta = self.start_positions[start_pos]
         self.motor_controller.set_pos(self.x, self.y, self.theta)
-        self.color = 'yellow' if start_pos <= 3 else 'blue'
+        self.task_presets.color = 'yellow' if start_pos <= 3 else 'blue'
         
         tactic = self.tactix[tactic]
         home_routine = self.home_routines[start_pos]
-        self.tactic = Task(self.motor_controller, self.camera, self.pico_controller, tactic)
-        self.home_routine = Task(self.motor_controller, self.camera, self.pico_controller, home_routine)
+        self.tactic = Task(self.motor_controller, self.camera, tactic)
+        self.home_routine = Task(self.motor_controller, self.camera, home_routine)
         
     async def home(self):
         self.task = await self.home_routine.next_action()
@@ -95,11 +93,11 @@ class RobotController:
     async def start(self):
         self.task = await self.tactic.next_action()
         
-        self.time_started = time()
-        self.logger.info(f'Started')
+        self.task.time_started = time()
+        self.logger.info(f'Tacitc started')
         
     async def run(self) -> bool:        
-        state = await self.task.control_loop(self.time_started)
+        state = await self.task.control_loop()
                 
         if state.finished: 
             return False

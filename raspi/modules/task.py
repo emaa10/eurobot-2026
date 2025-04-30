@@ -24,12 +24,12 @@ class Task():
         
         self.stopped_since = None
         self.abortable = True
+        self.time_started = 0
         
         self.logger = logging.getLogger(__name__)
                 
         for actions in action_set:
-            # self.logger.info(actions)
-            self.add_task(Task(self.motor_controller, None, None, [actions]))
+            self.add_task(Task(self.motor_controller, self.camera, self.pico_controller, [actions]))
         
         self.pathfinder = Pathfinder()
         
@@ -92,7 +92,7 @@ class Task():
         if(command == 1):
             self.pico_controller.set_command("v", 0)
         else:
-            self.pico_controller.set_command("v", 60)
+            self.pico_controller.set_command("v", 130)
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def servo_rotate_right(self, command: int):
@@ -116,7 +116,7 @@ class Task():
         if not state.stopped and self.stopped_since: self.stopped_since = None
             
         if self.stopped_since and self.stopped_since + 5 < time() and self.abortable:
-            self.add_task(Task(self.motor_controller, None, None, [self.initial_actions]))
+            self.add_task(Task(self.motor_controller, self.camera, self.pico_controller, [self.initial_actions]))
             state.task = await self.next_task()
         
         if state.finished:
@@ -157,23 +157,32 @@ class Task():
         
         
         match prefix:
-            case 'sp':
+            case 'sp':  # set pos
                 x, y, theta  = value.split(';')
                 self.motor_controller.set_pos(x, y, theta)
-            case 'dd':
+            case 'dd':  # drive distance
                 await self.motor_controller.drive_distance(int(value))
-            case 'dp':
+            case 'dp':  # drive to point
                 return self.drive_to_point(value)
-            case 'ta':
+            case 'ta':  # turn angle
                 await self.motor_controller.turn_angle(float(value))
-            case 'tt':
+            case 'tt':  # turn to angle
                 await self.motor_controller.turn_to(float(value))
-            case 'hh':
+            case 'fd':  # flag down
+                pass
+            case 'fu':  # flag up
+                pass
+            case 'gs':  # get stapel
+                pass
+            case 'rs':  # release stapel
+                pass
+            case 'hh':  # home
                 await self.motor_controller.home()
-                return await self.next_action()
-            case 'cw':
+            case 'cw':  # clean wheels
                 await self.motor_controller.clean_wheels()
-            case 'cc':
+                await asyncio.sleep(20)
+                await self.motor_controller.set_stop()
+            case 'cc':  # check cam
                 if not self.camera.check_cans():
                     await asyncio.sleep(0.5)
                     if not self.camera.check_cans():
@@ -192,12 +201,6 @@ class Task():
                 
                 actions = [f'ta{angle}'].extend(self.actions)
                 self.actions = actions
-                # actions = [f'ta{angle_cans}', f'dd{dist}', f'ta{90}']
-                
-                
-                
-                # actions = [f'dd{distance}'].extend(self.actions)
-                # self.actions = actions
 
 
         await asyncio.sleep(0.3)

@@ -67,7 +67,7 @@ class MainScene(QtWidgets.QWidget):
         self.main_controller = main_controller
         self.async_runner = async_runner
 
-        self.main_controller.pico_controller.set_command('i', 0)
+        self.main_controller.task.pico_controller.set_command('i', 0)
         
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -188,7 +188,7 @@ class MainScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
+        self.main_controller.task.pico_controller.set_command('e', 0) # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
@@ -296,7 +296,7 @@ class DebugScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
+        self.main_controller.task.pico_controller.set_command('e', 0) # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
@@ -377,7 +377,7 @@ class TestCodesScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
+        self.main_controller.task.pico_controller.set_command('e', 0) # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
@@ -390,10 +390,6 @@ class PicoScene(QtWidgets.QWidget):
         self.mid_stepper_value = 20    # "left"/mid stepper default
         self.right_stepper_value = 100  # right stepper default
         self.initUI()
-
-        # self.main_controller.pico_controller.set_command('h', 0)
-        # self.main_controller.pico_controller.set_command('b', self.mid_stepper_value)
-        # self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
 
     def initUI(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -474,19 +470,19 @@ class PicoScene(QtWidgets.QWidget):
     # Stepper control callbacks
     def step_mid_up(self):
         self.mid_stepper_value += 250
-        self.main_controller.pico_controller.set_command('b', self.mid_stepper_value)
+        self.main_controller.task.pico_controller.set_command('b', self.mid_stepper_value)
 
     def step_mid_down(self):
         self.mid_stepper_value = max(0, self.mid_stepper_value - 250)
-        self.main_controller.pico_controller.set_command('b', self.mid_stepper_value)
+        self.main_controller.task.pico_controller.set_command('b', self.mid_stepper_value)
 
     def step_right_up(self):
         self.right_stepper_value += 50
-        self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
+        self.main_controller.task.pico_controller.set_command('a', self.right_stepper_value)
 
     def step_right_down(self):
         self.right_stepper_value = max(0, self.right_stepper_value - 50)
-        self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
+        self.main_controller.task.pico_controller.set_command('a', self.right_stepper_value)
 
     def create_command_button(self, text, command_func, layout):
         btn = QtWidgets.QPushButton(text)
@@ -512,7 +508,7 @@ class PicoScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
+        self.main_controller.task.pico_controller.set_command('e', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
@@ -595,7 +591,7 @@ class DriveScene(QtWidgets.QWidget):
         self.setLayout(main_layout)
         
     def go_back(self):
-        self.main_controller.pico_controller.set_command('h', 0)  # stop all pico actions
+        self.main_controller.task.pico_controller.set_command('h', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         subprocess.Popen(
             ['lxterminal', '-e', '/home/eurobot/Desktop/restart-gui.sh'],
@@ -603,7 +599,7 @@ class DriveScene(QtWidgets.QWidget):
         )
 
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
+        self.main_controller.task.pico_controller.set_command('e', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
@@ -689,7 +685,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drive_scene.value_label.setText("Homing in progress...")
         self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
 
-        self.main_controller.pico_controller.set_command('h', 0)
+        self.main_controller.task.pico_controller.set_command('h', 0)
         #!! hier noch jannis logik
         
         selected_position = self.main_scene.selected_position
