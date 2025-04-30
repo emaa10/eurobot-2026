@@ -76,7 +76,7 @@ class RobotController:
         
     async def run(self) -> bool:        
         state = await self.task.control_loop(self.time_started)
-        
+                
         if state.finished: 
             return False
                         
@@ -131,6 +131,7 @@ async def main():
         
         while True:
             not_done = await controller.run()
+            
     finally:
         await controller.motor_controller.set_stop()
         await asyncio.sleep(0.5)

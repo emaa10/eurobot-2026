@@ -379,59 +379,196 @@ class TestCodesScene(QtWidgets.QWidget):
         time.sleep(1)
         os.system("pkill python3")
 
+# class PicoScene(QtWidgets.QWidget):
+#     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
+#         super().__init__()
+#         self.main_controller = main_controller
+#         self.async_runner = async_runner
+#         self.initUI()
+
+#     def initUI(self):
+#         layout = QtWidgets.QVBoxLayout()
+#         layout.setContentsMargins(50, 50, 50, 50)
+
+#         self.add_close_and_stop_buttons(layout, self.stop_everything)
+
+#         for text, action in [
+#             ("Button 1", lambda: None),
+#             ("Button 2", lambda: None),
+#             ("Button 3", lambda: None),
+#             ("Button 4", lambda: None),
+#             ("Button 5", lambda: None)
+#         ]:
+#             btn = QtWidgets.QPushButton(text)
+#             btn.setFixedHeight(80)
+#             btn.setStyleSheet("font-size: 24px; border-radius: 10px;")
+#             btn.clicked.connect(lambda _, a=action: self.async_runner.run_task(a()))
+#             layout.addWidget(btn)
+
+#         back_btn = QtWidgets.QPushButton("Back")
+#         back_btn.setFixedHeight(60)
+#         back_btn.setStyleSheet("font-size: 24px; background-color: #ff4444; border-radius: 10px;")
+#         back_btn.clicked.connect(lambda: window.stacked.setCurrentIndex(1))
+#         layout.addWidget(back_btn)
+
+#         self.setLayout(layout)
+
+#     def add_close_and_stop_buttons(self, layout, stop_callback):
+#         button_layout = QtWidgets.QHBoxLayout()
+#         stop_btn = QtWidgets.QPushButton("STOP")
+#         stop_btn.setFixedSize(100, 40)
+#         stop_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+#         stop_btn.clicked.connect(stop_callback)
+
+#         close_btn = QtWidgets.QPushButton("X")
+#         close_btn.setFixedSize(40, 40)
+#         close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
+#         close_btn.clicked.connect(QtWidgets.QApplication.quit)
+
+#         button_layout.addWidget(stop_btn)
+#         button_layout.addStretch()
+#         button_layout.addWidget(close_btn)
+#         layout.addLayout(button_layout)
+
+#     def stop_everything(self):
+#         self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
+#         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
+#         time.sleep(1)
+#         os.system("pkill python3")
+
 class PicoScene(QtWidgets.QWidget):
     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
         super().__init__()
         self.main_controller = main_controller
         self.async_runner = async_runner
         self.initUI()
-
+        
     def initUI(self):
-        layout = QtWidgets.QVBoxLayout()
-        layout.setContentsMargins(50, 50, 50, 50)
-
-        self.add_close_and_stop_buttons(layout, self.stop_everything)
-
-        for text, action in [
-            ("Button 1", lambda: None),
-            ("Button 2", lambda: None),
-            ("Button 3", lambda: None),
-            ("Button 4", lambda: None),
-            ("Button 5", lambda: None)
-        ]:
-            btn = QtWidgets.QPushButton(text)
-            btn.setFixedHeight(80)
-            btn.setStyleSheet("font-size: 24px; border-radius: 10px;")
-            btn.clicked.connect(lambda _, a=action: self.async_runner.run_task(a()))
-            layout.addWidget(btn)
-
-        back_btn = QtWidgets.QPushButton("Back")
+        main_layout = QtWidgets.QVBoxLayout()
+        main_layout.setContentsMargins(50, 50, 50, 50)
+        main_layout.setSpacing(20)
+        
+        # Add stop and close buttons at the top
+        self.add_close_and_stop_buttons(main_layout, self.stop_everything)
+        
+        # Stepper controls group (a, b commands)
+        stepper_group = QtWidgets.QGroupBox("Stepper Controls")
+        stepper_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
+        stepper_layout = QtWidgets.QHBoxLayout()
+        
+        self.create_command_button("Right Stepper 500", lambda: self.main_controller.pico_controller.set_command('a', 500), stepper_layout)
+        self.create_command_button("Mid Stepper 500", lambda: self.main_controller.pico_controller.set_command('b', 500), stepper_layout)
+        
+        stepper_group.setLayout(stepper_layout)
+        main_layout.addWidget(stepper_group)
+        
+        # Left servo controls (r commands)
+        left_servo_group = QtWidgets.QGroupBox("Left Servo Controls")
+        left_servo_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
+        left_servo_layout = QtWidgets.QHBoxLayout()
+        
+        self.create_command_button("Left Servo Up", lambda: self.main_controller.pico_controller.set_command('r', 0), left_servo_layout)
+        self.create_command_button("Left Servo Down", lambda: self.main_controller.pico_controller.set_command('r', 180), left_servo_layout)
+        
+        left_servo_group.setLayout(left_servo_layout)
+        main_layout.addWidget(left_servo_group)
+        
+        # Plate gripper controls (s commands)
+        plate_gripper_group = QtWidgets.QGroupBox("Plate Gripper Controls")
+        plate_gripper_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
+        plate_gripper_layout = QtWidgets.QHBoxLayout()
+        
+        self.create_command_button("Fully Open", lambda: self.main_controller.pico_controller.set_command('s', 180), plate_gripper_layout)
+        self.create_command_button("Grip Plate", lambda: self.main_controller.pico_controller.set_command('s', 120), plate_gripper_layout)
+        self.create_command_button("Collision Avoid", lambda: self.main_controller.pico_controller.set_command('s', 130), plate_gripper_layout)
+        self.create_command_button("Closed", lambda: self.main_controller.pico_controller.set_command('s', 0), plate_gripper_layout)
+        
+        plate_gripper_group.setLayout(plate_gripper_layout)
+        main_layout.addWidget(plate_gripper_group)
+        
+        # Drive flag controls (t commands)
+        drive_flag_group = QtWidgets.QGroupBox("Drive Flag Controls")
+        drive_flag_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
+        drive_flag_layout = QtWidgets.QHBoxLayout()
+        
+        self.create_command_button("Flag Up", lambda: self.main_controller.pico_controller.set_command('t', 20), drive_flag_layout)
+        self.create_command_button("Flag Down", lambda: self.main_controller.pico_controller.set_command('t', 180), drive_flag_layout)
+        
+        drive_flag_group.setLayout(drive_flag_layout)
+        main_layout.addWidget(drive_flag_group)
+        
+        # Right grip controls (v commands)
+        right_grip_group = QtWidgets.QGroupBox("Right Grip Controls")
+        right_grip_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
+        right_grip_layout = QtWidgets.QHBoxLayout()
+        
+        self.create_command_button("Grip Closed", lambda: self.main_controller.pico_controller.set_command('v', 20), right_grip_layout)
+        self.create_command_button("Grip Open", lambda: self.main_controller.pico_controller.set_command('v', 60), right_grip_layout)
+        
+        right_grip_group.setLayout(right_grip_layout)
+        main_layout.addWidget(right_grip_group)
+        
+        # Right rotate controls (w commands)
+        right_rotate_group = QtWidgets.QGroupBox("Right Rotate Controls")
+        right_rotate_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
+        right_rotate_layout = QtWidgets.QHBoxLayout()
+        
+        self.create_command_button("Rotate Outwards", lambda: self.main_controller.pico_controller.set_command('w', 20), right_rotate_layout)
+        self.create_command_button("Rotate Inwards", lambda: self.main_controller.pico_controller.set_command('w', 180), right_rotate_layout)
+        self.create_command_button("Rotate Deposit", lambda: self.main_controller.pico_controller.set_command('w', 165), right_rotate_layout)
+        self.create_command_button("Rotate Mid", lambda: self.main_controller.pico_controller.set_command('w', 100), right_rotate_layout)
+        
+        right_rotate_group.setLayout(right_rotate_layout)
+        main_layout.addWidget(right_rotate_group)
+        
+        # System commands (h, e commands)
+        system_group = QtWidgets.QGroupBox("System Commands")
+        system_group.setStyleSheet("QGroupBox { font-size: 18px; font-weight: bold; }")
+        system_layout = QtWidgets.QHBoxLayout()
+        
+        home_btn = self.create_command_button("Home Everything", lambda: self.main_controller.pico_controller.set_command('h', 0), system_layout)
+        home_btn.setStyleSheet("font-size: 20px; background-color: #85c1e9; border-radius: 10px; padding: 10px;")
+        
+        emergency_btn = self.create_command_button("EMERGENCY STOP", lambda: self.main_controller.pico_controller.set_command('e', 0), system_layout)
+        emergency_btn.setStyleSheet("font-size: 20px; background-color: #e74c3c; color: white; border-radius: 10px; padding: 10px;")
+        
+        system_group.setLayout(system_layout)
+        main_layout.addWidget(system_group)
+        
+        # Back button
+        back_btn = QtWidgets.QPushButton("Back to Main Menu")
         back_btn.setFixedHeight(60)
         back_btn.setStyleSheet("font-size: 24px; background-color: #ff4444; border-radius: 10px;")
         back_btn.clicked.connect(lambda: window.stacked.setCurrentIndex(1))
-        layout.addWidget(back_btn)
-
-        self.setLayout(layout)
-
+        main_layout.addWidget(back_btn)
+        
+        self.setLayout(main_layout)
+    
+    def create_command_button(self, text, command_func, layout):
+        btn = QtWidgets.QPushButton(text)
+        btn.setFixedHeight(60)
+        btn.setStyleSheet("font-size: 16px; border-radius: 10px; background-color: #f0f0f0;")
+        btn.clicked.connect(lambda: self.async_runner.run_task(command_func()))
+        layout.addWidget(btn)
+        return btn
+    
     def add_close_and_stop_buttons(self, layout, stop_callback):
         button_layout = QtWidgets.QHBoxLayout()
         stop_btn = QtWidgets.QPushButton("STOP")
         stop_btn.setFixedSize(100, 40)
         stop_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
         stop_btn.clicked.connect(stop_callback)
-
         close_btn = QtWidgets.QPushButton("X")
         close_btn.setFixedSize(40, 40)
         close_btn.setStyleSheet("font-size: 18px; background-color: #ff6666; border: none; border-radius: 5px;")
         close_btn.clicked.connect(QtWidgets.QApplication.quit)
-
         button_layout.addWidget(stop_btn)
         button_layout.addStretch()
         button_layout.addWidget(close_btn)
         layout.addLayout(button_layout)
-
+        
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
+        self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")

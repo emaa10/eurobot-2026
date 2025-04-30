@@ -213,6 +213,8 @@ class MotorController():
         
     async def get_finished(self) -> bool:
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
+        
+        print(all(data.values[moteus.Register.TRAJECTORY_COMPLETE] for data in servo_data.values()))
                 
         return all(data.values[moteus.Register.TRAJECTORY_COMPLETE] for data in servo_data.values())
     
@@ -274,12 +276,14 @@ class MotorController():
         [await controller.set_output_exact(position=0.0)
         for motor_id, controller in self.controllers.items()]
         
-        await self.drive_to_target(-999, -999, 10, 50, 0.05)
+        await self.drive_to_target(-999, -999, 8, 50, 0.07)
                 
         while True:
             torque = await self.get_torque()
             velocity = await self.get_velocity()
-            if torque > 0.049 and velocity > 9.9: break
+            if torque > 0.069 and velocity > 7.8: break
+            
+        print('homing done')
             
         await self.set_stop()
         
@@ -323,7 +327,7 @@ class MotorController():
         
     async def control_loop(self) -> DriveState:
         self.finished = await self.get_finished()
-                
+                            
         try:
             self.x, self.y, self.theta = self.serial_manager.get_pos()
         except:
