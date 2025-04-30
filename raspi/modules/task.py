@@ -165,7 +165,6 @@ class Task():
             case 'dp':  # drive to point
                 return self.drive_to_point(value)
             case 'ta':  # turn angle
-                print('debug')
                 await self.motor_controller.turn_angle(float(value))                              
             case 'tt':  # turn to angle
                 await self.motor_controller.turn_to(float(value))
@@ -196,6 +195,7 @@ class Task():
                 angle, distance = self.camera.get_distance()
                 angle_cans = self.camera.get_angle()
                 print(f"dist: {distance} - angle {angle} - angle cans {angle_cans}")
+                print(f"test: {distance*math.cos(angle)}")
                 
                 # self.logger.info(angle_cans)
                 
