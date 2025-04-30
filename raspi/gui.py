@@ -3,6 +3,7 @@ import os
 import subprocess
 import RPi.GPIO as GPIO
 from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtCore import QTimer
 import random
 from main import RobotController
 import asyncio
@@ -704,18 +705,15 @@ class MainWindow(QtWidgets.QMainWindow):
         
         self.main_controller.set_tactic(positions[selected_position], selected_tactic)
         
-        self.homing_timer = QtCore.QTimer()
-        self.homing_timer.timeout.connect(self.check_homing_status)
-        self.homing_timer.start(200)
+        asyncio.sleep(2)
+        QTimer.singleShot(2000, self._switch_to_pullcord)
         
-    def check_homing_status(self):
-        if(not self.homingComplete):
-            homingComplete = True
-        else:
-            self.homing_timer.stop()
-            self.drive_scene.value_label.setText("Waiting for pullcord...")
-            self.setup_complete = True
-            
+
+    def _switch_to_pullcord(self):
+        self.drive_scene.value_label.setText("Waiting for pullcord...")
+        self.setup_complete = True
+        
+        
     def return_to_main(self):
         self.drive_scene.stop_robot()
         self.stacked.setCurrentIndex(0)

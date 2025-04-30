@@ -157,6 +157,9 @@ class Task():
         
         
         match prefix:
+            case 'sp':
+                x, y, theta  = value.split(';')
+                self.motor_controller.set_pos(x, y, theta)
             case 'dd':
                 await self.motor_controller.drive_distance(int(value))
             case 'dp':
