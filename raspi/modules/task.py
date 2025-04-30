@@ -165,6 +165,7 @@ class Task():
             case 'dp':  # drive to point
                 return self.drive_to_point(value)
             case 'ta':  # turn angle
+                print('debug')
                 await self.motor_controller.turn_angle(float(value))                              
             case 'tt':  # turn to angle
                 await self.motor_controller.turn_to(float(value))
@@ -200,8 +201,13 @@ class Task():
                 
                 # dist = math.sqrt(distance**2-40**2)
                 
-                actions = [f'ta{angle}'].extend(self.actions)
+                actions = [f'ta{90+angle}']
+                actions.extend(self.actions)
+
                 self.actions = actions
+                print(actions)
+                print(self.actions)
+                return await self.next_action()
 
 
         await asyncio.sleep(0.3)
