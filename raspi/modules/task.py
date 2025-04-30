@@ -165,7 +165,7 @@ class Task():
             case 'dp':  # drive to point
                 return self.drive_to_point(value)
             case 'ta':  # turn angle
-                await self.motor_controller.turn_angle(float(value))
+                await self.motor_controller.turn_angle(float(value))                              
             case 'tt':  # turn to angle
                 await self.motor_controller.turn_to(float(value))
             case 'fd':  # flag down
@@ -186,7 +186,7 @@ class Task():
                 if not self.camera.check_cans():
                     await asyncio.sleep(0.5)
                     if not self.camera.check_cans():
-                        self.logger.info("skip")
+                        self.logger.info("Skip Camera, since cans not perfectly there")
                         return await self.next_task()
                     
                 await asyncio.sleep(1)

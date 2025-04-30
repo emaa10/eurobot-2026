@@ -209,6 +209,12 @@ class MotorController():
         
         self.serial_manager.set_pos(self.x, self.y, self.theta)
         
+    async def get_pos(self):
+        servo_data = {x.id: await x.query() for x in self.controllers.values()}
+                        
+        return [data.values[moteus.Register.POSITION] for data in servo_data.values()]
+    
+        
     async def get_finished(self) -> bool:
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
                         
@@ -235,10 +241,6 @@ class MotorController():
             self.target_positions[i+1] = self.target_positions[i+1] - data.values[moteus.Register.POSITION]
     
     async def set_target(self, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.05) -> None:
-        await self.set_stop()
-        
-        await asyncio.sleep(0.2)
-        
         # Set zero position
         [await controller.set_output_exact(position=0.0)
         for motor_id, controller in self.controllers.items()]
@@ -249,7 +251,7 @@ class MotorController():
                 velocity_limit=velocity_limit, 
                 accel_limit=accel_limit, 
                 maximum_torque=maximum_torque,
-                watchdog_timeout=math.nan
+                watchdog_timeout=math.nan,
             )
             
     async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.05) -> None:
@@ -265,7 +267,13 @@ class MotorController():
                 watchdog_timeout=math.nan
             )
         
-    async def set_stop(self) -> None:
+    async def set_stop(self):
+        for motor_id, controller in self.controllers.items():
+            await controller.set_position(
+                position=math.nan, 
+                velocity_limit=0, 
+            )
+        
         [await controller.set_stop() for controller in self.controllers.values()]
         
     async def home(self):
@@ -288,7 +296,7 @@ class MotorController():
     async def drive_distance(self, dist:int) -> None:
         self.direction = 1 if dist > 0 else -1
         
-        pulses_per_mm = 0.066
+        pulses_per_mm = 0.067
         pulses = dist * pulses_per_mm
         
         await self.drive_to_target(pulses, pulses)
@@ -296,11 +304,27 @@ class MotorController():
     async def turn_angle(self, angle: int) -> None:
         self.direction = 0
         
-        turn = 10.8055
+        turn = 11.7
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
-        await self.drive_to_target(-pulses, pulses, velocity_limit=35.0, accel_limit=30.0)
+        await self.drive_to_target(-pulses, pulses, velocity_limit=35.0, accel_limit=14.0)
+        
+        target_theta = self.theta + angle
+        
+        if target_theta < 0: target_theta += 360
+        if target_theta > 360: target_theta -= 360
+        x, y, theta = 0, 0, 0
+        while True:
+            try:
+                x, y, theta = self.serial_manager.get_pos()
+            except:
+                print('couldnt read serial')
+                
+            if abs(theta - target_theta) < theta//80:
+                break
+        
+        await self.set_stop()  
         
     async def turn_to(self, theta: float):
         delta_t = theta - self.theta

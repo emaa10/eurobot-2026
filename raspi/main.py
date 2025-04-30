@@ -65,7 +65,7 @@ class RobotController:
         }
         
         self.tactix = {
-            1: [['dd200']],
+            1: [['ta180']],
             2: [['dp200;500;-30']],
             3: [['cd']],
             4: [self.task_presets.flag()],
@@ -135,7 +135,7 @@ class RobotController:
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
                 
-            self.motor_controller.stop = stop
+            self.motor_controller.stop = False
         
         if LIDAR and not self.lidar.is_running():
             self.logger.info("Lidar thread stopped unexpectedly")
@@ -146,8 +146,12 @@ class RobotController:
 async def main():
     try:
         controller = RobotController()
-        controller.set_tactic(1, 4)
-        await controller.home()
+        controller.set_tactic(1, 1)
+        await controller.start()
+        while True:
+            not_done = await controller.run()
+            if not not_done:
+                break
 
     finally:
         await controller.motor_controller.set_stop()

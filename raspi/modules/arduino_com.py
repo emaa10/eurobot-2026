@@ -19,7 +19,7 @@ class Arduino():
             
     def read_input(self) -> str:
         # flush input to get the latest data
-        self.ser.flushInput()
+        # self.ser.flushInput()
 
         while True:
             line = self.ser.readline().decode("utf-8")
@@ -39,8 +39,12 @@ class Arduino():
         theta = int(str_list[2])
     
     def get_pos(self) -> tuple[int, int, float] | None:
-        serial_input = self.read_input() # get latest input
+        get_string = f"p\n"
+        byte_string = str.encode(get_string)
+        self.ser.write(byte_string)
         
+        serial_input = self.read_input() # get latest input
+                
         str_list = serial_input[1:].split(';')
         
         if not serial_input.startswith('p') or not len(str_list) == 3:        
