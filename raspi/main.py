@@ -44,6 +44,8 @@ class RobotController:
             self.logger.info("Camera started")
                     
         self.task: Task | None = Task(self.motor_controller, self.camera, self.pico_controller, [['dp200;500;-30']])
+        self.tactic: Task | None = Task(self.motor_controller, self.camera, self.pico_controller, [['dp200;500;-30']])
+        self.home_routine: Task | None = Task(self.motor_controller, self.camera, self.pico_controller, [['dp200;500;-30']])
         
         self.start_positions = {
             1: [25, 25, 0],
@@ -54,11 +56,20 @@ class RobotController:
             6: [25, 25, 0],
         }
         
+        self.home_routines = {
+            1: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150']],
+            2: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150']],
+            3: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150']],
+            4: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150']],
+            5: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150']],
+            6: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150']],
+        }
+        
         self.tactix = {
-            1: [['cw']],
+            1: [['dd200']],
             2: [['dp200;500;-30']],
             3: [['hh', 'dd200']],
-            4: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150']],
+            4: [['dd200']],
         }
         
     def set_tactic(self, start_pos: int, tactic: int):
@@ -66,10 +77,21 @@ class RobotController:
         self.motor_controller.set_pos(self.x, self.y, self.theta)
         
         tactic = self.tactix[tactic]
-        self.task = Task(self.motor_controller, self.camera, self.pico_controller, tactic)
+        home_routine = self.home_routines[start_pos]
+        self.tactic = Task(self.motor_controller, self.camera, self.pico_controller, tactic)
+        self.home_routine = Task(self.motor_controller, self.camera, self.pico_controller, home_routine)
+        
+    async def home(self):
+        self.task = await self.home_routine.next_action()
+        
+        self.logger.info('Homing routine started')
+        
+        while True:
+            not_done = await self.run()
+            if not not_done: break
         
     async def start(self):
-        self.task = await self.task.next_action()
+        self.task = await self.tactic.next_action()
         
         self.time_started = time()
         self.logger.info(f'Started')
@@ -125,11 +147,8 @@ async def main():
     try:
         controller = RobotController()
         controller.set_tactic(1, 4)
-        await controller.start()
-        
-        while True:
-            not_done = await controller.run()
-            if not not_done: break
+        await controller.home()
+
     finally:
         await controller.motor_controller.set_stop()
         await asyncio.sleep(0.5)

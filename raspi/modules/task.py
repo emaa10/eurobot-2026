@@ -33,7 +33,6 @@ class Task():
         
         self.pathfinder = Pathfinder()
         
-        
     def drive_to(self, x: int, y: int) -> list[str]:
         delta_x = x - self.motor_controller.x
         delta_y = y - self.motor_controller.y
@@ -49,7 +48,6 @@ class Task():
         delta_t *= 180 / math.pi
         
         return [f'ta{delta_t}', f'dd{int(dist)}']
-
     
     async def drive_to_point(self, value):
         target_x, target_y, target_theta = value.split(';')
@@ -109,9 +107,6 @@ class Task():
     async def emergency_stop(self):
         self.pico_controller.set_command("e", 0)
 
-
-
-        
     async def control_loop(self, time_started) -> DriveState:
         state = await self.motor_controller.control_loop()
                 
