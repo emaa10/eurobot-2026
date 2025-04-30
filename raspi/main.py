@@ -4,7 +4,7 @@ from modules.drive_state import DriveState
 from modules.lidar import Lidar
 from modules.camera import Camera
 from modules.pico_com import Pico
-from modules.arduino_com import Arduino
+from modules.task_prests import TaskPresets
 
 import math
 import asyncio
@@ -26,13 +26,9 @@ class RobotController:
         self.logger = logging.getLogger(__name__)
         
         self.time_started = time()
-        
         self.pico_controller = Pico()
-                
         self.motor_controller = MotorController()
-                        
         self.lidar = Lidar() if LIDAR else None
-
         self.camera = Camera() if CAM else None
         
         if LIDAR and not self.lidar.start_scanning():
@@ -43,14 +39,19 @@ class RobotController:
             self.camera.start()
             self.logger.info("Camera started")
                     
+        self.color = ''
         self.task: Task | None = Task(self.motor_controller, self.camera, self.pico_controller, [['dp200;500;-30']])
         self.tactic: Task | None = Task(self.motor_controller, self.camera, self.pico_controller, [['dp200;500;-30']])
         self.home_routine: Task | None = Task(self.motor_controller, self.camera, self.pico_controller, [['dp200;500;-30']])
         
+        self.task_presets = TaskPresets()
+        
         self.start_positions = {
+            # gelb
             1: [25, 25, 0],
             2: [25, 25, 0],
             3: [25, 25, 0],
+            # blau
             4: [25, 25, 0],
             5: [25, 25, 0],
             6: [25, 25, 0],
@@ -69,12 +70,13 @@ class RobotController:
             1: [['dd200']],
             2: [['dp200;500;-30']],
             3: [['hh', 'dd200']],
-            4: [['dd200']],
+            4: [self.task_presets.get_flag_action_set(self.color)],
         }
         
     def set_tactic(self, start_pos: int, tactic: int):
         self.x, self.y, self.theta = self.start_positions[start_pos]
         self.motor_controller.set_pos(self.x, self.y, self.theta)
+        self.color = 'yellow' if start_pos <= 3 else 'blue'
         
         tactic = self.tactix[tactic]
         home_routine = self.home_routines[start_pos]

@@ -65,6 +65,8 @@ class MainScene(QtWidgets.QWidget):
         
         self.main_controller = main_controller
         self.async_runner = async_runner
+
+        self.main_controller.pico_controller.set_command('i', 0)
         
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -384,15 +386,13 @@ class PicoScene(QtWidgets.QWidget):
         super().__init__()
         self.main_controller = main_controller
         self.async_runner = async_runner
-        # Initial stepper positions
         self.mid_stepper_value = 20    # "left"/mid stepper default
         self.right_stepper_value = 100  # right stepper default
         self.initUI()
 
-        # On entering scene: send home (h0) and then move to default stepper positions
-        self.main_controller.pico_controller.set_command('h', 0)
-        self.main_controller.pico_controller.set_command('b', self.mid_stepper_value)
-        self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
+        # self.main_controller.pico_controller.set_command('h', 0)
+        # self.main_controller.pico_controller.set_command('b', self.mid_stepper_value)
+        # self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
 
     def initUI(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -479,11 +479,11 @@ class PicoScene(QtWidgets.QWidget):
         self.mid_stepper_value = max(0, self.mid_stepper_value - 250)
         self.main_controller.pico_controller.set_command('b', self.mid_stepper_value)
 
-    def step_right_down(self):
+    def step_right_up(self):
         self.right_stepper_value += 50
         self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
 
-    def step_right_up(self):
+    def step_right_down(self):
         self.right_stepper_value = max(0, self.right_stepper_value - 50)
         self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
 
@@ -551,6 +551,7 @@ class DriveScene(QtWidgets.QWidget):
         top_bar.addWidget(close_btn)
         
         main_layout.addLayout(top_bar)
+
         
         # Add stretch before content to push it down (vertical centering)
         main_layout.addStretch(1)
@@ -621,7 +622,6 @@ class DriveScene(QtWidgets.QWidget):
         self.robot_running = False
         
     async def run_robot_controller(self):
-        """Run the robot controller asynchronously"""
         await self.main_controller.start()
         
         while self.robot_running:
@@ -643,68 +643,6 @@ class DriveScene(QtWidgets.QWidget):
                 self.robot_running = False
                 break
 
-
-# class MainWindow(QtWidgets.QMainWindow):
-#     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
-#         super().__init__()
-#         self.main_controller = main_controller
-#         self.async_runner = async_runner
-#         self.setup_complete = False
-#         self.initUI()
-#         self.showFullScreen()
-#         self.timer = QtCore.QTimer()
-#         self.timer.timeout.connect(self.update_pullcord)
-
-#         self.timer.start(50)
-
-#     def initUI(self):
-#         self.stacked = QtWidgets.QStackedWidget()
-#         self.main_scene = MainScene(self.main_controller, self.async_runner)
-#         self.debug_scene = DebugScene(self.main_controller, self.async_runner)
-#         self.drive_scene = DriveScene(self.main_controller, self.async_runner)
-#         self.testcodes_scene = TestCodesScene(self.main_controller, self.async_runner)
-#         self.picocodes_scene = PicoScene(self.main_controller, self.async_runner)
-        
-#         self.stacked.addWidget(self.main_scene)
-#         self.stacked.addWidget(self.debug_scene)
-#         self.stacked.addWidget(self.drive_scene)
-#         self.stacked.addWidget(self.testcodes_scene)
-#         self.stacked.addWidget(self.picocodes_scene)
-
-#         self.setCentralWidget(self.stacked)
-#         self.main_scene.debug_btn.clicked.connect(lambda: self.stacked.setCurrentIndex(1))
-#         self.main_scene.start_btn.clicked.connect(self.show_waiting_screen)
-
-#     def update_pullcord(self):
-#         if GPIO.input(pullcord) == GPIO.HIGH and not self.main_scene.pullcord_active and self.setup_complete:
-#             self.main_scene.pullcord_active = True
-#             self.drive_scene.show_points()
-#             self.drive_scene.start_robot()
-
-#     def show_waiting_screen(self):
-#         self.setup_complete = True
-#         self.stacked.setCurrentIndex(2)
-#         self.drive_scene.setStyleSheet("background-color: white;")
-#         selected_position = self.main_scene.selected_position
-#         selected_tactic = self.main_scene.selected_tactic
-#         positions = {
-#             (220, 122, 84, 84) : 1, #yellow
-#             (507, 2, 84, 84) : 2,
-#             (665, 290, 84, 84) : 3,
-#             (250, 290, 84, 84) : 4, #blue
-#             (405, 2, 84, 84) : 5,
-#             (695, 125, 84, 84) : 6
-#         }
-#         self.main_controller.set_tactic(positions[selected_position], selected_tactic)
-
-#     def return_to_main(self):
-#         self.drive_scene.stop_robot()
-#         self.stacked.setCurrentIndex(0)
-#         self.drive_scene.points_label.hide()
-#         self.drive_scene.value_label.setText("Waiting for pullcord...")
-#         self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
-#         self.main_scene.pullcord_active = False
-
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
         super().__init__()
@@ -715,6 +653,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.showFullScreen()
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_pullcord)
+
+        self.homingComplete = False
+
         self.timer.start(50)
         
     def initUI(self):
@@ -768,10 +709,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.homing_timer.start(200)
         
     def check_homing_status(self):
-        # Hier prüfen wir, ob das Homing abgeschlossen ist
-        # Ersetze die folgende Zeile durch den tatsächlichen Code zum Überprüfen des Homing-Status
-        if self.main_controller.is_homing_complete():
-            # Wenn das Homing abgeschlossen ist, Timer stoppen und Text ändern
+        if(not self.homingComplete):
+            homingComplete = True
+        else:
             self.homing_timer.stop()
             self.drive_scene.value_label.setText("Waiting for pullcord...")
             self.setup_complete = True

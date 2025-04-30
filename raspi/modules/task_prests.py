@@ -1,10 +1,9 @@
 from modules.task import Task
 
-class TaskPreset:
+class TaskPresets:
     def __init__(self) -> None:
         self.presets = {
             'flag': ['dp500;200;0', 'hh', 'gf'],
-            'test': ['ta90', 'dd200'],
         }
         
         self.blue_zones = {
@@ -27,6 +26,6 @@ class TaskPreset:
         else:
             return self.presets[preset].append(self.yellow_zones[zone])
         
-    def get_flag_action_set(self):
-        return self.presets['flag']
+    def get_flag_action_set(self, color: chr):
+        return ['dp500;200;0', 'hh', 'gf']
             

@@ -274,7 +274,7 @@ class MotorController():
         [await controller.set_output_exact(position=0.0)
         for motor_id, controller in self.controllers.items()]
         
-        await self.drive_to_target(-999, -999, 8, 50)
+        await self.drive_to_target(-999, -999, 5, 50, 0.05)
         
         accellerated = False
         
@@ -283,7 +283,8 @@ class MotorController():
             velocity = await self.get_velocity()
             if velocity > 7.9: accellerated = True
             if accellerated and torque > 0.049 and velocity < 0.1: break
-                        
+        
+        await asyncio.sleep(0.2)
         await self.set_stop()
         
     async def drive_distance(self, dist:int) -> None:
