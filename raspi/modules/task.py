@@ -62,9 +62,31 @@ class Task():
         self.actions = actions
         return await self.next_action()
 
+    async def set_right_stepper(self, pos: int):
+        self.pico_controller.set_command("a", pos)
+
+    async def set_mid_stepper(self, pos: int):
+        self.pico_controller.set_command("b", pos)
+
+    # 1: up, 2: down
+    async def set_left_servo(self, command: int):
+        if(command == 1):
+            self.pico_controller.set_command("b", 0)
+        else:
+            self.pico_controller.set_command("b", 180)
+                        
+    # 1: fully open, 2: 
+    async def set_plate_gripper(self, command: int):
+        if(command == 1):
+            self.pico_controller.set_command("b", 0)
+        else:
+            self.pico_controller.set_command("b", 180)
+
         
     async def control_loop(self, time_started) -> DriveState:
         state = await self.motor_controller.control_loop()
+        
+        print(state.finished)
         
         state.task = self
         
@@ -84,7 +106,7 @@ class Task():
         if time_started + 90 < time():
             pass    # drive home
             
-        if time_started + 99999 < time():
+        if time_started + 9999999 < time():
             self.logger.info('Cutoff')
             await self.motor_controller.set_stop()
             state.finished = True

@@ -83,7 +83,7 @@ void servoDriveFlagUP(){
 }
 
 void servoDriveFlagDown(){
-    servo_DRIVE_FLAG.write(180);
+    servo_DRIVE_FLAG.write(165);
 }
 
 void servoGripRightClosed(){
@@ -297,8 +297,9 @@ void setup() {
     midStepper.setAcceleration(ACCELERATION);
     
     //startupRoutine();
-    servoGripRightClosed();
-    servoRotateRightOutwards();
+    // servoGripRightClosed();
+    // servoRotateRightOutwards();
+    // servoDriveFlagUP();
 }
 
 void loop() {
