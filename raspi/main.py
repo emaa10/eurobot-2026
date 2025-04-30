@@ -58,7 +58,7 @@ class RobotController:
             1: [['dd300']],
             2: [['dp200;500;-30']],
             3: [['hh', 'dd200']],
-            4: [['cc']],
+            4: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150']],
         }
         
     def set_tactic(self, start_pos: int, tactic: int):
@@ -124,7 +124,7 @@ class RobotController:
 async def main():
     try:
         controller = RobotController()
-        controller.set_tactic(1, 3)
+        controller.set_tactic(1, 4)
         await controller.start()
         
         while True:

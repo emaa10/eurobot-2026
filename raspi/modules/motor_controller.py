@@ -226,7 +226,7 @@ class MotorController():
     async def get_velocity(self):
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
         
-        velocity = max(data.values[moteus.Register.VELOCITY] for data in servo_data.values())
+        velocity = min(abs(data.values[moteus.Register.VELOCITY]) for data in servo_data.values())
             
         return velocity
 
@@ -282,7 +282,9 @@ class MotorController():
             torque = await self.get_torque()
             velocity = await self.get_velocity()
             if velocity > 7.9: accellerated = True
-            if accellerated and torque > 0.069: break
+            print(velocity)
+            print(accellerated)
+            if accellerated and torque > 0.069 and velocity < 0.1: break
             
         print('homing done')
             

@@ -690,8 +690,11 @@ class DriveScene(QtWidgets.QWidget):
     def go_back(self):
         self.main_controller.pico_controller.set_command('h', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
-        window.stacked.setCurrentIndex(1)
-        
+        subprocess.Popen(
+            ['lxterminal', '-e', '/home/eurobot/Desktop/restart-gui.sh'],
+            env=os.environ.copy()
+        )
+
     def stop_everything(self):
         self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
