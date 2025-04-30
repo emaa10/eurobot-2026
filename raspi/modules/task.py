@@ -184,6 +184,7 @@ class Task():
                 await self.motor_controller.set_stop()
             case 'cd':  # check cam
                 if not self.camera.check_cans():
+                    print(self.camera.check_cans())
                     await asyncio.sleep(0.5)
                     if not self.camera.check_cans():
                         self.logger.info("Skip Camera, since cans not perfectly there")

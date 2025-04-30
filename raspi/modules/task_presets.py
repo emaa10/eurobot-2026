@@ -33,6 +33,6 @@ class TaskPresets:
         return [drive_stapel, 'dd300', 'gs', drive_zone, 'ga']
         
     def flag(self):
-        x = 500 if self.color == 'blue' else 1500
+        x = 300 if self.color == 'blue' else 1700
         return [f'dp{x};200;0', 'hh', 'gf']
             
