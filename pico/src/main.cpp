@@ -178,7 +178,7 @@ void homeSteppers() {
         midStepper.run();
     }   
     
-    rightStepper.setMaxSpeed(MAX_SPEED);
+    rightStepper.setMaxSpeed(MAX_SPEED/2);
     midStepper.setMaxSpeed(MAX_SPEED);
 }
 

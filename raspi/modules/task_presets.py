@@ -26,13 +26,13 @@ class TaskPresets:
             2: 'dp30;04;30', #
             3: 'dp30;04;30', #
         }
-    def stapel(self, stapel: int, zone: int, color: str):
+    def stapel(self, stapel: int, zone: int):
         drive_stapel = self.stapel[stapel]
-        drive_zone = self.blue_zones[zone] if color == 'blue' else self.yellow_zones[zone]
+        drive_zone = self.blue_zones[zone] if self.color == 'blue' else self.yellow_zones[zone]
         
         return [drive_stapel, 'dd300', 'gs', drive_zone, 'ga']
         
-    def flag(self, color: str):
-        x = 500 if color == 'blue' else 1500
+    def flag(self):
+        x = 500 if self.color == 'blue' else 1500
         return [f'dp{x};200;0', 'hh', 'gf']
             

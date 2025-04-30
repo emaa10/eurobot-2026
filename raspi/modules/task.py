@@ -13,10 +13,10 @@ from modules.pico_com import Pico
 import asyncio
 
 class Task():
-    def __init__(self, motor_controller: MotorController | None, camera: Camera | None, pico_controller: Pico | None, action_set: list[list[str]]):
+    def __init__(self, motor_controller: MotorController | None, camera: Camera | None, action_set: list[list[str]]):
         self.motor_controller = motor_controller
         self.camera = camera
-        self.pico_controller = pico_controller
+        self.pico_controller = Pico()
         self.initial_actions = action_set[0]# if we abort and want to add task to end
         self.actions = action_set.pop(0)
         self.current_action = None
@@ -90,7 +90,7 @@ class Task():
     # 1: closed, 2: open
     def set_grip_right(self, command: int):
         if(command == 1):
-            self.pico_controller.set_command("v", 0)
+            self.pico_controller.set_command("v", 20)
         else:
             self.pico_controller.set_command("v", 130)
 
@@ -107,7 +107,7 @@ class Task():
     def emergency_stop(self):
         self.pico_controller.set_command("e", 0)
 
-    async def control_loop(self, time_started) -> DriveState:
+    async def control_loop(self) -> DriveState:
         state = await self.motor_controller.control_loop()
                 
         state.task = self
@@ -125,10 +125,10 @@ class Task():
             state.task = await self.next_action()
             if state.task: state.finished = False
             
-        if time_started + 90 < time():
+        if self.time_started + 90 < time():
             pass    # drive home
             
-        if time_started + 9999999 < time():
+        if self.time_started + 9999999 < time():
             self.logger.info('Cutoff')
             await self.motor_controller.set_stop()
             state.finished = True
@@ -169,9 +169,9 @@ class Task():
             case 'tt':  # turn to angle
                 await self.motor_controller.turn_to(float(value))
             case 'fd':  # flag down
-                pass
+                self.set_drive_flag(2)
             case 'fu':  # flag up
-                pass
+                self.set_drive_flag(1)
             case 'gs':  # get stapel
                 pass
             case 'rs':  # release stapel
@@ -182,7 +182,7 @@ class Task():
                 await self.motor_controller.clean_wheels()
                 await asyncio.sleep(20)
                 await self.motor_controller.set_stop()
-            case 'cc':  # check cam
+            case 'cd':  # check cam
                 if not self.camera.check_cans():
                     await asyncio.sleep(0.5)
                     if not self.camera.check_cans():

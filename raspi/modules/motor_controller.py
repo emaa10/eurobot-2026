@@ -193,9 +193,7 @@ class MotorController():
         self.x = 0
         self.y = 0
         self.theta = 0.0
-        
-        self.serial_manager.set_pos(self.x, self.y, self.theta)
-        
+                
         self.target_positions = {1: 0, 2: 0}
         
         self.finished = False
@@ -249,7 +247,7 @@ class MotorController():
             await controller.set_position(
                 position=self.target_positions.get(motor_id, 0), 
                 velocity_limit=velocity_limit, 
-                accel_limit=accel_limit, 
+                accel_limit=accel_limit+motor_id, 
                 maximum_torque=maximum_torque,
                 watchdog_timeout=math.nan
             )
