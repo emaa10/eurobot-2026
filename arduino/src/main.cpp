@@ -81,8 +81,6 @@ void updatePos(){
     theta = theta + dtheta;
     while (theta > 2 * M_PI) theta -= 2 * M_PI;
     while (theta < 0) theta += 2 * M_PI;
-
-    send_pos();
 }
 
 void getData(){
@@ -117,6 +115,10 @@ void getData(){
         x = x_pos;
         y = y_pos;
         theta = theta_pos * M_PI / 180.0; // Convert degrees to radians
+    }
+
+    if(data[0] == 'p'){
+        send_pos();
     }
 }
 
