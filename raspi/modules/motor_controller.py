@@ -274,7 +274,7 @@ class MotorController():
         [await controller.set_output_exact(position=0.0)
         for motor_id, controller in self.controllers.items()]
         
-        await self.drive_to_target(-999, -999, 8, 50, 0.07)
+        await self.drive_to_target(-999, -999, 8, 50)
         
         accellerated = False
         
@@ -282,12 +282,8 @@ class MotorController():
             torque = await self.get_torque()
             velocity = await self.get_velocity()
             if velocity > 7.9: accellerated = True
-            print(velocity)
-            print(accellerated)
-            if accellerated and torque > 0.069 and velocity < 0.1: break
-            
-        print('homing done')
-            
+            if accellerated and torque > 0.049 and velocity < 0.1: break
+                        
         await self.set_stop()
         
     async def drive_distance(self, dist:int) -> None:
@@ -358,15 +354,10 @@ class MotorController():
 async def main():
     controller = MotorController()
     
-    await controller.drive(50)
+    await controller.clean_wheels()
         
     while True:
         time.sleep(0.5)
-        
-        finished = await controller.get_finished()
-        if finished: break
-        
-    await controller.drive(-50)
 
 
 if __name__ == '__main__':

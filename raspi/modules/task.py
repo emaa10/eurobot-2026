@@ -173,6 +173,8 @@ class Task():
             case 'hh':
                 await self.motor_controller.home()
                 return await self.next_action()
+            case 'cw':
+                await self.motor_controller.clean_wheels()
             case 'cc':
                 if not self.camera.check_cans():
                     await asyncio.sleep(0.5)
