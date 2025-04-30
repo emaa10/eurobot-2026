@@ -71,16 +71,45 @@ class Task():
     # 1: up, 2: down
     async def set_left_servo(self, command: int):
         if(command == 1):
-            self.pico_controller.set_command("b", 0)
+            self.pico_controller.set_command("r", 0)
         else:
-            self.pico_controller.set_command("b", 180)
+            self.pico_controller.set_command("r", 180)
                         
-    # 1: fully open, 2: 
+    # 1: fully open, 2: grip plate, 3: collision avoidance, 4: closed
     async def set_plate_gripper(self, command: int):
+        if(command == 1): self.pico_controller.set_command("s", 180)
+        elif(command == 2): self.pico_controller.set_command("s", 120)
+        elif(command == 3): self.pico_controller.set_command("s", 130)
+        elif(command == 4): self.pico_controller.set_command("s", 0)
+
+    # 1: up, 2: down
+    async def set_drive_flag(self, command: int):
         if(command == 1):
-            self.pico_controller.set_command("b", 0)
+            self.pico_controller.set_command("t", 20)
         else:
-            self.pico_controller.set_command("b", 180)
+            self.pico_controller.set_command("t", 165)
+
+    # 1: closed, 2: open
+    async def set_grip_right(self, command: int):
+        if(command == 1):
+            self.pico_controller.set_command("v", 20)
+        else:
+            self.pico_controller.set_command("v", 60)
+
+    # 1: outwards, 2: inwards, 3: deposit, 4: mid
+    async def servo_rotate_right(self, command: int):
+        if(command == 1): self.pico_controller.set_command("w", 20)
+        elif(command == 2): self.pico_controller.set_command("w", 180)
+        elif(command == 3): self.pico_controller.set_command("w", 165)
+        elif(command == 4): self.pico_controller.set_command("w", 100)
+
+    async def home_pico(self):
+        self.pico_controller.set_command("h", 0)
+
+    async def emergency_stop(self):
+        self.pico_controller.set_command("e", 0)
+
+
 
         
     async def control_loop(self, time_started) -> DriveState:
