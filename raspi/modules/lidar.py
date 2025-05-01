@@ -54,31 +54,27 @@ class Lidar:
         current_scan_data = []
         
         while True:
-            try:
-                for measurement in self.lidar.iter_measures():
-                    if not self.running:
-                        break
-                    
-                    # Unpack only the values we need
-                    _, quality, angle, distance = measurement[:4]
-                    
-                    # Process only if this is part of a new scan
-                    if measurement[0]:  # new_reading is the first element                        
-                        try:
-                            self.scan_results.put_nowait(current_scan_data)
-                        except queue.Full:
-                            self.scan_results.get_nowait()
-                            self.scan_results.put_nowait(current_scan_data)
+            for measurement in self.lidar.iter_measures():
+                if not self.running:
+                    break
+                
+                # Unpack only the values we need
+                _, quality, angle, distance = measurement[:4]
+                
+                # Process only if this is part of a new scan
+                if measurement[0]:  # new_reading is the first element                        
+                    try:
+                        self.scan_results.put_nowait(current_scan_data)
+                    except queue.Full:
+                        self.scan_results.get_nowait()
+                        self.scan_results.put_nowait(current_scan_data)
 
-                        # Clear scan data for next iteration
-                        current_scan_data = []
-                        
-                    # Store valid measurements
-                    if quality > 10 and distance > 0:  
-                        current_scan_data.append((angle, distance))
-            except: 
-                self.stop()
-                self.start_scanning()
+                    # Clear scan data for next iteration
+                    current_scan_data = []
+                    
+                # Store valid measurements
+                if quality > 10 and distance > 0:  
+                    current_scan_data.append((angle, distance))
                 
     
     def get_latest_scan(self):

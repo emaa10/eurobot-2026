@@ -47,7 +47,7 @@ class RobotController:
         }
         
         self.home_routines = {
-            1: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150', 'sp0;0;0']],
+            1: [['hh', 'dd150', 'ta-90', 'hh', 'dd100']],
             2: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150', 'sp0;0;0']],
             3: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150', 'sp0;0;0']],
             4: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150', 'sp0;0;0']],
@@ -56,14 +56,14 @@ class RobotController:
         }
         
         self.tactix = {
-            1: [['dd-200']],
+            1: [['dd100', 'ta90', 'dd100']],
             2: [['dp200;500;-30']],
             3: [['cd']],
             4: [self.task_presets.flag()],
         }
         
     def set_tactic(self, start_pos_num: int, tactic_num: int):
-        self.start_pos = self.start_positions[start_pos_num]
+        self.start_pos = start_pos_num
         self.task_presets.color = 'yellow' if start_pos_num <= 3 else 'blue'
         
         tactic = self.tactix[tactic_num]
@@ -78,8 +78,9 @@ class RobotController:
         while True:
             self.home_routine = await self.home_routine.run()
             if not self.home_routine: break
-            
-        self.tactic.motor_controller.set_pos(self.start_pos)
+        
+        x, y, theta = self.start_positions[self.start_pos]
+        self.tactic.motor_controller.set_pos(x, y, theta)
         
     def start(self):
         self.tactic.motor_controller.time_started = time()
@@ -95,13 +96,14 @@ async def main():
     try:
         controller = RobotController()
         controller.set_tactic(1, 1)
-        # await controller.home()
+        await controller.home()
+        await asyncio.sleep(1)
         controller.start()
         points = 1
         while True: 
             points = await controller.run()
             if not points: break
-
+            
         await controller.motor_controller.set_stop()
         await asyncio.sleep(0.5)
     finally:

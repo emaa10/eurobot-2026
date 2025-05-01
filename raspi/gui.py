@@ -9,6 +9,7 @@ from main import RobotController
 import asyncio
 import threading
 import time
+from functools import partial
 
 # pin
 pullcord = 22
@@ -255,10 +256,10 @@ class DebugScene(QtWidgets.QWidget):
 
         btns = [
             ("Shutdown", self.on_shutdown),
-            ("Test Codes", self.on_test_codes),
+            # ("Test Codes", self.on_test_codes),
             ("Pico Codes", self.on_pico_codes),
             ("Show Keyboard", self.on_show_keyboard),
-            ("Clean Wheels", self.on_clean_wheels),
+            # ("Clean Wheels", self.on_clean_wheels),
             ("Show Camera Stream", self.on_show_camera),
             ("Log Tail", self.on_log_tail)
         ]
@@ -332,15 +333,21 @@ class TestCodesScene(QtWidgets.QWidget):
         self.async_runner = async_runner
         self.initUI()
 
+    def driveDistance(self, distance: int):
+        coro = self.main_controller.motor_controller.drive_distance(1000)
+        self.async_runner.run_task(coro)
+
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(50, 50, 50, 50)
 
         self.add_close_and_stop_buttons(layout, self.stop_everything)
 
+
         for text, action in [
-            ("Drive 1m →", lambda: self.async_runner.run_task(self.main_controller.motor_controller.drive_distance(1000))),
-            ("Drive 1m →", lambda: self.main_controller.motor_controller.drive_distance(1000)),
+            # ("Drive 1m →", lambda: self.main_controller.motor_controller.drive_to_target(30, 30)),
+            ("Drive 1m →", lambda: self.driveDistance(1000)),
+            # ("Drive 1m →", lambda: self.driveDistance(1000)),
             ("Drive 1m ←", lambda: self.main_controller.motor_controller.drive_distance(-1000)),
             ("Turn 90°", lambda: self.main_controller.motor_controller.turn_angle(90)),
             ("Turn -90°", lambda: self.main_controller.motor_controller.turn_angle(-90)),
@@ -620,26 +627,20 @@ class DriveScene(QtWidgets.QWidget):
         self.robot_running = False
         
     async def run_robot_controller(self):
-        while self.robot_running:
-            try:
-                points = await self.main_controller.run()
-                print(points)
-                if not points:
-                    self.robot_running = False
-                    break
-                self.points = points
-                    
-                # Update points display logic
-                if self.points_visible:
-                    QtCore.QMetaObject.invokeMethod(
-                        self.points_label, "setText", 
-                        QtCore.Qt.QueuedConnection,
-                        QtCore.Q_ARG(str, str(self.points))
-                    )
-            except Exception as e:
-                print(f"Error in robot controller: {e}")
-                self.robot_running = False
-                break
+        self.main_controller.start()
+        while True: 
+            points = await controller.run()
+            if not points: break
+            
+            self.points = points
+                
+            # Update points display logic
+            if self.points_visible:
+                QtCore.QMetaObject.invokeMethod(
+                    self.points_label, "setText", 
+                    QtCore.Qt.QueuedConnection,
+                    QtCore.Q_ARG(str, str(self.points))
+                )
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
@@ -686,11 +687,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drive_scene.value_label.setText("Homing in progress...")
         self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
 
-        self.main_controller.pico_controller.set_command('h', 0)
-        #!! hier noch jannis logik
-        
-        selected_position = self.main_scene.selected_position
-        selected_tactic = self.main_scene.selected_tactic
         positions = {
             (220, 122, 84, 84) : 1, #yellow
             (507, 2, 84, 84) : 2,
@@ -699,10 +695,14 @@ class MainWindow(QtWidgets.QMainWindow):
             (405, 2, 84, 84) : 5,
             (695, 125, 84, 84) : 6
         }
-        
+        selected_position = self.main_scene.selected_position
+        selected_tactic = self.main_scene.selected_tactic
         self.main_controller.set_tactic(positions[selected_position], selected_tactic)
+        self.main_controller.pico_controller.set_command('h', 0)
+        self.async_runner.run_task(self.main_controller.home())
         
-        asyncio.sleep(2)
+        
+        time.sleep(2)
         QTimer.singleShot(2000, self._switch_to_pullcord)
         
 

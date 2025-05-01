@@ -372,7 +372,9 @@ class MotorController():
                 if  (self.direction <= 0 and 0 >= d_y >= -500) and abs(d_x) <= 250 and point_in_arena:
                     self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
-                    break                
+                    break       
+                
+        self.stop = False         
                     
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None
@@ -401,4 +403,5 @@ class MotorController():
             self.finished = True
         
         if not self.lidar.is_running():
-            self.logger.info("Lidar not running")
+            # self.logger.info("Lidar not running")
+            pass
