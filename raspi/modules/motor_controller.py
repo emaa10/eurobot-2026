@@ -186,7 +186,7 @@ class MotorController():
         
     async def get_finished(self) -> bool:
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
-                        
+                            
         return all(data.values[moteus.Register.TRAJECTORY_COMPLETE] for data in servo_data.values())
     
     async def get_torque(self):
@@ -219,6 +219,8 @@ class MotorController():
             self.target_positions[i+1] = self.target_positions[i+1] - data.values[moteus.Register.POSITION]
     
     async def set_target(self, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.05) -> None:
+        await self.set_stop()
+        
         # Set zero position
         [await controller.set_output_exact(position=0.0)
         for motor_id, controller in self.controllers.items()]
@@ -232,10 +234,11 @@ class MotorController():
                 watchdog_timeout=math.nan,
             )
             
+        await asyncio.sleep(0.2)
+            
     async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.05) -> None:
         self.target_positions = {1: pos1, 2: -pos2}
         await self.set_target(velocity_limit, accel_limit, maximum_torque)
-        await asyncio.sleep(0.2)
         
         
     async def drive_distance(self, dist:int) -> None:
@@ -331,9 +334,6 @@ class MotorController():
         
     async def control_loop(self):        
         self.finished = await self.get_finished()
-                                    
-        if self.finished:
-            await self.set_stop()
             
         try:
             self.x, self.y, self.theta = self.serial_manager.get_pos()
@@ -346,9 +346,9 @@ class MotorController():
             latest_scan = self.lidar.get_latest_scan()
             self.latest_scan_time = time()
         
-        self.stop = False
         
         if latest_scan: 
+            self.stop = False
             for angle, distance in latest_scan:
                 # point in relation to bot
                 d_x = distance * math.sin((angle+180) * math.pi / 180)
@@ -372,6 +372,9 @@ class MotorController():
                     self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
+                
+        print(self.stop)
+                
                     
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None
@@ -384,8 +387,13 @@ class MotorController():
                 self.stopped = True
         
         if self.stopped and not self.stop:
+            print(self.target_positions)
             await self.set_target()
+            self.finished = False
             self.stopped = False
+            
+        if self.finished:
+            await self.set_stop()
             
         if self.time_started + 90 < time():
             pass    # drive home

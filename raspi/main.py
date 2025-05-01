@@ -2,6 +2,7 @@ from modules.task import Task
 from modules.camera import Camera
 from modules.task_presets import TaskPresets
 from modules.motor_controller import MotorController
+from modules.pico_com import Pico
 
 import math
 import asyncio
@@ -11,7 +12,7 @@ import logging
 
 class RobotController:
     def __init__(self):
-        CAM = True
+        CAM = False
         
         self.start_pos = 0
         self.points = 0
@@ -23,6 +24,7 @@ class RobotController:
         
         self.motor_controller = MotorController()
         self.camera = Camera() if CAM else None
+        self.pico_controller = Pico()
 
         if CAM:
             self.camera.start()
@@ -54,7 +56,7 @@ class RobotController:
         }
         
         self.tactix = {
-            1: [['dd10000']],
+            1: [['ta180']],
             2: [['dp200;500;-30']],
             3: [['cd']],
             4: [self.task_presets.flag()],
