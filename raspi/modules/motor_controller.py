@@ -252,30 +252,24 @@ class MotorController():
         self.direction = 0
         self.finished = False
         
-        turn = 11.7
+        turn = 11.3
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
         await self.drive_to_target(-pulses, pulses, velocity_limit=35.0, accel_limit=14.0)
-        
+            
         target_theta = self.theta + angle
+        
         if target_theta < 0: target_theta += 360
         if target_theta > 360: target_theta -= 360
-        
         while not self.finished:
             await self.control_loop()
-            
-            if abs(self.theta - target_theta) < angle//80:
-                print(self.theta)
+                
+            if abs(self.theta - target_theta) < target_theta//120:
                 break
         
         await self.set_stop()  
-        
-        await asyncio.sleep(2)
-        
-        await self.control_loop()
-        
-        print(self.theta)
+    
         
     async def turn_to(self, theta: float):
         delta_t = theta - self.theta
