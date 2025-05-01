@@ -716,7 +716,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected_position = self.main_scene.selected_position
         selected_tactic = self.main_scene.selected_tactic
         self.main_controller.set_tactic(positions[selected_position], selected_tactic)
-        self.main_controller.pico_controller.set_command('h', 0)
+        # self.main_controller.pico_controller.set_command('h', 0)
         self.async_runner.run_task(self.main_controller.home())
         
         

@@ -12,7 +12,7 @@ import logging
 
 class RobotController:
     def __init__(self):
-        CAM = False
+        CAM = True
         
         self.start_pos = 0
         self.points = 0
@@ -77,9 +77,9 @@ class RobotController:
     async def home(self):
         self.logger.info('Homing routine started')
         
-        while True:
-            self.home_routine = await self.home_routine.run()
-            if not self.home_routine: break
+        # while True:
+        #     self.home_routine = await self.home_routine.run()
+        #     if not self.home_routine: break
         
         x, y, theta = self.start_positions[self.start_pos]
         self.tactic.motor_controller.set_pos(x, y, theta)

@@ -109,7 +109,7 @@ class Task():
                 await asyncio.sleep(20)
                 await self.motor_controller.set_stop()
             case 'cd':  # check cam
-                await self.motor_controller.drive_distance(200)
+                # await self.motor_controller.drive_distance(200)
                 # if not self.camera.check_cans():
                 #     print(self.camera.check_cans())
                 #     await asyncio.sleep(0.5)
@@ -121,8 +121,9 @@ class Task():
                 print("1")
                 
                 angle, distance = self.camera.get_distance()
-                print(f"")
+                print(distance)
                 angle, distance = self.camera.get_angle(distance, angle)
+                print(distance)
                 await self.motor_controller.turn_angle(-90+angle)
                 await self.motor_controller.drive_distance(distance)
                 await self.motor_controller.turn_angle(90)
