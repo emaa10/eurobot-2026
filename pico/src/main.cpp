@@ -161,9 +161,11 @@ void colisionFreeServos() {
 void positionServos() {
     servoPlateGripperClosed();// weit vor sodass arm nicht aufsetzt
     servo_GRIP_RIGHT.write(50);
-    servo_ROTATE_RIGHT.write(160);
+    servo_ROTATE_RIGHT.write(170);
+    // servo_ROTATE_LEFT.write(50);
     servo_ROTATE_LEFT.write(5);
-    servo_GRIP_LEFT.write(85);
+    // servo_GRIP_LEFT.write(85);
+    servo_GRIP_LEFT.write(70);
     servo8.write(0);
 }
 
