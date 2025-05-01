@@ -13,7 +13,7 @@ from modules.pico_com import Pico
 import asyncio
 
 class Task():
-    def __init__(self, motor_controller: MotorController, camera: Camera, pico_controller: Pico, action_set: list[list[str]]):
+    def __init__(self, motor_controller: MotorController, camera: Camera, pico_controller: Pico, action_set: list[list[str]], color: str):
         self.motor_controller = motor_controller
         self.camera = camera
         self.pico_controller = pico_controller
@@ -21,6 +21,7 @@ class Task():
         self.actions = action_set.pop(0)
         self.current_action = None
         self.successor = None
+        self.color = color
                 
         self.stopped_since = None
         self.time_started = 0
@@ -65,8 +66,21 @@ class Task():
                 await self.motor_controller.drive_distance(int(value))
             case 'dp':  # drive to point
                 x, y, theta  = value.split(';')
-                return self.motor_controller.drive_to_point(x, y, theta)
+                await self.motor_controller.drive_to_point(x, y, theta)
             case 'dh':
+                if self.color == 'blue':
+                    await self.motor_controller.drive_to_point(2500, 1100, 0)
+                else:
+                    await self.motor_controller.drive_to_point(500, 1100, 0)
+                
+                while self.time_started + 90 > time():
+                    await asyncio.sleep(1)
+                
+                if self.color == 'blue':
+                    await self.motor_controller.drive_to_point(2500, 1400, 0)
+                else:
+                    await self.motor_controller.drive_to_point(500, 1400, 0)
+                    
                 self.points += 10
             case 'ta':  # turn angle
                 await self.motor_controller.turn_angle(float(value))                              

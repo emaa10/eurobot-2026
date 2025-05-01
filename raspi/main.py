@@ -63,14 +63,15 @@ class RobotController:
         }
         
     def set_tactic(self, start_pos_num: int, tactic_num: int):
+        color = 'yellow' if start_pos_num <= 3 else 'blue'
         self.start_pos = start_pos_num
-        self.task_presets.color = 'yellow' if start_pos_num <= 3 else 'blue'
+        self.task_presets.color = color
         
         tactic = self.tactix[tactic_num]
         home_routine = self.home_routines[start_pos_num]
                 
-        self.tactic = Task(self.motor_controller, self.camera, self.pico_controller, tactic)
-        self.home_routine = Task(self.motor_controller, self.camera, self.pico_controller, home_routine)
+        self.tactic = Task(self.motor_controller, self.camera, self.pico_controller, tactic, color)
+        self.home_routine = Task(self.motor_controller, self.camera, self.pico_controller, home_routine, color)
         
     async def home(self):
         self.logger.info('Homing routine started')
