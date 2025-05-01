@@ -54,7 +54,7 @@ class RobotController:
         }
         
         self.tactix = {
-            1: [['dd-1000']],
+            1: [['dd10000']],
             2: [['dp200;500;-30']],
             3: [['cd']],
             4: [self.task_presets.flag()],
@@ -90,17 +90,20 @@ class RobotController:
         return self.tactic.points
 
 async def main():
-    controller = RobotController()
-    controller.set_tactic(1, 1)
-    # await controller.home()
-    controller.start()
-    points = 1
-    while True: 
-        points = await controller.run()
-        if not points: break
+    try:
+        controller = RobotController()
+        controller.set_tactic(1, 1)
+        # await controller.home()
+        controller.start()
+        points = 1
+        while True: 
+            points = await controller.run()
+            if not points: break
 
-    await controller.motor_controller.set_stop()
-    await asyncio.sleep(0.5)
+        await controller.motor_controller.set_stop()
+        await asyncio.sleep(0.5)
+    finally:
+        await controller.motor_controller.set_stop()
     
 
 if __name__ == '__main__':

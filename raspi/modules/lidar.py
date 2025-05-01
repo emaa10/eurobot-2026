@@ -47,60 +47,39 @@ class Lidar:
         return True
     
     def _scan_loop(self):
-        """Background thread for continuous scanning"""
-        try:
-            self.logger.info("Scan loop started")
-            time_stamp = time_ns()
+        self.logger.info("Scan loop started")
+        time_stamp = time_ns()
+        
+        # Reset scan data
+        current_scan_data = []
+        
+        for measurement in self.lidar.iter_measures():
+            if not self.running:
+                break
             
-            # Reset scan data
-            current_scan_data = []
+            # Unpack only the values we need
+            _, quality, angle, distance = measurement[:4]
             
-            for measurement in self.lidar.iter_measures():
-                if not self.running:
-                    break
+            # Process only if this is part of a new scan
+            if measurement[0]:  # new_reading is the first element                        
+                try:
+                    self.scan_results.put_nowait(current_scan_data)
+                except queue.Full:
+                    self.scan_results.get_nowait()
+                    self.scan_results.put_nowait(current_scan_data)
+
+                # Clear scan data for next iteration
+                current_scan_data = []
                 
-                new_reading, quality, angle, distance = measurement
+            # Store valid measurements
+            if quality > 10 and distance > 0:  
+                current_scan_data.append((angle, distance))
                 
-                # Process only if this is part of a new scan
-                if new_reading:
-                    # Calculate and self.logger.info time for a complete scan
-                    scan_time_ms = (time_ns() - time_stamp) // 1000000
-                    # self.logger.info(f"Scan time: {scan_time_ms}ms")
-                    time_stamp = time_ns()
-                    
-                    # Put result in queue, non-blocking
-                    try:
-                        self.scan_results.put_nowait(current_scan_data)
-                    except queue.Full:
-                        # Queue is full, get the oldest item first (non-blocking)
-                        try:
-                            self.scan_results.get_nowait()
-                            self.scan_results.put_nowait(current_scan_data)
-                        except (queue.Empty, queue.Full):
-                            # Handle rare race condition
-                            pass
-                
-                    # Clear scan data for next iteration
-                    current_scan_data = []
-                    
-                # Store valid measurements
-                if quality > 10 and distance > 0:  
-                    current_scan_data.append((angle, distance))
-                
-        except Exception as e:
-            self.logger.info(f"Error in scan loop: {e}")
-                
-        finally:
-            if self.running:  # Only self.logger.info if we didn't deliberately stop
-                self.logger.info("Scan loop ended unexpectedly")
-            self.running = False
-    
     
     def get_latest_scan(self):
         """
         Get the latest scan result with timeout
-        Returns: Boolean (True = path clear, False = obstacle detected)
-                 or None if no data available
+        Returns: List of (angle, distance) tuples or None if no data available
         """
         try:
             return self.scan_results.get_nowait()
@@ -149,11 +128,11 @@ def main():
             if scan:
                 for angle, distance in scan:
                     # point in relation to bot
-                    d_x = distance * math.sin(angle * math.pi / 180)
-                    d_y = distance * math.cos(angle * math.pi / 180)
+                    d_x = distance * math.sin((angle+180) * math.pi / 180)
+                    d_y = distance * math.cos((angle+180) * math.pi / 180)
                     
                     
-                    if 0 >= d_y >= -500 and abs(d_x) <= 250:
+                    if 0 <= d_y <= 500 and abs(d_x) <= 250:
                         print(f'x: {d_x}, y:{d_y}')
 
                 

@@ -147,7 +147,7 @@ class MotorController():
         
         self.serial_manager = Arduino()
         self.lidar = Lidar()
-            
+        
         if not self.lidar.start_scanning():
             self.logger.info("Failed to start Lidar")
             return
@@ -167,6 +167,8 @@ class MotorController():
         self.stop = False
         self.direction = 0
         self.abortable = True
+        
+        self.latest_scan_time = 0
         
         
     def set_pos(self, x, y, theta):
@@ -210,11 +212,10 @@ class MotorController():
         
         [await controller.set_stop() for controller in self.controllers.values()]
 
-    async def override_target(self):
+    async def get_remaining_distance(self):
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
         
-        for i, data in enumerate(servo_data.values()):
-            self.target_positions[i+1] = self.target_positions[i+1] - data.values[moteus.Register.POSITION]
+        return abs(self.target_positions[0] - servo_data.values()[0].values[moteus.Register.POSITION])
     
     async def set_target(self, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.05) -> None:
         # Set zero position
@@ -339,22 +340,25 @@ class MotorController():
         except:
             self.logger.info("Could not read new pos data")
             
-        latest_scan = self.lidar.get_latest_scan()
+        latest_scan = None
+        
+        if self.latest_scan_time + 0.01 <= time():
+            latest_scan = self.lidar.get_latest_scan()
+            self.latest_scan_time = time()
+        
         self.stop = False
         
         if latest_scan: 
             for angle, distance in latest_scan:
                 # point in relation to bot
-                d_x = distance * math.sin(angle * math.pi / 180)
-                d_y = distance * math.cos(angle * math.pi / 180)
+                d_x = distance * math.sin((angle+180) * math.pi / 180)
+                d_y = distance * math.cos((angle+180) * math.pi / 180)
                 
                 # point in arena
                 arena_angle = (-angle) + self.theta
                 arena_x = distance * math.cos(arena_angle * math.pi / 180) + self.x
                 arena_y = distance * math.sin(arena_angle * math.pi / 180) + self.y
                 
-                print(f'x: {d_x}, y:{d_y}')
-                print(self.direction)
                 
                 point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 5cm threshold
                 point_in_arena = True
@@ -368,21 +372,23 @@ class MotorController():
                     self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
-            
-            # self.stop = False
-        
+                    
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None
         
         if self.stop:
             self.finished = False
             if not self.stopped:
-                await self.override_target()
+                if self.direction == 1:
+                    self.remaining = self.get_remaining_distance()
+                elif self.direction == -1:
+                    self.remaining = -self.get_remaining_distance()
                 await self.set_stop()
                 self.stopped = True
                 self.need_to_continue = True
         
         if self.need_to_continue and not self.stop:
+            print('weider gehts')
             await self.set_target()
             self.need_to_continue = False
             self.stopped = False

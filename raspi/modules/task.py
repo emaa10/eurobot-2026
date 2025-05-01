@@ -99,12 +99,9 @@ class Task():
                 await asyncio.sleep(1)
                 
                 angle, distance = self.camera.get_distance()
-                angle_cans = self.camera.get_angle()
-                print(f"dist: {distance} - angle {angle} - angle cans {angle_cans}")
-                
-                # self.logger.info(angle_cans)
-                
-                # dist = math.sqrt(distance**2-40**2)
+                actions_drive = self.camera.get_angle(distance, angle)
+                # print(f"dist: {distance} - angle {angle} - angle cans {angle_cans}")
+                print(actions_drive)
                 
                 actions = [f'ta{90+angle}']
                 actions.extend(self.actions)
