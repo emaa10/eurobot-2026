@@ -34,6 +34,53 @@ class Pico():
         byte_string = str.encode(command_string)
         self.ser.write(byte_string)
         
+    def set_right_stepper(self, pos: int):
+        self.set_command("a", pos)
+
+    def set_mid_stepper(self, pos: int):
+        self.set_command("b", pos)
+
+    # 1: up, 2: down
+    def set_left_servo(self, command: int):
+        if(command == 1):
+            self.set_command("r", 0)
+        else:
+            self.set_command("r", 180)
+                        
+    # 1: fully open, 2: grip plate, 3: collision avoidance, 4: closed
+    def set_plate_gripper(self, command: int):
+        if(command == 1): self.set_command("s", 180)
+        elif(command == 2): self.set_command("s", 120)
+        elif(command == 3): self.set_command("s", 130)
+        elif(command == 4): self.set_command("s", 0)
+
+    # 1: up, 2: down
+    def set_drive_flag(self, command: int):
+        if(command == 1):
+            self.set_command("t", 20)
+        else:
+            self.set_command("t", 165)
+
+    # 1: closed, 2: open
+    def set_grip_right(self, command: int):
+        if(command == 1):
+            self.set_command("v", 20)
+        else:
+            self.set_command("v", 80)
+
+    # 1: outwards, 2: inwards, 3: deposit, 4: mid
+    def servo_rotate_right(self, command: int):
+        if(command == 1): self.set_command("w", 0)
+        elif(command == 2): self.set_command("w", 170)
+        elif(command == 3): self.set_command("w", 160)
+        elif(command == 4): self.set_command("w", 100)
+
+    def home_pico(self):
+        self.set_command("h", 0)
+
+    def emergency_stop(self):
+        self.set_command("e", 0)
+        
 def main():
     serial_manager = Pico()
     

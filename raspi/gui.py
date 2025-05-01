@@ -9,6 +9,7 @@ from main import RobotController
 import asyncio
 import threading
 import time
+from functools import partial
 
 # pin
 pullcord = 22
@@ -26,7 +27,6 @@ def run_async_task(task):
         return None
 
 class AsyncRunner:
-    """Manages the asyncio event loop in a separate thread"""
     def __init__(self):
         self.loop = None
         self.thread = None
@@ -67,7 +67,7 @@ class MainScene(QtWidgets.QWidget):
         self.main_controller = main_controller
         self.async_runner = async_runner
 
-        self.main_controller.task.pico_controller.set_command('i', 0)
+        self.main_controller.pico_controller.set_command('i', 0)
         
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -188,7 +188,7 @@ class MainScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.task.pico_controller.set_command('e', 0) # stop all pico actions
+        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
@@ -256,10 +256,10 @@ class DebugScene(QtWidgets.QWidget):
 
         btns = [
             ("Shutdown", self.on_shutdown),
-            ("Test Codes", self.on_test_codes),
+            # ("Test Codes", self.on_test_codes),
             ("Pico Codes", self.on_pico_codes),
             ("Show Keyboard", self.on_show_keyboard),
-            ("Clean Wheels", self.on_clean_wheels),
+            # ("Clean Wheels", self.on_clean_wheels),
             ("Show Camera Stream", self.on_show_camera),
             ("Log Tail", self.on_log_tail)
         ]
@@ -296,7 +296,7 @@ class DebugScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.task.pico_controller.set_command('e', 0) # stop all pico actions
+        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
@@ -333,17 +333,25 @@ class TestCodesScene(QtWidgets.QWidget):
         self.async_runner = async_runner
         self.initUI()
 
+    def driveDistance(self, distance: int):
+        coro = self.main_controller.motor_controller.drive_distance(1000)
+        self.async_runner.run_task(coro)
+
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(50, 50, 50, 50)
 
         self.add_close_and_stop_buttons(layout, self.stop_everything)
 
+
         for text, action in [
-            ("Drive 100 →", lambda: self.main_controller.motor_controller.drive_distance(1000)),
-            ("Drive 100 ←", lambda: self.main_controller.motor_controller.drive_distance(-1000)),
+            # ("Drive 1m →", lambda: self.main_controller.motor_controller.drive_to_target(30, 30)),
+            ("Drive 1m →", lambda: self.driveDistance(1000)),
+            # ("Drive 1m →", lambda: self.driveDistance(1000)),
+            ("Drive 1m ←", lambda: self.main_controller.motor_controller.drive_distance(-1000)),
             ("Turn 90°", lambda: self.main_controller.motor_controller.turn_angle(90)),
-            ("Turn -90°", lambda: self.main_controller.motor_controller.turn_angle(-90))
+            ("Turn -90°", lambda: self.main_controller.motor_controller.turn_angle(-90)),
+            ("Turn 180°", lambda: self.main_controller.motor_controller.turn_angle(180))
         ]:
             btn = QtWidgets.QPushButton(text)
             btn.setFixedHeight(80)
@@ -377,7 +385,7 @@ class TestCodesScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.task.pico_controller.set_command('e', 0) # stop all pico actions
+        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
@@ -413,48 +421,48 @@ class PicoScene(QtWidgets.QWidget):
         # --- Other existing groups ---
         left_servo_group = QtWidgets.QGroupBox()
         left_servo_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Left Servo Up", lambda: self.main_controller.task.set_left_servo(1), left_servo_layout)
-        self.create_command_button("Left Servo Down", lambda: self.main_controller.task.set_left_servo(2), left_servo_layout)
+        self.create_command_button("Left Servo Up", lambda: self.main_controller.pico_controller.set_left_servo(1), left_servo_layout)
+        self.create_command_button("Left Servo Down", lambda: self.main_controller.pico_controller.set_left_servo(2), left_servo_layout)
         left_servo_group.setLayout(left_servo_layout)
         main_layout.addWidget(left_servo_group)
 
         plate_gripper_group = QtWidgets.QGroupBox()
         plate_gripper_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Fully Open", lambda: self.main_controller.task.set_plate_gripper(1), plate_gripper_layout)
-        self.create_command_button("Grip Plate", lambda: self.main_controller.task.set_plate_gripper(2), plate_gripper_layout)
-        self.create_command_button("Collision Avoid", lambda: self.main_controller.task.set_plate_gripper(3), plate_gripper_layout)
-        self.create_command_button("Closed", lambda: self.main_controller.task.set_plate_gripper(4), plate_gripper_layout)
+        self.create_command_button("Fully Open", lambda: self.main_controller.pico_controller.set_plate_gripper(1), plate_gripper_layout)
+        self.create_command_button("Grip Plate", lambda: self.main_controller.pico_controller.set_plate_gripper(2), plate_gripper_layout)
+        self.create_command_button("Collision Avoid", lambda: self.main_controller.pico_controller.set_plate_gripper(3), plate_gripper_layout)
+        self.create_command_button("Closed", lambda: self.main_controller.pico_controller.set_plate_gripper(4), plate_gripper_layout)
         plate_gripper_group.setLayout(plate_gripper_layout)
         main_layout.addWidget(plate_gripper_group)
 
         drive_flag_group = QtWidgets.QGroupBox()
         drive_flag_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Flag Up", lambda: self.main_controller.task.set_drive_flag(1), drive_flag_layout)
-        self.create_command_button("Flag Down", lambda: self.main_controller.task.set_drive_flag(2), drive_flag_layout)
+        self.create_command_button("Flag Up", lambda: self.main_controller.pico_controller.set_drive_flag(1), drive_flag_layout)
+        self.create_command_button("Flag Down", lambda: self.main_controller.pico_controller.set_drive_flag(2), drive_flag_layout)
         drive_flag_group.setLayout(drive_flag_layout)
         main_layout.addWidget(drive_flag_group)
 
         right_grip_group = QtWidgets.QGroupBox()
         right_grip_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Grip Closed", lambda: self.main_controller.task.set_grip_right(1), right_grip_layout)
-        self.create_command_button("Grip Open", lambda: self.main_controller.task.set_grip_right(2), right_grip_layout)
+        self.create_command_button("Grip Closed", lambda: self.main_controller.pico_controller.set_grip_right(1), right_grip_layout)
+        self.create_command_button("Grip Open", lambda: self.main_controller.pico_controller.set_grip_right(2), right_grip_layout)
         right_grip_group.setLayout(right_grip_layout)
         main_layout.addWidget(right_grip_group)
 
         right_rotate_group = QtWidgets.QGroupBox()
         right_rotate_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Rotate Outwards", lambda: self.main_controller.task.servo_rotate_right(1), right_rotate_layout)
-        self.create_command_button("Rotate Inwards", lambda: self.main_controller.task.servo_rotate_right(2), right_rotate_layout)
-        self.create_command_button("Rotate Deposit", lambda: self.main_controller.task.servo_rotate_right(3), right_rotate_layout)
-        self.create_command_button("Rotate Mid", lambda: self.main_controller.task.servo_rotate_right(4), right_rotate_layout)
+        self.create_command_button("Rotate Outwards", lambda: self.main_controller.pico_controller.servo_rotate_right(1), right_rotate_layout)
+        self.create_command_button("Rotate Inwards", lambda: self.main_controller.pico_controller.servo_rotate_right(2), right_rotate_layout)
+        self.create_command_button("Rotate Deposit", lambda: self.main_controller.pico_controller.servo_rotate_right(3), right_rotate_layout)
+        self.create_command_button("Rotate Mid", lambda: self.main_controller.pico_controller.servo_rotate_right(4), right_rotate_layout)
         right_rotate_group.setLayout(right_rotate_layout)
         main_layout.addWidget(right_rotate_group)
 
         system_group = QtWidgets.QGroupBox()
         system_layout = QtWidgets.QHBoxLayout()
-        home_btn = self.create_command_button("Home Everything", lambda: self.main_controller.task.home_pico(), system_layout)
+        home_btn = self.create_command_button("Home Everything", lambda: self.main_controller.pico_controller.home_pico(), system_layout)
         home_btn.setStyleSheet("font-size: 20px; background-color: #85c1e9; border-radius: 10px; padding: 10px;")
-        emergency_btn = self.create_command_button("EMERGENCY STOP", lambda: self.main_controller.task.emergency_stop(), system_layout)
+        emergency_btn = self.create_command_button("EMERGENCY STOP", lambda: self.main_controller.pico_controller.emergency_stop(), system_layout)
         emergency_btn.setStyleSheet("font-size: 20px; background-color: #e74c3c; color: white; border-radius: 10px; padding: 10px;")
         system_group.setLayout(system_layout)
         main_layout.addWidget(system_group)
@@ -470,19 +478,19 @@ class PicoScene(QtWidgets.QWidget):
     # Stepper control callbacks
     def step_mid_up(self):
         self.mid_stepper_value += 250
-        self.main_controller.task.pico_controller.set_command('b', self.mid_stepper_value)
+        self.main_controller.pico_controller.set_command('b', self.mid_stepper_value)
 
     def step_mid_down(self):
         self.mid_stepper_value = max(0, self.mid_stepper_value - 250)
-        self.main_controller.task.pico_controller.set_command('b', self.mid_stepper_value)
+        self.main_controller.pico_controller.set_command('b', self.mid_stepper_value)
 
     def step_right_up(self):
         self.right_stepper_value += 50
-        self.main_controller.task.pico_controller.set_command('a', self.right_stepper_value)
+        self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
 
     def step_right_down(self):
         self.right_stepper_value = max(0, self.right_stepper_value - 50)
-        self.main_controller.task.pico_controller.set_command('a', self.right_stepper_value)
+        self.main_controller.pico_controller.set_command('a', self.right_stepper_value)
 
     def create_command_button(self, text, command_func, layout):
         btn = QtWidgets.QPushButton(text)
@@ -508,7 +516,7 @@ class PicoScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.task.pico_controller.set_command('e', 0)  # stop all pico actions
+        self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
@@ -591,7 +599,7 @@ class DriveScene(QtWidgets.QWidget):
         self.setLayout(main_layout)
         
     def go_back(self):
-        self.main_controller.task.pico_controller.set_command('h', 0)  # stop all pico actions
+        self.main_controller.pico_controller.set_command('h', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         subprocess.Popen(
             ['lxterminal', '-e', '/home/eurobot/Desktop/restart-gui.sh'],
@@ -599,7 +607,7 @@ class DriveScene(QtWidgets.QWidget):
         )
 
     def stop_everything(self):
-        self.main_controller.task.pico_controller.set_command('e', 0)  # stop all pico actions
+        self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
         self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
         time.sleep(1)
         os.system("pkill python3")
@@ -619,26 +627,20 @@ class DriveScene(QtWidgets.QWidget):
         self.robot_running = False
         
     async def run_robot_controller(self):
-        await self.main_controller.start()
-        
-        while self.robot_running:
-            try:
-                not_done, self.points = await self.main_controller.run()
-                if not not_done:
-                    self.robot_running = False
-                    break
-                    
-                # Update points display logic
-                if self.points_visible:
-                    QtCore.QMetaObject.invokeMethod(
-                        self.points_label, "setText", 
-                        QtCore.Qt.QueuedConnection,
-                        QtCore.Q_ARG(str, str(self.points))
-                    )
-            except Exception as e:
-                print(f"Error in robot controller: {e}")
-                self.robot_running = False
-                break
+        self.main_controller.start()
+        while True: 
+            points = await controller.run()
+            if not points: break
+            
+            self.points = points
+                
+            # Update points display logic
+            if self.points_visible:
+                QtCore.QMetaObject.invokeMethod(
+                    self.points_label, "setText", 
+                    QtCore.Qt.QueuedConnection,
+                    QtCore.Q_ARG(str, str(self.points))
+                )
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
@@ -685,11 +687,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drive_scene.value_label.setText("Homing in progress...")
         self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
 
-        self.main_controller.task.pico_controller.set_command('h', 0)
-        #!! hier noch jannis logik
-        
-        selected_position = self.main_scene.selected_position
-        selected_tactic = self.main_scene.selected_tactic
         positions = {
             (220, 122, 84, 84) : 1, #yellow
             (507, 2, 84, 84) : 2,
@@ -698,10 +695,14 @@ class MainWindow(QtWidgets.QMainWindow):
             (405, 2, 84, 84) : 5,
             (695, 125, 84, 84) : 6
         }
-        
+        selected_position = self.main_scene.selected_position
+        selected_tactic = self.main_scene.selected_tactic
         self.main_controller.set_tactic(positions[selected_position], selected_tactic)
+        self.main_controller.pico_controller.set_command('h', 0)
+        self.async_runner.run_task(self.main_controller.home())
         
-        asyncio.sleep(2)
+        
+        time.sleep(2)
         QTimer.singleShot(2000, self._switch_to_pullcord)
         
 
