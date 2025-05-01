@@ -26,7 +26,6 @@ def run_async_task(task):
         return None
 
 class AsyncRunner:
-    """Manages the asyncio event loop in a separate thread"""
     def __init__(self):
         self.loop = None
         self.thread = None
@@ -340,10 +339,12 @@ class TestCodesScene(QtWidgets.QWidget):
         self.add_close_and_stop_buttons(layout, self.stop_everything)
 
         for text, action in [
-            ("Drive 100 →", lambda: self.main_controller.motor_controller.drive_distance(1000)),
-            ("Drive 100 ←", lambda: self.main_controller.motor_controller.drive_distance(-1000)),
+            ("Drive 1m →", lambda: self.async_runner.run_task(self.main_controller.motor_controller.drive_distance(1000))),
+            ("Drive 1m →", lambda: self.main_controller.motor_controller.drive_distance(1000)),
+            ("Drive 1m ←", lambda: self.main_controller.motor_controller.drive_distance(-1000)),
             ("Turn 90°", lambda: self.main_controller.motor_controller.turn_angle(90)),
-            ("Turn -90°", lambda: self.main_controller.motor_controller.turn_angle(-90))
+            ("Turn -90°", lambda: self.main_controller.motor_controller.turn_angle(-90)),
+            ("Turn 180°", lambda: self.main_controller.motor_controller.turn_angle(180))
         ]:
             btn = QtWidgets.QPushButton(text)
             btn.setFixedHeight(80)

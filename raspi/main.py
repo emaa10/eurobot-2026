@@ -56,7 +56,7 @@ class RobotController:
         }
         
         self.tactix = {
-            1: [['ta180']],
+            1: [['dd-200']],
             2: [['dp200;500;-30']],
             3: [['cd']],
             4: [self.task_presets.flag()],
@@ -106,6 +106,7 @@ async def main():
         await asyncio.sleep(0.5)
     finally:
         await controller.motor_controller.set_stop()
+        controller.motor_controller.lidar.stop()
     
 
 if __name__ == '__main__':

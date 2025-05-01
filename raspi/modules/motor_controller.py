@@ -242,7 +242,7 @@ class MotorController():
         await self.set_target(velocity_limit, accel_limit, maximum_torque)
         
         
-    async def drive_distance(self, dist:int) -> None:
+    async def drive_distance(self, dist:int):
         self.direction = 1 if dist > 0 else -1
         self.finished = False
         
@@ -254,7 +254,7 @@ class MotorController():
         while not self.finished:
             await self.control_loop()
         
-    async def turn_angle(self, angle: float) -> None:
+    async def turn_angle(self, angle: float):
         self.direction = 0
         self.finished = False
         
@@ -385,7 +385,6 @@ class MotorController():
                 self.stopped = True
         
         if self.stopped and not self.stop:
-            print(self.target_positions)
             await self.set_target()
             self.finished = False
             self.stopped = False

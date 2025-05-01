@@ -31,7 +31,7 @@ class Task():
         
                 
         for actions in action_set:
-            self.add_task(Task(self.motor_controller, self.camera, [actions]))
+            self.add_task(Task(self.motor_controller, self.camera, self.motor_controller, [actions]))
         
         self.pathfinder = Pathfinder()
     
