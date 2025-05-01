@@ -119,17 +119,17 @@ void colisionFreeServos() {
     servoDriveFlagUP(); // ganz hoch, dann muss später nichtmehr gehomed werden
     servo_GRIP_RIGHT.write(20);
     servo_ROTATE_RIGHT.write(50);
-    servo_ROTATE_LEFT.write(0);
-    servo_GRIP_LEFT.write(0);
+    servo_ROTATE_LEFT.write(120);
+    servo_GRIP_LEFT.write(100);
     servo8.write(0);
 }
 
 void positionServos() {
     servoPlateGripperClosed();// weit vor sodass arm nicht aufsetzt
-    servo_GRIP_RIGHT.write(20);
+    servo_GRIP_RIGHT.write(60);
     servo_ROTATE_RIGHT.write(50);
-    servo_ROTATE_LEFT.write(0);
-    servo_GRIP_LEFT.write(0);
+    servo_ROTATE_LEFT.write(130);
+    servo_GRIP_LEFT.write(100);
     servo8.write(0);
 }
 
@@ -307,7 +307,7 @@ void setup() {
     midStepper.setMaxSpeed(MAX_SPEED);
     midStepper.setAcceleration(ACCELERATION);
     
-    //startupRoutine();
+    startupRoutine();
     // servoGripRightClosed();
     // servoRotateRightOutwards();
     // servoDriveFlagUP();
@@ -315,14 +315,6 @@ void setup() {
 
 void loop() {
     processSteppers();
-    delay(1000);
-    servo_ROTATE_LEFT.write(10);
-    // servo_GRIP_LEFT.write(0);
-    delay(1000);
-    // servo_GRIP_LEFT.write(180);
-    servo_ROTATE_LEFT.write(170);
-    // emergencyStop();
-    delay(1000);
 }
 
 void setup1(){
