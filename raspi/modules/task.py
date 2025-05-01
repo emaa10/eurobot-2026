@@ -90,9 +90,9 @@ class Task():
     # 1: closed, 2: open
     def set_grip_right(self, command: int):
         if(command == 1):
-            self.pico_controller.set_command("v", 20)
+            self.pico_controller.set_command("v", 10)
         else:
-            self.pico_controller.set_command("v", 130)
+            self.pico_controller.set_command("v", 160)
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def servo_rotate_right(self, command: int):
@@ -152,6 +152,7 @@ class Task():
             return await self.successor.next_action()
         
         self.current_action = self.actions.pop(0)
+        print(f"current actio {self.current_action}")
         prefix = self.current_action[:2]
         value = self.current_action[2:]
         
@@ -166,6 +167,7 @@ class Task():
                 return self.drive_to_point(value)
             case 'ta':  # turn angle
                 await self.motor_controller.turn_angle(float(value))                              
+                # return await self.next_action()
             case 'tt':  # turn to angle
                 await self.motor_controller.turn_to(float(value))
             case 'fd':  # flag down
@@ -183,30 +185,35 @@ class Task():
                 await asyncio.sleep(20)
                 await self.motor_controller.set_stop()
             case 'cd':  # check cam
-                if not self.camera.check_cans():
-                    print(self.camera.check_cans())
-                    await asyncio.sleep(0.5)
-                    if not self.camera.check_cans():
-                        self.logger.info("Skip Camera, since cans not perfectly there")
-                        return await self.next_task()
+                # if not self.camera.check_cans():
+                #     print(self.camera.check_cans())
+                #     await asyncio.sleep(0.5)
+                #     if not self.camera.check_cans():
+                #         self.logger.info("Skip Camera, since cans not perfectly there")
+                #         return await self.next_task()
                     
                 await asyncio.sleep(1)
+                print("1")
                 
                 angle, distance = self.camera.get_distance()
                 angle_cans = self.camera.get_angle()
-                print(f"dist: {distance} - angle {angle} - angle cans {angle_cans}")
-                print(f"test: {distance*math.cos(angle)}")
+                print("2")
+                print(f"test: angle: {angle*1.2}, dist: {distance*0.8}")
+                print(angle_cans)
                 
-                # self.logger.info(angle_cans)
-                
-                # dist = math.sqrt(distance**2-40**2)
-                
-                actions = [f'ta{90+angle}']
-                actions.extend(self.actions)
 
-                self.actions = actions
-                print(actions)
-                print(self.actions)
+                
+                # actions = [f'dd100']
+                # actions = [f'dd{int(distance*0.6)}']
+                # actions.extend(self.actions)
+                # self.actions = actions
+                # actions = [f'ta{int(10)}']
+                # # actions = [f'ta{int(angle*1.5)}']
+                # actions.extend(self.actions)
+                # self.actions = actions
+
+                # print(actions)
+                # print(self.actions)
                 return await self.next_action()
 
 

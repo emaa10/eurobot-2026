@@ -98,12 +98,14 @@ class Camera:
         """
         frame = self._get_frame()
         left_angle, left_distance, right_angle, right_distance = self._process_angle(frame)
+        print(f"left angle: {left_angle} - left distance: {left_distance} - right angle {right_angle} - right dist {right_distance}")
         left_x = left_distance * math.sin(left_angle)
         left_y = left_distance * math.cos(left_angle)
         right_x = right_distance * math.sin(right_angle)
         right_y = right_distance * math.cos(right_angle)
         dx = abs(left_x - right_x)
         dy = abs(left_y - right_y)
+        print(f"{left_x} {left_y} {right_x} {right_y} {dx} {dy}")
         angle_cans = math.atan2(dy, dx)
         return angle_cans
 
