@@ -619,14 +619,14 @@ class DriveScene(QtWidgets.QWidget):
         self.robot_running = False
         
     async def run_robot_controller(self):
-        await self.main_controller.start()
         
         while self.robot_running:
             try:
-                not_done, self.points = await self.main_controller.run()
-                if not not_done:
+                points = await self.main_controller.run()
+                if not points:
                     self.robot_running = False
                     break
+                self.points = points
                     
                 # Update points display logic
                 if self.points_visible:
