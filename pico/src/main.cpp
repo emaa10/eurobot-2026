@@ -46,7 +46,7 @@ const float HOMING_SPEED = 1000;
 int RIGHT_stepperTargetPos = 0;
 int MID_stepperTargetPos = 0;
 
-int RIGHT_stepperStartPos = 350;
+int RIGHT_stepperStartPos = 325;
 int MID_stepperStartPos = 1500;
 
 bool startupRoutineBool = false;
@@ -111,6 +111,8 @@ void servoRotateRightMid(){
 }
 
 
+
+
 void servoGripLeftClosed(){
     servo_GRIP_LEFT.write(20);
 }
@@ -140,21 +142,28 @@ void servoRotateLeftMid(){
 //refer to look up table for servo positions
 void colisionFreeServos() {
     servoDriveLeftDown();
+    delay(100);
     servoPlateGripperColisionAvoidence(); // weit vor sodass arm nicht aufsetzt
+    delay(100);
     servoDriveFlagUP(); // ganz hoch, dann muss später nichtmehr gehomed werden
+    delay(100);
     servo_GRIP_RIGHT.write(20);
+    delay(100);
     servo_ROTATE_RIGHT.write(50);
+    delay(100);
     servo_ROTATE_LEFT.write(120);
+    delay(100);
     servo_GRIP_LEFT.write(100);
+    delay(100);
     servo8.write(0);
 }
 
 void positionServos() {
     servoPlateGripperClosed();// weit vor sodass arm nicht aufsetzt
-    servo_GRIP_RIGHT.write(60);
-    servo_ROTATE_RIGHT.write(50);
-    servo_ROTATE_LEFT.write(130);
-    servo_GRIP_LEFT.write(100);
+    servo_GRIP_RIGHT.write(50);
+    servo_ROTATE_RIGHT.write(160);
+    servo_ROTATE_LEFT.write(5);
+    servo_GRIP_LEFT.write(85);
     servo8.write(0);
 }
 
@@ -323,8 +332,8 @@ void setup() {
     servo_DRIVE_FLAG.attach(SERVO_DRIVE_FLAG, 700, 2600);
     servo_GRIP_RIGHT.attach(SERVO_GRIP_RIGHT, 700, 2600);
     servo_ROTATE_RIGHT.attach(SERVO_ROTATE_RIGHT, 700, 2600);
-    servo_ROTATE_LEFT.attach(SERVO_ROTATE_LEFT);
-    servo_GRIP_LEFT.attach(SERVO_GRIP_LEFT);
+    servo_ROTATE_LEFT.attach(SERVO_ROTATE_LEFT, 700, 2600);
+    servo_GRIP_LEFT.attach(SERVO_GRIP_LEFT, 700, 2600);
     servo8.attach(SERVO8);
 
     rightStepper.setMaxSpeed(MAX_SPEED);
@@ -332,6 +341,7 @@ void setup() {
     midStepper.setMaxSpeed(MAX_SPEED);
     midStepper.setAcceleration(ACCELERATION);
     
+    // servoGripLeftClosed();
     startupRoutine();
     // servoGripRightClosed();
     // servoRotateRightOutwards();

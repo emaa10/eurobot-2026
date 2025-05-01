@@ -55,7 +55,6 @@ class Task():
             return self.successor
         
         self.current_action = self.actions.pop(0)
-        print(f"current actio {self.current_action}")
         prefix = self.current_action[:2]
         value = self.current_action[2:]
         
@@ -68,6 +67,9 @@ class Task():
             case 'dp':  # drive to point
                 x, y, theta  = value.split(';')
                 await self.motor_controller.drive_to_point(x, y, theta)
+                print(self.motor_controller.x)
+                print(self.motor_controller.y)
+                print(self.motor_controller.theta)
             case 'dh':
                 if self.color == 'blue':
                     await self.motor_controller.drive_to_point(2500, 1100, 0)
@@ -107,6 +109,7 @@ class Task():
                 await asyncio.sleep(20)
                 await self.motor_controller.set_stop()
             case 'cd':  # check cam
+                await self.motor_controller.drive_distance(200)
                 # if not self.camera.check_cans():
                 #     print(self.camera.check_cans())
                 #     await asyncio.sleep(0.5)

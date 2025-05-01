@@ -37,7 +37,7 @@ class RobotController:
         
         self.start_positions = {
             # gelb
-            1: [200, 950, 0],
+            1: [200, 950, 90],
             2: [25, 25, 0],
             3: [25, 25, 0],
             # blau
@@ -47,7 +47,8 @@ class RobotController:
         }
         
         self.home_routines = {
-            1: [['hh', 'dd50', 'ta-90', 'hh', 'dd100']],
+            #1: [['hh', 'dd50', 'ta-90', 'hh', 'dd100']],
+            1: [['hh', 'dd100']],
             2: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150', 'sp0;0;0']],
             3: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150', 'sp0;0;0']],
             4: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150', 'sp0;0;0']],
@@ -57,7 +58,7 @@ class RobotController:
         
         self.tactix = {
             1: [['dd100', 'ta90', 'dd100']],
-            2: [['dp200;500;-30']],
+            2: [['dp400;700;-30']],
             3: [['cd']],
             4: [self.task_presets.flag()],
         }
@@ -96,7 +97,7 @@ class RobotController:
 async def main():
     try:
         controller = RobotController()
-        controller.set_tactic(1, 1)
+        controller.set_tactic(1, 2)
         await controller.home()
         await asyncio.sleep(1)
         controller.start()

@@ -21,7 +21,7 @@ class ServoClock:
         self.state = None
         self.device_ms_count = 0
         self.measure_only = measure_only
-
+        
         self.time_error_s = 0.0
 
         self._query = self.controller.make_custom_query(
@@ -136,6 +136,8 @@ class MotorController():
         args = parser.parse_args()
 
         self.SERVO_IDS = [1, 2]
+        
+        self.pathfinder = Pathfinder()
 
         qr = moteus.QueryResolution()
         qr.trajectory_complete = moteus.INT8
@@ -289,15 +291,19 @@ class MotorController():
         delta_y = y - self.y
                 
         dist = math.sqrt(delta_x**2+delta_y**2)
-                
-        delta_t = (delta_x/dist) - self.theta * math.pi / 180
-                
-        # normalize theta
-        while (delta_t > math.pi): delta_t -= 2 * math.pi
-        while (delta_t < -math.pi): delta_t += 2 * math.pi
+                        
+        # Calculate absolute angle to target (90 degrees = parallel to x-axis)
+        target_angle = (-math.atan2(delta_y, delta_x) * 180 / math.pi + 90) % 360
         
-        delta_t *= 180 / math.pi
+        # Calculate relative angle needed to turn
+        delta_t = target_angle - self.theta
         
+        # Normalize angle to [-180, 180]
+        while (delta_t > 180): delta_t -= 360
+        while (delta_t < -180): delta_t += 360
+        
+        print(f"Current theta: {self.theta}, Target angle: {target_angle}, Delta angle: {delta_t}")
+                
         await self.turn_angle(delta_t)
         await self.drive_distance(dist)
     
@@ -306,7 +312,7 @@ class MotorController():
         for point in points:
             await self.drive_to(point.x*10, point.y*10)
         
-        await self.turn_to(theta)
+        await self.turn_to(float(theta))
         
     async def clean_wheels(self) -> None:
         for motor_id, controller in self.controllers.items():
