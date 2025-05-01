@@ -64,7 +64,6 @@ class Task():
                 self.motor_controller.set_pos(x, y, theta)
             case 'dd':  # drive distance
                 await self.motor_controller.drive_distance(int(value))
-                print('finished')
             case 'dp':  # drive to point
                 x, y, theta  = value.split(';')
                 await self.motor_controller.drive_to_point(x, y, theta)

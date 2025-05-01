@@ -171,7 +171,7 @@ class MotorController():
         self.abortable = True
         
         self.latest_scan_time = 0
-        self.time_started = 0
+        self.time_started = 9999999999999999
         
         
     def set_pos(self, x, y, theta):
