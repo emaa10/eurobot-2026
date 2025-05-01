@@ -25,7 +25,7 @@ class Task():
         self.stopped_since = None
         self.time_started = 0
         
-        self.points = 20
+        self.points = 10
         
         self.logger = logging.getLogger(__name__)
         
@@ -63,10 +63,11 @@ class Task():
                 self.motor_controller.set_pos(x, y, theta)
             case 'dd':  # drive distance
                 await self.motor_controller.drive_distance(int(value))
-                self.points += 10
             case 'dp':  # drive to point
                 x, y, theta  = value.split(';')
                 return self.motor_controller.drive_to_point(x, y, theta)
+            case 'dh':
+                self.points += 10
             case 'ta':  # turn angle
                 await self.motor_controller.turn_angle(float(value))                              
             case 'tt':  # turn to angle
@@ -100,17 +101,11 @@ class Task():
                 await asyncio.sleep(1)
                 
                 angle, distance = self.camera.get_distance()
-                actions_drive = self.camera.get_angle(distance, angle)
-                # print(f"dist: {distance} - angle {angle} - angle cans {angle_cans}")
-                print(actions_drive)
-                
-                actions = [f'ta{90+angle}']
-                actions.extend(self.actions)
+                angle, distance = self.camera.get_angle(distance, angle)
+                await self.motor_controller.turn_angle(-90+angle)
+                await self.motor_controller.drive_distance(distance)
+                await self.motor_controller.turn_angle(90)
 
-                self.actions = actions
-                print(actions)
-                print(self.actions)
-                return await self.run()
 
 
         await asyncio.sleep(0.3)

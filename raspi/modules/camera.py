@@ -122,13 +122,13 @@ class Camera:
         
         optimal_distance = wall_center_x * math.sin(robot_angle_rad) + wall_center_z * math.cos(robot_angle_rad)
         
-        actions = [
-            f"ta{-90+robot_angle_deg:.1f}",     # Drehe parallel zur Wand
-            f"dd{optimal_distance:.1f}",     # Fahre optimale Distanz
-            "ta90.0"                         # Drehe 90 Grad nach right
-        ]
+        # actions = [
+        #     f"ta{-90+robot_angle_deg:.1f}",     # Drehe parallel zur Wand
+        #     f"dd{optimal_distance:.1f}",     # Fahre optimale Distanz
+        #     "ta90.0"                         # Drehe 90 Grad nach right
+        # ]
         
-        return actions
+        return robot_angle_deg, optimal_distance
 
     def get_distance(self) -> list:
         """
