@@ -12,6 +12,11 @@ import logging
 
 from modules.drive_state import DriveState
 from modules.arduino_com import Arduino
+from modules.lidar import Lidar
+from modules.pathfinding import Pathfinder
+from modules.position import Position
+
+LIDAR = True
 
 class ServoClock:
     '''This class can be used to keep a controller's time base
@@ -187,6 +192,11 @@ class MotorController():
         self.poller = Poller(self.controllers, args)
         
         self.serial_manager = Arduino()
+        self.lidar = Lidar() if LIDAR else None
+            
+        if LIDAR and not self.lidar.start_scanning():
+            self.logger.info("Failed to start Lidar")
+            return
         
         self.logger = logging.getLogger(__name__)
         
@@ -198,9 +208,12 @@ class MotorController():
         
         self.finished = False
         self.stopped = False
+        self.stopped_since = None
         self.need_to_continue = False
         self.stop = False
         self.direction = 0
+        self.abortable = True
+        
         
     def set_pos(self, x, y, theta):
         self.x = x
@@ -233,6 +246,15 @@ class MotorController():
         velocity = min(abs(data.values[moteus.Register.VELOCITY]) for data in servo_data.values())
             
         return velocity
+    
+    async def set_stop(self):
+        for motor_id, controller in self.controllers.items():
+            await controller.set_position(
+                position=math.nan, 
+                velocity_limit=0, 
+            )
+        
+        [await controller.set_stop() for controller in self.controllers.values()]
 
     async def override_target(self):
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
@@ -258,6 +280,72 @@ class MotorController():
         self.target_positions = {1: pos1, 2: -pos2}
         await self.set_target(velocity_limit, accel_limit, maximum_torque)
         
+        
+    async def drive_distance(self, dist:int) -> None:
+        self.direction = 1 if dist > 0 else -1
+        self.finished = False
+        
+        pulses_per_mm = 0.067
+        pulses = dist * pulses_per_mm
+        
+        await self.drive_to_target(pulses, pulses)
+        
+        while not self.finished:
+            self.control_loop()
+        
+    async def turn_angle(self, angle: float) -> None:
+        self.direction = 0
+        self.finished = False
+        
+        turn = 11.7
+        pulses_per_degree=turn/90
+        pulses = angle*pulses_per_degree
+                
+        await self.drive_to_target(-pulses, pulses, velocity_limit=35.0, accel_limit=14.0)
+        
+        target_theta = self.theta + angle
+        if target_theta < 0: target_theta += 360
+        if target_theta > 360: target_theta -= 360
+        
+        while not self.finished:
+            self.control_loop()
+            
+            if abs(self.theta - target_theta) < angle//80:
+                break
+        
+        await self.set_stop()  
+        
+    async def turn_to(self, theta: float):
+        delta_t = theta - self.theta
+        while (delta_t > 180): delta_t -= 360
+        while (delta_t < -180): delta_t += 360
+        
+        await self.turn_angle(delta_t)
+    
+    async def drive_to(self, x: int, y: int):
+        delta_x = x - self.x
+        delta_y = y - self.y
+                
+        dist = math.sqrt(delta_x**2+delta_y**2)
+                
+        delta_t = (delta_x/dist) - self.theta * math.pi / 180
+                
+        # normalize theta
+        while (delta_t > math.pi): delta_t -= 2 * math.pi
+        while (delta_t < -math.pi): delta_t += 2 * math.pi
+        
+        delta_t *= 180 / math.pi
+        
+        await self.turn_angle(delta_t)
+        await self.drive_distance(dist)
+    
+    async def drive_to_point(self, x, y, theta):
+        points = self.pathfinder.proccess(start=Position(self.x//10, self.y//10), target=Position(int(x)//10, int(y)//10))
+        for point in points:
+            await self.drive_to(point.x*10, point.y*10)
+        
+        await self.turn_to(theta)
+        
     async def clean_wheels(self) -> None:
         for motor_id, controller in self.controllers.items():
             await controller.set_position(
@@ -267,14 +355,6 @@ class MotorController():
                 watchdog_timeout=math.nan
             )
         
-    async def set_stop(self):
-        for motor_id, controller in self.controllers.items():
-            await controller.set_position(
-                position=math.nan, 
-                velocity_limit=0, 
-            )
-        
-        [await controller.set_stop() for controller in self.controllers.values()]
         
     async def home(self):
         [await controller.set_output_exact(position=0.0)
@@ -287,79 +367,60 @@ class MotorController():
         while True:
             torque = await self.get_torque()
             velocity = await self.get_velocity()
-            if velocity > 7.9: accellerated = True
+            if velocity > 4.9: accellerated = True
             if accellerated and torque > 0.049 and velocity < 0.1: break
         
-        await asyncio.sleep(0.2)
         await self.set_stop()
         
-    async def drive_distance(self, dist:int) -> None:
-        self.direction = 1 if dist > 0 else -1
-        
-        pulses_per_mm = 0.067
-        pulses = dist * pulses_per_mm
-        
-        await self.drive_to_target(pulses, pulses)
-        
-    async def turn_angle(self, angle: int) -> None:
-        self.direction = 0
-        
-        turn = 11.7
-        pulses_per_degree=turn/90
-        pulses = angle*pulses_per_degree
-                
-        await self.drive_to_target(-pulses, pulses, velocity_limit=35.0, accel_limit=14.0)
-        
-        target_theta = self.theta + angle
-        
-        if target_theta < 0: target_theta += 360
-        if target_theta > 360: target_theta -= 360
-        x, y, theta = 0, 0, 0
-        while True:
-            try:
-                x, y, theta = self.serial_manager.get_pos()
-            except:
-                print('couldnt read serial')
-                
-            if abs(theta - target_theta) < theta//80:
-                break
-        
-        await self.set_stop()  
-        
-    async def turn_to(self, theta: float):
-        delta_t = theta - self.theta
-        while (delta_t > 180): delta_t -= 360
-        while (delta_t < -180): delta_t += 360
-        
-        await self.turn_angle(delta_t)
-        
-    def drive_to(self, x: int, y: int, theta: float | None = None) -> list[str]:
-        delta_x = x - self.x
-        delta_y = y - self.y
-                
-        dist = math.sqrt(delta_x**2+delta_y**2)
-        
-        t = -math.degrees(math.asin(delta_y/dist))
-        
-        actions = [f'r{t}', f'd{int(dist)}']
-        
-        if theta: actions.append(f'r{theta}')
-        
-        return actions  
-        
-    async def control_loop(self) -> DriveState:
+    async def control_loop(self):
         self.finished = await self.get_finished()
                             
+        if self.finished:
+            await self.set_stop()
+            
         try:
             self.x, self.y, self.theta = self.serial_manager.get_pos()
         except:
             self.logger.info("Could not read new pos data")
             
+        # lidar
+        if LIDAR:
+            latest_scan = self.lidar.get_latest_scan()
+            stop = False
+            
+            for angle, distance in latest_scan:
+                # point in relation to bot
+                d_x = distance * math.sin(angle * math.pi / 180)
+                d_y = distance * math.cos(angle * math.pi / 180)
+                
+                # point in arena
+                arena_angle = (-angle) + self.theta
+                arena_x = distance * math.cos(arena_angle * math.pi / 180) + self.x
+                arena_y = distance * math.sin(arena_angle * math.pi / 180) + self.y
+                
+                point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 5cm threshold
+                point_in_arena = True
+                            
+                if (self.direction >= 0 and 0 <= d_y <= 500) and abs(d_x) <= 250 and point_in_arena:
+                    stop = True
+                    self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
+                    break
+                
+                if  (self.direction <= 0 and 0 >= d_y >= -500) and abs(d_x) <= 250 and point_in_arena:
+                    stop = True
+                    self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
+                    break
+                
+            self.stop = stop
+        
+        if self.stopped and not self.stopped_since: self.stopped_since = time()
+        if not self.stopped and self.stopped_since: self.stopped_since = None
+        
         if self.stop:
             self.finished = False
             if not self.stopped:
                 await self.override_target()
-                [await controller.set_stop() for controller in self.controllers.values()]
+                await self.stop()
                 self.stopped = True
                 self.need_to_continue = True
         
@@ -368,20 +429,14 @@ class MotorController():
             self.need_to_continue = False
             self.stopped = False
             
-        if self.finished:
+        if self.time_started + 90 < time():
+            pass    # drive home
+            
+        if self.time_started + 99 < time():
+            self.logger.info('Cutoff')
             await self.set_stop()
+            self.finished = True
         
-        return DriveState(self.x, self.y, self.theta, self.finished, None, self.stopped, self.direction)
-        
-        
-async def main():
-    controller = MotorController()
-    
-    await controller.clean_wheels()
-        
-    while True:
-        time.sleep(0.5)
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
+        if LIDAR and not self.lidar.is_running():
+            self.logger.info("Lidar thread stopped unexpectedly")
+            LIDAR = False

@@ -1,4 +1,4 @@
-#!/Users/jannis/Developer/eurobot/eurobot25/main-bot/raspi/.venv/bin/python3.12
+#!/Users/jannis/Developer/eurobot/eurobot25/main-bot/raspi/.venv/bin/python3.13
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -1,17 +1,13 @@
 from modules.task import Task
-from modules.motor_controller import MotorController
-from modules.drive_state import DriveState
-from modules.lidar import Lidar
 from modules.camera import Camera
-from modules.pico_com import Pico
 from modules.task_presets import TaskPresets
+from modules.motor_controller import MotorController
 
 import math
 import asyncio
 from time import time
 import logging
 
-LIDAR = False
 CAM = True
 
 class RobotController:
@@ -26,21 +22,16 @@ class RobotController:
         self.logger = logging.getLogger(__name__)
         
         self.time_started = time()
-        self.motor_controller = MotorController()
-        self.lidar = Lidar() if LIDAR else None
-        self.camera = Camera() if CAM else None
         
-        if LIDAR and not self.lidar.start_scanning():
-            self.logger.info("Failed to start Lidar")
-            return
+        self.motor_controller = MotorController()
+        self.camera = Camera() if CAM else None
 
         if CAM:
             self.camera.start()
             self.logger.info("Camera started")
                     
-        self.task: Task | None = Task(self.motor_controller, self.camera, [['dp200;500;-30']])
-        self.tactic: Task | None = Task(self.motor_controller, self.camera, [['dp200;500;-30']])
-        self.home_routine: Task | None = Task(self.motor_controller, self.camera, [['dp200;500;-30']])
+        self.tactic: Task | None = None
+        self.home_routine: Task | None = None
         
         self.task_presets = TaskPresets()
         
@@ -73,7 +64,7 @@ class RobotController:
         
     def set_tactic(self, start_pos: int, tactic: int):
         self.x, self.y, self.theta = self.start_positions[start_pos]
-        self.motor_controller.set_pos(self.x, self.y, self.theta)
+        self.task.motor_controller.set_pos(self.x, self.y, self.theta)
         self.task_presets.color = 'yellow' if start_pos <= 3 else 'blue'
         
         tactic = self.tactix[tactic]
@@ -82,79 +73,28 @@ class RobotController:
         self.home_routine = Task(self.motor_controller, self.camera, home_routine)
         
     async def home(self):
-        self.task = await self.home_routine.next_action()
-        
         self.logger.info('Homing routine started')
         
         while True:
-            not_done = await self.run()
-            if not not_done: break
+            self.home_routine = await self.home_routine.run()
+            if not self.home_routine: break
         
     async def start(self):
-        self.task = await self.tactic.next_action()
-        
-        self.task.time_started = time()
+        self.task.motor_controller.time_started = time()
         self.logger.info(f'Tacitc started')
         
-    async def run(self) -> bool:        
-        state = await self.task.control_loop()
-                
-        if state.finished: 
-            return False
-                        
-        self.x = state.x
-        self.y = state.y
-        self.theta = state.theta
-        self.task = state.task
-        
-        # lidar
-        if LIDAR:
-            latest_scan = self.lidar.get_latest_scan()
-            stop = False
-            
-            for angle, distance in latest_scan:
-                # point in relation to bot
-                d_x = distance * math.sin(angle * math.pi / 180)
-                d_y = distance * math.cos(angle * math.pi / 180)
-                
-                # point in arena
-                arena_angle = (-angle) + self.theta
-                arena_x = distance * math.cos(arena_angle * math.pi / 180) + self.x
-                arena_y = distance * math.sin(arena_angle * math.pi / 180) + self.y
-                
-                point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 5cm threshold
-                point_in_arena = True
-                            
-                if (state.direction >= 0 and 0 <= d_y <= 500) and abs(d_x) <= 250 and point_in_arena:
-                    stop = True
-                    self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
-                    break
-                
-                if  (state.direction <= 0 and 0 >= d_y >= -500) and abs(d_x) <= 250 and point_in_arena:
-                    stop = True
-                    self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
-                    break
-                
-            self.motor_controller.stop = False
-        
-        if LIDAR and not self.lidar.is_running():
-            self.logger.info("Lidar thread stopped unexpectedly")
-            return False
-                
-        return True, self.points
+        while True:
+            self.tactic = await self.tactic.run()
+            if not self.tactic: break
 
 async def main():
     try:
         controller = RobotController()
         controller.set_tactic(1, 1)
         await controller.start()
-        while True:
-            not_done = await controller.run()
-            if not not_done:
-                break
 
     finally:
-        await controller.motor_controller.set_stop()
+        await controller.task.motor_controller.set_stop()
         await asyncio.sleep(0.5)
     
 
