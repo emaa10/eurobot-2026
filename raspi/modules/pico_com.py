@@ -84,9 +84,11 @@ class Pico():
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def servo_rotate_left(self, command: int):
-        if(command == 1): self.set_command("x", 115)
-        elif(command == 2): self.set_command("x", 5)
-        elif(command == 3): self.set_command("x", 5)
+        if(command == 1): self.set_command("x", 180)
+        # if(command == 1): self.set_command("x", 170)
+        elif(command == 2): self.set_command("x", 0)
+        # elif(command == 2): self.set_command("x", 8)
+        elif(command == 3): self.set_command("x", 8)
         elif(command == 4): self.set_command("x", 75)
 
     def home_pico(self):

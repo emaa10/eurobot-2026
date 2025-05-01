@@ -9,7 +9,7 @@
 #define MID_STEPPER_DIR 19  
 #define MID_STEPPER_STEP 20 
 
-#define SWITCH1 15 // backup
+// #define SWITCH1 15 // backup
 #define SWITCH2 14 // -> MID_stepper
 #define SWITCH3 13 // -> RIGHT_stepper
 
@@ -18,9 +18,9 @@
 #define SERVO_DRIVE_FLAG 6
 #define SERVO_GRIP_RIGHT 7
 #define SERVO_ROTATE_RIGHT 8
-#define SERVO_ROTATE_LEFT 9
+#define SERVO_ROTATE_LEFT 11 //9
 #define SERVO_GRIP_LEFT 10       //backup: 11
-#define SERVO8 11
+#define SERVO8 9 //1
 
 Servo servo_DRIVE_LEFT;
 Servo servo_PLATE_GRIPPER;
@@ -126,11 +126,11 @@ void servoRotateLeftOutwards(){
 }
 
 void servoRotateLeftInwards(){
-    servo_ROTATE_LEFT.write(5);
+    servo_ROTATE_LEFT.write(8);
 }
 
 void servoRotateLeftDeposit(){
-    servo_ROTATE_LEFT.write(5);
+    servo_ROTATE_LEFT.write(8);
 }
 
 void servoRotateLeftMid(){
@@ -319,7 +319,7 @@ void setup() {
     pinMode(MID_STEPPER_EN, OUTPUT);
     pinMode(MID_STEPPER_STEP, OUTPUT);
 
-    pinMode(SWITCH1, INPUT_PULLUP);
+    // pinMode(SWITCH1, INPUT_PULLUP);
     pinMode(SWITCH2, INPUT_PULLUP);
     pinMode(SWITCH3, INPUT_PULLUP);
 
@@ -340,6 +340,7 @@ void setup() {
     rightStepper.setAcceleration(ACCELERATION);
     midStepper.setMaxSpeed(MAX_SPEED);
     midStepper.setAcceleration(ACCELERATION);
+
     
     // servoGripLeftClosed();
     // startupRoutine();

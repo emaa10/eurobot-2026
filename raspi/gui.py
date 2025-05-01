@@ -401,8 +401,8 @@ class PicoScene(QtWidgets.QWidget):
 
     def initUI(self):
         main_layout = QtWidgets.QVBoxLayout()
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(3)
+        main_layout.setContentsMargins(10,10,10,10)
+        main_layout.setSpacing(1)
 
         self.add_close_and_stop_buttons(main_layout, self.stop_everything)
 

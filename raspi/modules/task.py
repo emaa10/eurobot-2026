@@ -121,6 +121,7 @@ class Task():
                 print("1")
                 
                 angle, distance = self.camera.get_distance()
+                print(f"")
                 angle, distance = self.camera.get_angle(distance, angle)
                 await self.motor_controller.turn_angle(-90+angle)
                 await self.motor_controller.drive_distance(distance)
