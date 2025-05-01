@@ -212,10 +212,11 @@ class MotorController():
         
         [await controller.set_stop() for controller in self.controllers.values()]
 
-    async def get_remaining_distance(self):
+    async def override_target(self):
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
         
-        return abs(self.target_positions[0] - servo_data.values()[0].values[moteus.Register.POSITION])
+        for i, data in enumerate(servo_data.values()):
+            self.target_positions[i+1] = self.target_positions[i+1] - data.values[moteus.Register.POSITION]
     
     async def set_target(self, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.05) -> None:
         # Set zero position
@@ -265,8 +266,8 @@ class MotorController():
         if target_theta > 360: target_theta -= 360
         while not self.finished:
             await self.control_loop()
-                
-            if abs(self.theta - target_theta) < target_theta//120:
+                            
+            if abs(target_theta - self.theta) < target_theta//120:
                 break
         
         await self.set_stop()  
@@ -311,7 +312,6 @@ class MotorController():
                 accel_limit=50, 
                 watchdog_timeout=math.nan
             )
-        
         
     async def home(self):
         [await controller.set_output_exact(position=0.0)
@@ -379,18 +379,12 @@ class MotorController():
         if self.stop:
             self.finished = False
             if not self.stopped:
-                if self.direction == 1:
-                    self.remaining = self.get_remaining_distance()
-                elif self.direction == -1:
-                    self.remaining = -self.get_remaining_distance()
+                await self.override_target()
                 await self.set_stop()
                 self.stopped = True
-                self.need_to_continue = True
         
-        if self.need_to_continue and not self.stop:
-            print('weider gehts')
+        if self.stopped and not self.stop:
             await self.set_target()
-            self.need_to_continue = False
             self.stopped = False
             
         if self.time_started + 90 < time():
