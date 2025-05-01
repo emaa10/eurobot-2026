@@ -342,7 +342,7 @@ void setup() {
     midStepper.setAcceleration(ACCELERATION);
     
     // servoGripLeftClosed();
-    startupRoutine();
+    // startupRoutine();
     // servoGripRightClosed();
     // servoRotateRightOutwards();
     // servoDriveFlagUP();
