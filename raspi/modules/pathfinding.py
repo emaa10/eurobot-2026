@@ -5,7 +5,7 @@ import numpy as np
 import random
 import logging
 
-from modules.position import Position
+from position import Position
 
 def time_ms():
     return time_ns() // 1000000
@@ -24,16 +24,16 @@ class Pathfinder():
         self.bot_width = bot_width
         
         # stacks
-        self.add_stack(Position(90, 90), Position(130, 100))
-        self.add_stack(Position(170, 90), Position(210, 100))
-        self.add_stack(Position(195, 170), Position(235, 180))
-        self.add_stack(Position(65, 170), Position(105, 180))
-        self.add_stack(Position(55, 0), Position(95, 10))
-        self.add_stack(Position(205, 0), Position(245, 10))
-        self.add_stack(Position(260, 45), Position(299, 55))
-        self.add_stack(Position(0, 45), Position(40, 55))
-        self.add_stack(Position(260, 100), Position(299, 110))
-        self.add_stack(Position(0, 100), Position(40, 110))
+        self.add_stack(Position(0, 20), Position(13, 60)) #1
+        self.add_stack(Position(0, 112), Position(13, 152)) #2
+        self.add_stack(Position(65, 165), Position(105, 175)) #3
+        self.add_stack(Position(195, 165), Position(235, 175)) #4
+        self.add_stack(Position(287, 112), Position(299, 152)) #5
+        self.add_stack(Position(287, 20), Position(299, 60)) #6
+        self.add_stack(Position(205, 20), Position(245, 30)) #7
+        self.add_stack(Position(55, 20), Position(95, 30)) #8
+        self.add_stack(Position(90, 90), Position(130, 100)) #9
+        self.add_stack(Position(170, 90), Position(210, 100)) #10
         
         # stage and ramp
         self.add_obstacle(Position(65, 180), Position(235, 199))
@@ -116,9 +116,11 @@ class Pathfinder():
             
         # Check robot width boundaries
         right1, right2 = self.calculate_parallel_points(node1, node2, self.bot_width)
+        right3, right4 = self.calculate_parallel_points(node1, node2, self.bot_width//2)
         left1, left2 = self.calculate_parallel_points(node1, node2, -self.bot_width)
+        left3, left4 = self.calculate_parallel_points(node1, node2, -self.bot_width//2)
         
-        return self.collission(right1, right2) or self.collission(left1, left2)
+        return self.collission(right1, right2) or self.collission(right3, right4) or self.collission(left1, left2) or self.collission(left3, left4)
     
     def plan(self, start, target) -> list[Position] | None:
         # if no collision return target         
@@ -215,4 +217,4 @@ class Pathfinder():
         
 if __name__ == "__main__":
     pathfinder = Pathfinder(start=Position(25, 10), target=Position(30, 135))
-    pathfinder.proccess(Position(25, 10), Position(20, 80), True)
+    pathfinder.proccess(Position(125, 10), Position(50, 150), True)
