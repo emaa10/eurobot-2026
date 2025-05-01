@@ -413,48 +413,48 @@ class PicoScene(QtWidgets.QWidget):
         # --- Other existing groups ---
         left_servo_group = QtWidgets.QGroupBox()
         left_servo_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Left Servo Up", lambda: self.main_controller.tactic.set_left_servo(1), left_servo_layout)
-        self.create_command_button("Left Servo Down", lambda: self.main_controller.tactic.set_left_servo(2), left_servo_layout)
+        self.create_command_button("Left Servo Up", lambda: self.main_controller.pico_controller.set_left_servo(1), left_servo_layout)
+        self.create_command_button("Left Servo Down", lambda: self.main_controller.pico_controller.set_left_servo(2), left_servo_layout)
         left_servo_group.setLayout(left_servo_layout)
         main_layout.addWidget(left_servo_group)
 
         plate_gripper_group = QtWidgets.QGroupBox()
         plate_gripper_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Fully Open", lambda: self.main_controller.tactic.set_plate_gripper(1), plate_gripper_layout)
-        self.create_command_button("Grip Plate", lambda: self.main_controller.tactic.set_plate_gripper(2), plate_gripper_layout)
-        self.create_command_button("Collision Avoid", lambda: self.main_controller.tactic.set_plate_gripper(3), plate_gripper_layout)
-        self.create_command_button("Closed", lambda: self.main_controller.tactic.set_plate_gripper(4), plate_gripper_layout)
+        self.create_command_button("Fully Open", lambda: self.main_controller.pico_controller.set_plate_gripper(1), plate_gripper_layout)
+        self.create_command_button("Grip Plate", lambda: self.main_controller.pico_controller.set_plate_gripper(2), plate_gripper_layout)
+        self.create_command_button("Collision Avoid", lambda: self.main_controller.pico_controller.set_plate_gripper(3), plate_gripper_layout)
+        self.create_command_button("Closed", lambda: self.main_controller.pico_controller.set_plate_gripper(4), plate_gripper_layout)
         plate_gripper_group.setLayout(plate_gripper_layout)
         main_layout.addWidget(plate_gripper_group)
 
         drive_flag_group = QtWidgets.QGroupBox()
         drive_flag_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Flag Up", lambda: self.main_controller.tactic.set_drive_flag(1), drive_flag_layout)
-        self.create_command_button("Flag Down", lambda: self.main_controller.tactic.set_drive_flag(2), drive_flag_layout)
+        self.create_command_button("Flag Up", lambda: self.main_controller.pico_controller.set_drive_flag(1), drive_flag_layout)
+        self.create_command_button("Flag Down", lambda: self.main_controller.pico_controller.set_drive_flag(2), drive_flag_layout)
         drive_flag_group.setLayout(drive_flag_layout)
         main_layout.addWidget(drive_flag_group)
 
         right_grip_group = QtWidgets.QGroupBox()
         right_grip_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Grip Closed", lambda: self.main_controller.tactic.set_grip_right(1), right_grip_layout)
-        self.create_command_button("Grip Open", lambda: self.main_controller.tactic.set_grip_right(2), right_grip_layout)
+        self.create_command_button("Grip Closed", lambda: self.main_controller.pico_controller.set_grip_right(1), right_grip_layout)
+        self.create_command_button("Grip Open", lambda: self.main_controller.pico_controller.set_grip_right(2), right_grip_layout)
         right_grip_group.setLayout(right_grip_layout)
         main_layout.addWidget(right_grip_group)
 
         right_rotate_group = QtWidgets.QGroupBox()
         right_rotate_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Rotate Outwards", lambda: self.main_controller.tactic.servo_rotate_right(1), right_rotate_layout)
-        self.create_command_button("Rotate Inwards", lambda: self.main_controller.tactic.servo_rotate_right(2), right_rotate_layout)
-        self.create_command_button("Rotate Deposit", lambda: self.main_controller.tactic.servo_rotate_right(3), right_rotate_layout)
-        self.create_command_button("Rotate Mid", lambda: self.main_controller.tactic.servo_rotate_right(4), right_rotate_layout)
+        self.create_command_button("Rotate Outwards", lambda: self.main_controller.pico_controller.servo_rotate_right(1), right_rotate_layout)
+        self.create_command_button("Rotate Inwards", lambda: self.main_controller.pico_controller.servo_rotate_right(2), right_rotate_layout)
+        self.create_command_button("Rotate Deposit", lambda: self.main_controller.pico_controller.servo_rotate_right(3), right_rotate_layout)
+        self.create_command_button("Rotate Mid", lambda: self.main_controller.pico_controller.servo_rotate_right(4), right_rotate_layout)
         right_rotate_group.setLayout(right_rotate_layout)
         main_layout.addWidget(right_rotate_group)
 
         system_group = QtWidgets.QGroupBox()
         system_layout = QtWidgets.QHBoxLayout()
-        home_btn = self.create_command_button("Home Everything", lambda: self.main_controller.tactic.home_pico(), system_layout)
+        home_btn = self.create_command_button("Home Everything", lambda: self.main_controller.pico_controller.home_pico(), system_layout)
         home_btn.setStyleSheet("font-size: 20px; background-color: #85c1e9; border-radius: 10px; padding: 10px;")
-        emergency_btn = self.create_command_button("EMERGENCY STOP", lambda: self.main_controller.tactic.emergency_stop(), system_layout)
+        emergency_btn = self.create_command_button("EMERGENCY STOP", lambda: self.main_controller.pico_controller.emergency_stop(), system_layout)
         emergency_btn.setStyleSheet("font-size: 20px; background-color: #e74c3c; color: white; border-radius: 10px; padding: 10px;")
         system_group.setLayout(system_layout)
         main_layout.addWidget(system_group)
@@ -619,10 +619,10 @@ class DriveScene(QtWidgets.QWidget):
         self.robot_running = False
         
     async def run_robot_controller(self):
-        
         while self.robot_running:
             try:
                 points = await self.main_controller.run()
+                print(points)
                 if not points:
                     self.robot_running = False
                     break

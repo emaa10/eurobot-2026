@@ -69,8 +69,8 @@ class RobotController:
         tactic = self.tactix[tactic_num]
         home_routine = self.home_routines[start_pos_num]
                 
-        self.tactic = Task(self.motor_controller, self.camera, tactic)
-        self.home_routine = Task(self.motor_controller, self.camera, home_routine)
+        self.tactic = Task(self.motor_controller, self.camera, self.pico_controller, tactic)
+        self.home_routine = Task(self.motor_controller, self.camera, self.pico_controller, home_routine)
         
     async def home(self):
         self.logger.info('Homing routine started')

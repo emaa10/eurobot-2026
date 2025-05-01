@@ -169,6 +169,7 @@ class MotorController():
         self.abortable = True
         
         self.latest_scan_time = 0
+        self.time_started = 0
         
         
     def set_pos(self, x, y, theta):
@@ -371,10 +372,7 @@ class MotorController():
                 if  (self.direction <= 0 and 0 >= d_y >= -500) and abs(d_x) <= 250 and point_in_arena:
                     self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
-                    break
-                
-        print(self.stop)
-                
+                    break                
                     
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None

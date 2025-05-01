@@ -13,10 +13,10 @@ from modules.pico_com import Pico
 import asyncio
 
 class Task():
-    def __init__(self, motor_controller: MotorController | None, camera: Camera | None, action_set: list[list[str]]):
-        self.motor_controller = motor_controller if motor_controller else MotorController()
+    def __init__(self, motor_controller: MotorController, camera: Camera, pico_controller: Pico, action_set: list[list[str]]):
+        self.motor_controller = motor_controller
         self.camera = camera
-        self.pico_controller = Pico()
+        self.pico_controller = pico_controller
         self.initial_actions = action_set[0]# if we abort and want to add task to end
         self.actions = action_set.pop(0)
         self.current_action = None
