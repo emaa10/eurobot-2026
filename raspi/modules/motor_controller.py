@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import math
 import moteus
-import time
+from time import time
 import logging
 
 from modules.drive_state import DriveState
@@ -43,7 +43,7 @@ class ServoClock:
 
         self.state = await self.controller.execute(self._query)
 
-        now = time.time()
+        now = time()
 
         ms_count_delta = 0
 
@@ -92,7 +92,7 @@ class Poller:
 
     def __init__(self, controllers: dict[int, moteus.Controller], args: argparse.ArgumentParser):
         self.controllers = controllers
-        self.last_time = time.time()
+        self.last_time = time()
         self.servo_data = {x.id: {}
                                for x in self.controllers.values()}
         self.servo_clocks = {
@@ -104,9 +104,9 @@ class Poller:
         
 
     async def wait_for_event(self, condition, timeout=None, per_cycle=None):
-        start = time.time()
+        start = time()
         while True:
-            now = time.time()
+            now = time()
             if (now - start) > timeout:
                 raise RuntimeError("timeout")
 
@@ -129,7 +129,6 @@ class Poller:
 
 class MotorController():
     def __init__(self) -> None:
-        LIDAR = True
         parser = argparse.ArgumentParser()
         parser.add_argument('--no-synchronize', action='store_true')
         parser.add_argument('--verbose', '-v', action='store_true')
@@ -147,9 +146,9 @@ class MotorController():
         self.poller = Poller(self.controllers, args)
         
         self.serial_manager = Arduino()
-        self.lidar = Lidar() if LIDAR else None
+        self.lidar = Lidar()
             
-        if LIDAR and not self.lidar.start_scanning():
+        if not self.lidar.start_scanning():
             self.logger.info("Failed to start Lidar")
             return
         
@@ -234,6 +233,7 @@ class MotorController():
     async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.05) -> None:
         self.target_positions = {1: pos1, 2: -pos2}
         await self.set_target(velocity_limit, accel_limit, maximum_torque)
+        await asyncio.sleep(0.2)
         
         
     async def drive_distance(self, dist:int) -> None:
@@ -246,7 +246,7 @@ class MotorController():
         await self.drive_to_target(pulses, pulses)
         
         while not self.finished:
-            self.control_loop()
+            await self.control_loop()
         
     async def turn_angle(self, angle: float) -> None:
         self.direction = 0
@@ -263,12 +263,19 @@ class MotorController():
         if target_theta > 360: target_theta -= 360
         
         while not self.finished:
-            self.control_loop()
+            await self.control_loop()
             
             if abs(self.theta - target_theta) < angle//80:
+                print(self.theta)
                 break
         
         await self.set_stop()  
+        
+        await asyncio.sleep(2)
+        
+        await self.control_loop()
+        
+        print(self.theta)
         
     async def turn_to(self, theta: float):
         delta_t = theta - self.theta
@@ -327,9 +334,9 @@ class MotorController():
         
         await self.set_stop()
         
-    async def control_loop(self):
+    async def control_loop(self):        
         self.finished = await self.get_finished()
-                            
+                                    
         if self.finished:
             await self.set_stop()
             
@@ -338,11 +345,10 @@ class MotorController():
         except:
             self.logger.info("Could not read new pos data")
             
-        # lidar
-        if LIDAR:
-            latest_scan = self.lidar.get_latest_scan()
-            stop = False
-            
+        latest_scan = self.lidar.get_latest_scan()
+        stop = False
+        
+        if latest_scan: 
             for angle, distance in latest_scan:
                 # point in relation to bot
                 d_x = distance * math.sin(angle * math.pi / 180)
@@ -365,8 +371,8 @@ class MotorController():
                     stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
-                
-            self.stop = stop
+            
+            self.stop = False
         
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None
@@ -375,7 +381,7 @@ class MotorController():
             self.finished = False
             if not self.stopped:
                 await self.override_target()
-                await self.stop()
+                await self.set_stop()
                 self.stopped = True
                 self.need_to_continue = True
         
@@ -392,6 +398,5 @@ class MotorController():
             await self.set_stop()
             self.finished = True
         
-        if LIDAR and not self.lidar.is_running():
+        if not self.lidar.is_running():
             self.logger.info("Lidar thread stopped unexpectedly")
-            LIDAR = False

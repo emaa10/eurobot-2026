@@ -13,7 +13,7 @@ class RobotController:
     def __init__(self):
         CAM = True
         
-        self.start_pos
+        self.start_pos = 0
         self.points = 0
         
         logging.basicConfig(filename='/home/eurobot/main-bot/raspi/eurobot.log', level=logging.INFO)
@@ -54,19 +54,19 @@ class RobotController:
         }
         
         self.tactix = {
-            1: [['ta180'], ['dd200']],
+            1: [['ta90']],
             2: [['dp200;500;-30']],
             3: [['cd']],
             4: [self.task_presets.flag()],
         }
         
-    def set_tactic(self, start_pos: int, tactic: int):
-        self.start_pos = self.start_positions[start_pos]
-        self.task_presets.color = 'yellow' if start_pos <= 3 else 'blue'
+    def set_tactic(self, start_pos_num: int, tactic_num: int):
+        self.start_pos = self.start_positions[start_pos_num]
+        self.task_presets.color = 'yellow' if start_pos_num <= 3 else 'blue'
         
-        tactic = self.tactix[tactic]
-        home_routine = self.home_routines[start_pos]
-        
+        tactic = self.tactix[tactic_num]
+        home_routine = self.home_routines[start_pos_num]
+                
         self.tactic = Task(self.motor_controller, self.camera, tactic)
         self.home_routine = Task(self.motor_controller, self.camera, home_routine)
         
@@ -79,28 +79,28 @@ class RobotController:
             
         self.tactic.motor_controller.set_pos(self.start_pos)
         
-    async def run(self) -> int | None:
-        self.task.motor_controller.time_started = time()
+    def start(self):
+        self.tactic.motor_controller.time_started = time()
         self.logger.info(f'Tacitc started')
-    
+        
+    async def run(self) -> int | None:
         self.tactic = await self.tactic.run()
         if not self.tactic: return None
         
         return self.tactic.points
 
 async def main():
-    try:
-        controller = RobotController()
-        controller.set_tactic(1, 1)
-        await controller.home()
-        points = 1
-        while True: 
-            points = await controller.run()
-            if not points: break
+    controller = RobotController()
+    controller.set_tactic(1, 1)
+    # await controller.home()
+    controller.start()
+    points = 1
+    while True: 
+        points = await controller.run()
+        if not points: break
 
-    finally:
-        await controller.task.motor_controller.set_stop()
-        await asyncio.sleep(0.5)
+    await controller.motor_controller.set_stop()
+    await asyncio.sleep(0.5)
     
 
 if __name__ == '__main__':

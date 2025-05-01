@@ -21,16 +21,17 @@ class Task():
         self.actions = action_set.pop(0)
         self.current_action = None
         self.successor = None
-        
+                
         self.stopped_since = None
         self.time_started = 0
         
         self.points = 20
         
         self.logger = logging.getLogger(__name__)
+        
                 
         for actions in action_set:
-            self.add_task(Task(self.motor_controller, self.camera, self.pico_controller, [actions]))
+            self.add_task(Task(self.motor_controller, self.camera, [actions]))
         
         self.pathfinder = Pathfinder()
     
@@ -46,7 +47,7 @@ class Task():
         
     async def run(self) -> Self:
         if len(self.actions) <= 0:
-            if not self.successor: None
+            if not self.successor: return None
             
             self.successor.points = self.points
             await self.successor.run()
