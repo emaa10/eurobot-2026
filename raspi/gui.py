@@ -556,7 +556,6 @@ class DriveScene(QtWidgets.QWidget):
         top_bar.addWidget(close_btn)
         
         main_layout.addLayout(top_bar)
-
         
         # Add stretch before content to push it down (vertical centering)
         main_layout.addStretch(1)

@@ -18,8 +18,8 @@
 #define SERVO_DRIVE_FLAG 6
 #define SERVO_GRIP_RIGHT 7
 #define SERVO_ROTATE_RIGHT 8
-#define SERVO6 9
-#define SERVO7 10       //backup: 11
+#define SERVO_ROTATE_LEFT 9
+#define SERVO_GRIP_LEFT 10       //backup: 11
 #define SERVO8 11
 
 Servo servo_DRIVE_LEFT;
@@ -245,8 +245,8 @@ void reinitializeServos() {
     servo_DRIVE_FLAG.attach(SERVO_DRIVE_FLAG, 700, 2600);
     servo_GRIP_RIGHT.attach(SERVO_GRIP_RIGHT, 700, 2600);
     servo_ROTATE_RIGHT.attach(SERVO_ROTATE_RIGHT, 700, 2600);
-    servo6.attach(SERVO6);
-    servo7.attach(SERVO7);
+    servo6.attach(SERVO_ROTATE_LEFT);
+    servo7.attach(SERVO_GRIP_LEFT);
     servo8.attach(SERVO8);
 }
 
@@ -298,8 +298,8 @@ void setup() {
     servo_DRIVE_FLAG.attach(SERVO_DRIVE_FLAG, 700, 2600);
     servo_GRIP_RIGHT.attach(SERVO_GRIP_RIGHT, 700, 2600);
     servo_ROTATE_RIGHT.attach(SERVO_ROTATE_RIGHT, 700, 2600);
-    servo6.attach(SERVO6);
-    servo7.attach(SERVO7);
+    servo6.attach(SERVO_ROTATE_LEFT);
+    servo7.attach(SERVO_GRIP_LEFT);
     servo8.attach(SERVO8);
 
     rightStepper.setMaxSpeed(MAX_SPEED);
@@ -315,6 +315,14 @@ void setup() {
 
 void loop() {
     processSteppers();
+    // delay(1000);
+    // servo6.write(80);
+    // servo7.write(0);
+    // delay(1000);
+    // servo7.write(180);
+    // servo6.write(180);
+    emergencyStop();
+    delay(1000);
 }
 
 void setup1(){
