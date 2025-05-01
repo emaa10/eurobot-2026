@@ -142,19 +142,19 @@ void servoRotateLeftMid(){
 //refer to look up table for servo positions
 void colisionFreeServos() {
     servoDriveLeftDown();
-    delay(100);
+    delay(200);
     servoPlateGripperColisionAvoidence(); // weit vor sodass arm nicht aufsetzt
-    delay(100);
+    delay(200);
     servoDriveFlagUP(); // ganz hoch, dann muss später nichtmehr gehomed werden
-    delay(100);
+    delay(200);
     servo_GRIP_RIGHT.write(20);
-    delay(100);
+    delay(200);
     servo_ROTATE_RIGHT.write(50);
-    delay(100);
-    servo_ROTATE_LEFT.write(120);
-    delay(100);
+    delay(200);
+    servo_ROTATE_LEFT.write(155);
+    delay(200);
     servo_GRIP_LEFT.write(100);
-    delay(100);
+    delay(200);
     servo8.write(0);
 }
 
@@ -340,6 +340,13 @@ void setup() {
     rightStepper.setAcceleration(ACCELERATION);
     midStepper.setMaxSpeed(MAX_SPEED);
     midStepper.setAcceleration(ACCELERATION);
+
+    // servo_ROTATE_LEFT.write(170);
+    // delay(1000);
+    // servo_ROTATE_LEFT.write(140);
+    // delay(1000);
+    // servo_ROTATE_LEFT.write(170);
+    
 
     
     // servoGripLeftClosed();
