@@ -8,14 +8,12 @@ import asyncio
 from time import time
 import logging
 
-CAM = True
 
 class RobotController:
     def __init__(self):
-        self.x = 0
-        self.y = 0
-        self.theta = 0.0
+        CAM = True
         
+        self.start_pos
         self.points = 0
         
         logging.basicConfig(filename='/home/eurobot/main-bot/raspi/eurobot.log', level=logging.INFO)
@@ -63,12 +61,12 @@ class RobotController:
         }
         
     def set_tactic(self, start_pos: int, tactic: int):
-        self.x, self.y, self.theta = self.start_positions[start_pos]
-        self.task.motor_controller.set_pos(self.x, self.y, self.theta)
+        self.start_pos = self.start_positions[start_pos]
         self.task_presets.color = 'yellow' if start_pos <= 3 else 'blue'
         
         tactic = self.tactix[tactic]
         home_routine = self.home_routines[start_pos]
+        
         self.tactic = Task(self.motor_controller, self.camera, tactic)
         self.home_routine = Task(self.motor_controller, self.camera, home_routine)
         
@@ -78,20 +76,27 @@ class RobotController:
         while True:
             self.home_routine = await self.home_routine.run()
             if not self.home_routine: break
+            
+        self.tactic.motor_controller.set_pos(self.start_pos)
         
-    async def start(self):
+    async def run(self) -> int | None:
         self.task.motor_controller.time_started = time()
         self.logger.info(f'Tacitc started')
+    
+        self.tactic = await self.tactic.run()
+        if not self.tactic: return None
         
-        while True:
-            self.tactic = await self.tactic.run()
-            if not self.tactic: break
+        return self.tactic.points
 
 async def main():
     try:
         controller = RobotController()
         controller.set_tactic(1, 1)
-        await controller.start()
+        await controller.home()
+        points = 1
+        while True: 
+            points = await controller.run()
+            if not points: break
 
     finally:
         await controller.task.motor_controller.set_stop()

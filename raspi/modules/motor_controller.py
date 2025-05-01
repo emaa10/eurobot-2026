@@ -1,8 +1,3 @@
-'''This example shows how time can be synchronized across multiple
-moteus controllers.  When time is synchronized in this way, then
-trajectory commands that would take the same amount of time will
-complete simultaneously.'''
-
 import argparse
 import asyncio
 import math
@@ -16,23 +11,8 @@ from modules.lidar import Lidar
 from modules.pathfinding import Pathfinder
 from modules.position import Position
 
-LIDAR = True
-
 class ServoClock:
-    '''This class can be used to keep a controller's time base
-    synchronized with the host time base.
-
-    Instantiate it, then call await ServoClock.update_second() at a
-    regular rate, approximately at 1Hz.
-    '''
-
-    # This constant should be approximately 5-10x the update rate.
-    # Smaller means that the device time will converge with the host
-    # time more quickly, but will also be less stable.
     TIME_CONSTANT = 5.0
-
-    # This is the approximate change in clock rate of the device for
-    # each trim count change.
     TRIM_STEP_SIZE = 0.0025
 
     def __init__(self, controller, measure_only=False):
@@ -42,8 +22,6 @@ class ServoClock:
         self.device_ms_count = 0
         self.measure_only = measure_only
 
-        # This is the currently reported time error between the host
-        # and the device.
         self.time_error_s = 0.0
 
         self._query = self.controller.make_custom_query(
@@ -52,22 +30,15 @@ class ServoClock:
         )
         
     def _calculate_ms_delta(self, time1, time2):
-        # These are returned as int32s, so they may have wrapped around.
         if time2 < 0 and time1 > 0:
             result_ms = time2 + (2**32) - time1
         else:
             result_ms = time2 - time1
         if result_ms > 100000 or time2 < time1:
-            # We'll assume any difference of more than 100s is a problem
-            # (or a negative difference).
             return None
         return result_ms
 
     async def update_second(self):
-        '''This should be called at a regular interval, no more often than
-        once per second.
-        '''
-
         old_state = self.state
 
         self.state = await self.controller.execute(self._query)
@@ -89,37 +60,20 @@ class ServoClock:
                 self.device_ms_count += ms_count_delta
 
         if self.initial_time is not None and ms_count_delta != 0:
-            # We have enough information to calculate an update.
-
-            # First, we calculate the delta between our starting time
-            # and now in the host timespace.
             total_host_time = now - self.initial_time
 
-            # And the amount of host time that has advanced since our
-            # last call.  This should be approximately 1s.
             period_host_time = now - self.last_time
-
-            # Now measure the absolute drift in seconds between the
-            # device and our host clock.
+            
             absolute_drift = self.device_ms_count / 1000 - total_host_time
             self.time_error_s = absolute_drift
 
-            # And secondarily measure the ratio between the device
-            # time and host time during the last period.
             rate_drift = (ms_count_delta / 1000) / period_host_time
 
-            # What drift would we need to cancel out our total
-            # absolute drift over the next TIME_CONSTANT seconds?
             desired_drift = 1 + -absolute_drift / self.TIME_CONSTANT
 
-            # Figure out how much we need to change the devices clock
-            # rate in order to cancel that drift, both as a floating
-            # point value, then again in integer counts.
             delta_drift = desired_drift - rate_drift
             delta_drift_integral = round(delta_drift / self.TRIM_STEP_SIZE)
 
-            # Finally, we figure out the new trim value we should ask
-            # for.
             new_trim = (self.state.values[moteus.Register.CLOCK_TRIM] +
                         delta_drift_integral)
 
@@ -175,6 +129,7 @@ class Poller:
 
 class MotorController():
     def __init__(self) -> None:
+        LIDAR = True
         parser = argparse.ArgumentParser()
         parser.add_argument('--no-synchronize', action='store_true')
         parser.add_argument('--verbose', '-v', action='store_true')

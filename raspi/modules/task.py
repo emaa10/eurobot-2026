@@ -25,7 +25,7 @@ class Task():
         self.stopped_since = None
         self.time_started = 0
         
-        self.points = 0
+        self.points = 20
         
         self.logger = logging.getLogger(__name__)
                 
