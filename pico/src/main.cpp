@@ -27,8 +27,8 @@ Servo servo_PLATE_GRIPPER;
 Servo servo_DRIVE_FLAG;
 Servo servo_GRIP_RIGHT;
 Servo servo_ROTATE_RIGHT;
-Servo servo6;
-Servo servo7;
+Servo servo_ROTATE_LEFT;
+Servo servo_GRIP_LEFT;
 Servo servo8;
 
 // AccelStepper::DRIVER means step/dir pins
@@ -119,8 +119,8 @@ void colisionFreeServos() {
     servoDriveFlagUP(); // ganz hoch, dann muss später nichtmehr gehomed werden
     servo_GRIP_RIGHT.write(20);
     servo_ROTATE_RIGHT.write(50);
-    servo6.write(0);
-    servo7.write(0);
+    servo_ROTATE_LEFT.write(0);
+    servo_GRIP_LEFT.write(0);
     servo8.write(0);
 }
 
@@ -128,8 +128,8 @@ void positionServos() {
     servoPlateGripperClosed();// weit vor sodass arm nicht aufsetzt
     servo_GRIP_RIGHT.write(20);
     servo_ROTATE_RIGHT.write(50);
-    servo6.write(0);
-    servo7.write(0);
+    servo_ROTATE_LEFT.write(0);
+    servo_GRIP_LEFT.write(0);
     servo8.write(0);
 }
 
@@ -245,8 +245,8 @@ void reinitializeServos() {
     servo_DRIVE_FLAG.attach(SERVO_DRIVE_FLAG, 700, 2600);
     servo_GRIP_RIGHT.attach(SERVO_GRIP_RIGHT, 700, 2600);
     servo_ROTATE_RIGHT.attach(SERVO_ROTATE_RIGHT, 700, 2600);
-    servo6.attach(SERVO_ROTATE_LEFT);
-    servo7.attach(SERVO_GRIP_LEFT);
+    servo_ROTATE_LEFT.attach(SERVO_ROTATE_LEFT);
+    servo_GRIP_LEFT.attach(SERVO_GRIP_LEFT);
     servo8.attach(SERVO8);
 }
 
@@ -264,8 +264,8 @@ void emergencyStop() {
     servo_DRIVE_FLAG.detach();
     servo_GRIP_RIGHT.detach();
     servo_ROTATE_RIGHT.detach();
-    servo6.detach();
-    servo7.detach();
+    servo_ROTATE_LEFT.detach();
+    servo_GRIP_LEFT.detach();
     servo8.detach();
     
     Serial.println("ok");
@@ -298,8 +298,8 @@ void setup() {
     servo_DRIVE_FLAG.attach(SERVO_DRIVE_FLAG, 700, 2600);
     servo_GRIP_RIGHT.attach(SERVO_GRIP_RIGHT, 700, 2600);
     servo_ROTATE_RIGHT.attach(SERVO_ROTATE_RIGHT, 700, 2600);
-    servo6.attach(SERVO_ROTATE_LEFT);
-    servo7.attach(SERVO_GRIP_LEFT);
+    servo_ROTATE_LEFT.attach(SERVO_ROTATE_LEFT);
+    servo_GRIP_LEFT.attach(SERVO_GRIP_LEFT);
     servo8.attach(SERVO8);
 
     rightStepper.setMaxSpeed(MAX_SPEED);
@@ -315,13 +315,13 @@ void setup() {
 
 void loop() {
     processSteppers();
-    // delay(1000);
-    // servo6.write(80);
-    // servo7.write(0);
-    // delay(1000);
-    // servo7.write(180);
-    // servo6.write(180);
-    emergencyStop();
+    delay(1000);
+    servo_ROTATE_LEFT.write(10);
+    // servo_GRIP_LEFT.write(0);
+    delay(1000);
+    // servo_GRIP_LEFT.write(180);
+    servo_ROTATE_LEFT.write(170);
+    // emergencyStop();
     delay(1000);
 }
 
@@ -367,8 +367,8 @@ void loop1(){
             case 'u': servo_DRIVE_FLAG.write(value); success = true; break;
             case 'v': servo_GRIP_RIGHT.write(value); success = true; break;
             case 'w': servo_ROTATE_RIGHT.write(value); success = true; break;
-            case 'x': servo6.write(value); success = true; break;
-            case 'y': servo7.write(value); success = true; break;
+            case 'x': servo_ROTATE_LEFT.write(value); success = true; break;
+            case 'y': servo_GRIP_LEFT.write(value); success = true; break;
             case 'h': startupRoutineBool = true; success = true; break;
             case 'i': reinitializeServos(); success = true; break;
             case 'e':
