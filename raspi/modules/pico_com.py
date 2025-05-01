@@ -70,9 +70,9 @@ class Pico():
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def servo_rotate_right(self, command: int):
-        if(command == 1): self.set_command("w", 0)
+        if(command == 1): self.set_command("w", 5)
         elif(command == 2): self.set_command("w", 170)
-        elif(command == 3): self.set_command("w", 160)
+        elif(command == 3): self.set_command("w", 155)
         elif(command == 4): self.set_command("w", 100)
 
     def home_pico(self):
@@ -80,6 +80,20 @@ class Pico():
 
     def emergency_stop(self):
         self.set_command("e", 0)
+
+    # 1: slightly lifted, 2: more lifted, 3: on the plate, 4: on top
+    def setRightStepper(self, position: int):
+        if(position == 1): self.set_right_stepper(1)
+        elif(position == 2): self.set_right_stepper(2)
+        elif(position == 3): self.set_right_stepper(3)
+        elif(position == 4): self.set_right_stepper(4)
+
+    # 1-3: plates, 4: on top
+    def setMiddleStepper(self, position: int):
+        if(position == 1): self.set_mid_stepper(1)
+        elif(position == 2): self.set_mid_stepper(2)
+        elif(position == 3): self.set_mid_stepper(3)
+        elif(position == 4): self.set_mid_stepper(4)
         
 def main():
     serial_manager = Pico()
