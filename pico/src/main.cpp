@@ -333,7 +333,7 @@ void setup() {
     servo_GRIP_RIGHT.attach(SERVO_GRIP_RIGHT, 700, 2600);
     servo_ROTATE_RIGHT.attach(SERVO_ROTATE_RIGHT, 700, 2600);
     servo_ROTATE_LEFT.attach(SERVO_ROTATE_LEFT, 700, 2600);
-    servo_GRIP_LEFT.attach(SERVO_GRIP_LEFT, 700, 2600);
+    servo_GRIP_LEFT.attach(SERVO_GRIP_LEFT, 800, 2200);
     servo8.attach(SERVO8);
 
     rightStepper.setMaxSpeed(MAX_SPEED);
