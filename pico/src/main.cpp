@@ -110,6 +110,31 @@ void servoRotateRightMid(){
     servo_ROTATE_RIGHT.write(100);
 }
 
+
+void servoGripLeftClosed(){
+    servo_GRIP_LEFT.write(20);
+}
+
+void servoGripLEFTOpen(){
+    servo_GRIP_LEFT.write(60);
+}
+
+void servoRotateLeftOutwards(){
+    servo_ROTATE_LEFT.write(20);
+}
+
+void servoRotateLeftInwards(){
+    servo_ROTATE_LEFT.write(180);
+}
+
+void servoRotateLeftDeposit(){
+    servo_ROTATE_LEFT.write(165);
+}
+
+void servoRotateLeftMid(){
+    servo_ROTATE_LEFT.write(100);
+}
+
 // ========== motor functions ==========
 
 //refer to look up table for servo positions
