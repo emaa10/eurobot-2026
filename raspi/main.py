@@ -48,7 +48,7 @@ class RobotController:
         
         self.home_routines = {
             #1: [['hh', 'dd50', 'ta-90', 'hh', 'dd100']],
-            1: [['hh', 'dd100']],
+            1: [['hh', 'dd200']],
             2: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150', 'sp0;0;0']],
             3: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150', 'sp0;0;0']],
             4: [['hh', 'dd200', 'ta-90', 'hh', 'dd200', 'ta45', 'dd-150', 'sp0;0;0']],
@@ -57,8 +57,8 @@ class RobotController:
         }
         
         self.tactix = {
-            1: [['dd100', 'ta90', 'dd100']],
-            2: [['dp400;700;-30']],
+            1: [['ta180']],
+            2: [['dp400;700;-30', 'ta180']],
             3: [['cd']],
             4: [self.task_presets.flag()],
         }

@@ -8,7 +8,7 @@ unsigned long lastPosUpdate = millis();
 #define ENC_RIGHT_A_PHASE 18
 #define ENC_RIGHT_B_PHASE 19
 
-#define WHEELBASE_ENC 126
+#define WHEELBASE_ENC 127.5
 #define WHEELBASE_DRIVE 207
 #define PULSES_PER_REV 1200
 #define ENC_WHEEL_DIAMETER 50                                                                           
@@ -77,7 +77,7 @@ void updatePos(){
 
     // update global pos
     x = x - dx;
-    y = y + dy;
+    y = y - dy;
     theta = theta + dtheta;
     while (theta > 2 * M_PI) theta -= 2 * M_PI;
     while (theta < 0) theta += 2 * M_PI;

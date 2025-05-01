@@ -273,10 +273,16 @@ class MotorController():
         while not self.finished:
             await self.control_loop()
                             
-            if abs(target_theta - self.theta) < target_theta//120:
+            # if abs(target_theta - self.theta) < 0.2:
+            if abs(target_theta - self.theta) < target_theta//140:
+                print(self.theta)
                 break
         
         await self.set_stop()  
+        
+        await asyncio.sleep(2)
+        await self.control_loop()
+        print(self.theta)
     
         
     async def turn_to(self, theta: float):

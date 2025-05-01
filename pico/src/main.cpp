@@ -114,27 +114,27 @@ void servoRotateRightMid(){
 
 
 void servoGripLeftClosed(){
-    servo_GRIP_LEFT.write(20);
+    servo_GRIP_LEFT.write(85);
 }
 
 void servoGripLEFTOpen(){
-    servo_GRIP_LEFT.write(60);
+    servo_GRIP_LEFT.write(30);
 }
 
 void servoRotateLeftOutwards(){
-    servo_ROTATE_LEFT.write(20);
+    servo_ROTATE_LEFT.write(115);
 }
 
 void servoRotateLeftInwards(){
-    servo_ROTATE_LEFT.write(180);
+    servo_ROTATE_LEFT.write(5);
 }
 
 void servoRotateLeftDeposit(){
-    servo_ROTATE_LEFT.write(165);
+    servo_ROTATE_LEFT.write(5);
 }
 
 void servoRotateLeftMid(){
-    servo_ROTATE_LEFT.write(100);
+    servo_ROTATE_LEFT.write(75);
 }
 
 // ========== motor functions ==========
@@ -162,10 +162,8 @@ void positionServos() {
     servoPlateGripperClosed();// weit vor sodass arm nicht aufsetzt
     servo_GRIP_RIGHT.write(50);
     servo_ROTATE_RIGHT.write(170);
-    // servo_ROTATE_LEFT.write(50);
     servo_ROTATE_LEFT.write(5);
-    // servo_GRIP_LEFT.write(85);
-    servo_GRIP_LEFT.write(70);
+    servo_GRIP_LEFT.write(75);
     servo8.write(0);
 }
 
