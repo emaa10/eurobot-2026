@@ -3,7 +3,7 @@ import time
 import logging
 
 class Pico():
-    def __init__(self, port="/dev/serial/by-id/usb-Raspberry_Pi_Pico_E66118C4179D582D-if00", baud_rate=115200) -> None:
+    def __init__(self, port="/dev/serial/by-id/usb-Raspberry_Pi_Pico_503558607AD3331F-if00", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=1)
         
         self.ser.setDTR(False)
@@ -78,23 +78,23 @@ class Pico():
     # 1: closed, 2: open
     def set_grip_left(self, command: int):
         if(command == 1):
-            self.set_command("y", 85)
+            self.set_command("y", 160)
         else:
-            self.set_command("y", 30)
+            self.set_command("y", 20)
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def servo_rotate_left(self, command: int):
-        if(command == 1): 
-            i = 10
-            while i <= 170:
-                self.set_command("x", i)
-                time.sleep(0.15) 
-                i += 10
-        # if(command == 1): self.set_command("x", 170)
+        # if(command == 1): 
+        #     i = 10
+        #     while i <= 170:
+        #         self.set_command("x", i)
+        #         time.sleep(0.15) 
+        #         i += 10
+        if(command == 1): self.set_command("x", 180)
         elif(command == 2): self.set_command("x", 0)
         # elif(command == 2): self.set_command("x", 8)
-        elif(command == 3): self.set_command("x", 8)
-        elif(command == 4): self.set_command("x", 75)
+        elif(command == 3): self.set_command("x", 15)
+        elif(command == 4): self.set_command("x", 100)
 
     def home_pico(self):
         self.set_command("h", 0)

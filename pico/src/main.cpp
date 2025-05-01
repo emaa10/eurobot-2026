@@ -18,8 +18,8 @@
 #define SERVO_DRIVE_FLAG 6
 #define SERVO_GRIP_RIGHT 7
 #define SERVO_ROTATE_RIGHT 8
-#define SERVO_ROTATE_LEFT 11 //9
-#define SERVO_GRIP_LEFT 10       //backup: 11
+#define SERVO_ROTATE_LEFT 10 //9
+#define SERVO_GRIP_LEFT 11       //backup: 11
 #define SERVO8 9 //1
 
 Servo servo_DRIVE_LEFT;

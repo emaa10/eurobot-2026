@@ -12,7 +12,7 @@ import logging
 
 class RobotController:
     def __init__(self):
-        CAM = True
+        CAM = False
         
         self.start_pos = 0
         self.points = 0
