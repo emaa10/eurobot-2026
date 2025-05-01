@@ -55,6 +55,7 @@ class Task():
             return self.successor
         
         self.current_action = self.actions.pop(0)
+        print(f"current actio {self.current_action}")
         prefix = self.current_action[:2]
         value = self.current_action[2:]
         
@@ -84,6 +85,7 @@ class Task():
                 self.points += 10
             case 'ta':  # turn angle
                 await self.motor_controller.turn_angle(float(value))                              
+                # return await self.next_action()
             case 'tt':  # turn to angle
                 await self.motor_controller.turn_to(float(value))
             case 'fd':  # flag down
@@ -105,14 +107,15 @@ class Task():
                 await asyncio.sleep(20)
                 await self.motor_controller.set_stop()
             case 'cd':  # check cam
-                if not self.camera.check_cans():
-                    print(self.camera.check_cans())
-                    await asyncio.sleep(0.5)
-                    if not self.camera.check_cans():
-                        self.logger.info("Skip Camera, since cans not perfectly there")
-                        return await self.next_task()
+                # if not self.camera.check_cans():
+                #     print(self.camera.check_cans())
+                #     await asyncio.sleep(0.5)
+                #     if not self.camera.check_cans():
+                #         self.logger.info("Skip Camera, since cans not perfectly there")
+                #         return await self.next_task()
                     
                 await asyncio.sleep(1)
+                print("1")
                 
                 angle, distance = self.camera.get_distance()
                 angle, distance = self.camera.get_angle(distance, angle)
