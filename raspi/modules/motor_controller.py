@@ -340,7 +340,7 @@ class MotorController():
             self.logger.info("Could not read new pos data")
             
         latest_scan = self.lidar.get_latest_scan()
-        stop = False
+        self.stop = False
         
         if latest_scan: 
             for angle, distance in latest_scan:
@@ -353,20 +353,23 @@ class MotorController():
                 arena_x = distance * math.cos(arena_angle * math.pi / 180) + self.x
                 arena_y = distance * math.sin(arena_angle * math.pi / 180) + self.y
                 
+                print(f'x: {d_x}, y:{d_y}')
+                print(self.direction)
+                
                 point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 5cm threshold
                 point_in_arena = True
                             
                 if (self.direction >= 0 and 0 <= d_y <= 500) and abs(d_x) <= 250 and point_in_arena:
-                    stop = True
+                    self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
                 
                 if  (self.direction <= 0 and 0 >= d_y >= -500) and abs(d_x) <= 250 and point_in_arena:
-                    stop = True
+                    self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
             
-            self.stop = False
+            # self.stop = False
         
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None
@@ -393,4 +396,4 @@ class MotorController():
             self.finished = True
         
         if not self.lidar.is_running():
-            self.logger.info("Lidar thread stopped unexpectedly")
+            self.logger.info("Lidar not running")

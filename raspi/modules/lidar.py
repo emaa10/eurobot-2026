@@ -1,8 +1,9 @@
 import threading
 import logging
-from time import time_ns
+from time import time_ns, sleep
 import queue
 from rplidar import RPLidar
+import math
 
 class Lidar:
     def __init__(self, port: str = '/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0'):
@@ -142,6 +143,25 @@ def main():
         if not lidar.start_scanning():
             print("Failed to start Lidar")
             return
+        
+        while True:
+            scan = lidar.get_latest_scan()
+            if scan:
+                for angle, distance in scan:
+                    # point in relation to bot
+                    d_x = distance * math.sin(angle * math.pi / 180)
+                    d_y = distance * math.cos(angle * math.pi / 180)
+                    
+                    
+                    if 0 >= d_y >= -500 and abs(d_x) <= 250:
+                        print(f'x: {d_x}, y:{d_y}')
+
+                
+                    if 0 >= d_y >= -500 and abs(d_x) <= 250:
+                        print(f'x: {d_x}, y:{d_y}')
+                    
+            sleep(0.01)
+                    
     
     except KeyboardInterrupt:
         print("Interrupted by user")
