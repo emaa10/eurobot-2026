@@ -91,23 +91,44 @@ class Camera:
         return frame
 
             
-    def get_angle(self):
+    def get_angle(self, mid_distance, mid_angle):
         """
-        Liefert angle_cans
-        für die äußersten beiden Dosen.
+        Liefert die actions zum anfahren der dosen
         """
         frame = self._get_frame()
         left_angle, left_distance, right_angle, right_distance = self._process_angle(frame)
-        print(f"left angle: {left_angle} - left distance: {left_distance} - right angle {right_angle} - right dist {right_distance}")
-        left_x = left_distance * math.sin(left_angle)
-        left_y = left_distance * math.cos(left_angle)
-        right_x = right_distance * math.sin(right_angle)
-        right_y = right_distance * math.cos(right_angle)
-        dx = abs(left_x - right_x)
-        dy = abs(left_y - right_y)
-        print(f"{left_x} {left_y} {right_x} {right_y} {dx} {dy}")
-        angle_cans = math.atan2(dy, dx)
-        return angle_cans
+
+        def polar_to_cartesian(distance, angle_deg):
+            angle_rad = math.radians(angle_deg)
+            x = distance * math.sin(angle_rad)
+            z = distance * math.cos(angle_rad)
+            return x, z
+        
+        left_x, left_z = polar_to_cartesian(left_distance, left_angle)
+        mid_x, mid_z = polar_to_cartesian(mid_distance, mid_angle)
+        right_x, right_z = polar_to_cartesian(right_distance, right_angle)
+        
+        x_values = [left_x, mid_x, right_x]
+        z_values = [left_z, mid_z, right_z]
+        
+        A = np.vstack([x_values, np.ones(len(x_values))]).T
+        m, b = np.linalg.lstsq(A, z_values, rcond=None)[0]
+        
+        robot_angle_rad = math.atan(m)
+        robot_angle_deg = math.degrees(robot_angle_rad)
+        
+        wall_center_x = (left_x + right_x) / 2
+        wall_center_z = (left_z + right_z) / 2
+        
+        optimal_distance = wall_center_x * math.sin(robot_angle_rad) + wall_center_z * math.cos(robot_angle_rad)
+        
+        # actions = [
+        #     f"ta{-90+robot_angle_deg:.1f}",     # Drehe parallel zur Wand
+        #     f"dd{optimal_distance:.1f}",     # Fahre optimale Distanz
+        #     "ta90.0"                         # Drehe 90 Grad nach right
+        # ]
+        
+        return robot_angle_deg, optimal_distance
 
     def get_distance(self) -> list:
         """
