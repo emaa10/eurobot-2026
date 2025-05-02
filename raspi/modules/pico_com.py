@@ -58,10 +58,10 @@ class Pico():
         else:
             self.set_command("t", 165)
 
-    # 1: closed, 2: open
+    # 1: open, 2: closed 3: home
     def set_grip_right(self, command: int):
         if(command == 1):
-            self.set_command("v", 55)
+            self.set_command("v", 70)
         elif(command == 2):
             self.set_command("v", 30)
         elif(command == 3):
@@ -141,7 +141,7 @@ def main():
     serial_manager = Pico()
     time.sleep(1)
 
-    # serial_manager.set_command('s', 0)
+    serial_manager.set_servo_rotate_left(85)
     
     # serial_manager.set_command('s', 130)
     # serial_manager.set_command('h', 0)
