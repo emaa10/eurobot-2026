@@ -66,7 +66,7 @@ class Pico():
         elif(command == 2):
             self.set_command("v", 30)
         elif(command == 3):
-            self.set_command("v", 60)
+            self.set_command("v", 50)
 
     # 1: closed, 2: open
     def set_grip_left(self, command: int):
@@ -95,6 +95,7 @@ class Pico():
 
     def emergency_stop(self):
         self.set_command("e", 0)
+        servo_rotate_left.detach()
 
     # 1: slightly lifted, 2: more lifted, 3: on the plate, 4: on top
     def set_right_stepper(self, position: int):
@@ -111,9 +112,9 @@ class Pico():
         time.sleep(0.2)
         self.set_drive_flag(1)
         time.sleep(0.2)
-        self.set_grip_right(1)
+        self.set_grip_right(3)
         time.sleep(0.2)
-        self.set_grip_left(1)
+        self.set_grip_left(3)
         time.sleep(0.2)
         self.set_servo_rotate_right(5)
         time.sleep(0.2)
@@ -124,19 +125,19 @@ class Pico():
         self.set_plate_gripper(4)
         self.set_servo_rotate_right(2)
         self.set_servo_rotate_left(2)
-        self.set_grip_right(3)
-        self.set_grip_left(3)
         
     def home_pico(self):
         self.collission_free_sevors()
         self.set_command("h", 0)
         self.wait_for_ok()
         self.position_sevors()
+        time.sleep(0.5)
+        servo_rotate_left.detach()
         
 def main():
     serial_manager = Pico()
     
-    serial_manager.set_grip_left(1)
+    serial_manager.set_grip_right(3)
     # serial_manager.set_command('s', 0)
     
     # serial_manager.set_command('s', 130)
