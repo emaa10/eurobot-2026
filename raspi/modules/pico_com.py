@@ -1,6 +1,9 @@
 import serial
 import time
 import logging
+from gpiozero import AngularServo
+
+servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
 
 
 class Pico():
@@ -35,7 +38,6 @@ class Pico():
         byte_string = str.encode(command_string)
         self.ser.write(byte_string)
 
-
     # 1: up, 2: down
     def set_left_servo(self, command: int):
         if(command == 1):
@@ -61,8 +63,8 @@ class Pico():
     def set_grip_right(self, command: int):
         if(command == 1):
             self.set_command("v", 20)
-        else:
-            self.set_command("v", 80)
+        elif(command == 2):
+            self.set_command("v", 50)
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def set_servo_rotate_right(self, command: int):
@@ -72,19 +74,21 @@ class Pico():
         elif(command == 4): self.set_command("w", 100)
         elif(command == 5): self.set_command("w", 50)
 
+    # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def set_servo_rotate_left(self, command: int):
-        pass
+        if(command == 1): servo_rotate_left.angle = 80
+        elif(command == 2): servo_rotate_left.angle = -70
+        elif(command == 3): servo_rotate_left.angle = 50
+        elif(command == 4): servo_rotate_left.angle = 40
         
     # 1: closed, 2: open
     def set_grip_left(self, command: int):
         if(command == 1):
             self.set_command("y", 160)
-        else:
+        elif(command == 2):
             self.set_command("y", 20)
-
-
-    def home_pico(self):
-        self.set_command("h", 0)
+        elif(command == 3):
+            self.set_command("y", 75)
 
     def emergency_stop(self):
         self.set_command("e", 0)
@@ -108,8 +112,21 @@ class Pico():
         time.sleep(0.2)
         self.set_servo_rotate_right(5)
         time.sleep(0.2)
-        self.set_servo_rotate_left(100)
+        self.set_servo_rotate_left(1)
         time.sleep(0.2)
+        
+    def position_sevors(self):
+        self.set_plate_gripper(4)
+        self.set_grip_right(2)
+        self.set_servo_rotate_right(2)
+        self.set_servo_rotate_left(2)
+        self.set_grip_left(3)
+        
+    def home_pico(self):
+        self.collission_free_sevors()
+        self.set_command("h", 0)
+        self.wait_for_ok()
+        self.position_sevors()
         
 def main():
     serial_manager = Pico()

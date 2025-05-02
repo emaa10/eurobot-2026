@@ -165,7 +165,7 @@ void positionServos() {
     servo_ROTATE_RIGHT.write(170);
     servo_ROTATE_LEFT.write(5);
     servo_GRIP_LEFT.write(75);
-    servo8.write(0);
+    // servo8.write(0);
 }
 
 
@@ -232,6 +232,7 @@ void positionSteppers() {
     }    
 }
 
+// erst das, dann homeservos
 void startupRoutine() {
     Serial.println("startup routine");
     // colisionFreeServos();
@@ -245,7 +246,7 @@ void startupRoutine() {
 
     positionSteppers();
 
-    positionServos();
+    // positionServos();
     
     isHoming = false;
     startupRoutineBool = false;
