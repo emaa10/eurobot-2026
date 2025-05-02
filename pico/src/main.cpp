@@ -139,6 +139,7 @@ void servoRotateLeftMid(){
 
 // ========== motor functions ==========
 
+
 //refer to look up table for servo positions
 void colisionFreeServos() {
     servoDriveLeftDown();
@@ -233,7 +234,7 @@ void positionSteppers() {
 
 void startupRoutine() {
     Serial.println("startup routine");
-    colisionFreeServos();
+    // colisionFreeServos();
     
     digitalWrite(RIGHT_STEPPER_EN, LOW);
     digitalWrite(MID_STEPPER_EN, LOW);

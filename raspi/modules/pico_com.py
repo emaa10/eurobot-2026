@@ -2,6 +2,7 @@ import serial
 import time
 import logging
 
+
 class Pico():
     def __init__(self, port="/dev/serial/by-id/usb-Raspberry_Pi_Pico_503558607AD3331F-if00", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=1)
@@ -33,12 +34,7 @@ class Pico():
         command_string = f"{command}{value}\n"
         byte_string = str.encode(command_string)
         self.ser.write(byte_string)
-        
-    def set_right_stepper(self, pos: int):
-        self.set_command("a", pos)
 
-    def set_mid_stepper(self, pos: int):
-        self.set_command("b", pos)
 
     # 1: up, 2: down
     def set_left_servo(self, command: int):
@@ -69,12 +65,16 @@ class Pico():
             self.set_command("v", 80)
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
-    def servo_rotate_right(self, command: int):
+    def set_servo_rotate_right(self, command: int):
         if(command == 1): self.set_command("w", 5)
         elif(command == 2): self.set_command("w", 170)
         elif(command == 3): self.set_command("w", 155)
         elif(command == 4): self.set_command("w", 100)
+        elif(command == 5): self.set_command("w", 50)
 
+    def set_servo_rotate_left(self, command: int):
+        pass
+        
     # 1: closed, 2: open
     def set_grip_left(self, command: int):
         if(command == 1):
@@ -82,19 +82,6 @@ class Pico():
         else:
             self.set_command("y", 20)
 
-    # 1: outwards, 2: inwards, 3: deposit, 4: mid
-    def servo_rotate_left(self, command: int):
-        # if(command == 1): 
-        #     i = 10
-        #     while i <= 170:
-        #         self.set_command("x", i)
-        #         time.sleep(0.15) 
-        #         i += 10
-        if(command == 1): self.set_command("x", 180)
-        elif(command == 2): self.set_command("x", 0)
-        # elif(command == 2): self.set_command("x", 8)
-        elif(command == 3): self.set_command("x", 15)
-        elif(command == 4): self.set_command("x", 100)
 
     def home_pico(self):
         self.set_command("h", 0)
@@ -103,18 +90,26 @@ class Pico():
         self.set_command("e", 0)
 
     # 1: slightly lifted, 2: more lifted, 3: on the plate, 4: on top
-    def setRightStepper(self, position: int):
-        if(position == 1): self.set_right_stepper(1)
-        elif(position == 2): self.set_right_stepper(2)
-        elif(position == 3): self.set_right_stepper(3)
-        elif(position == 4): self.set_right_stepper(4)
+    def set_right_stepper(self, position: int):
+        self.set_command('a', position)
 
     # 1-3: plates, 4: on top
-    def setMiddleStepper(self, position: int):
-        if(position == 1): self.set_mid_stepper(1)
-        elif(position == 2): self.set_mid_stepper(2)
-        elif(position == 3): self.set_mid_stepper(3)
-        elif(position == 4): self.set_mid_stepper(4)
+    def set_middle_stepper(self, position: int):
+        self.set_command('b', position)
+        
+    def collission_free_sevors(self):
+        self.set_left_servo(2)
+        time.sleep(0.2)
+        self.set_plate_gripper(3)
+        time.sleep(0.2)
+        self.set_drive_flag(1)
+        time.sleep(0.2)
+        self.set_grip_right(1)
+        time.sleep(0.2)
+        self.set_servo_rotate_right(5)
+        time.sleep(0.2)
+        self.set_servo_rotate_left(100)
+        time.sleep(0.2)
         
 def main():
     serial_manager = Pico()
