@@ -19,9 +19,7 @@ class RobotController:
         
         logging.basicConfig(filename='/home/eurobot/main-bot/raspi/eurobot.log', level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-        
-        self.time_started = time()
-        
+                
         self.motor_controller = MotorController()
         self.camera = Camera() if CAM else None
         self.pico_controller = Pico()

@@ -345,6 +345,20 @@ class MotorController():
         
         await self.set_stop()
         
+    async def drive_home(self, color):
+        if color == 'blue':
+            await self.drive_to_point(2500, 1100, 0)
+        else:
+            await self.drive_to_point(500, 1100, 0)
+        
+        while self.time_started + 90 > time():
+            await asyncio.sleep(1)
+        
+        if color == 'blue':
+            await self.drive_to_point(2500, 1400, 0)
+        else:
+            await self.drive_to_point(500, 1400, 0)
+        
     async def control_loop(self):        
         self.finished = await self.get_finished()
             
@@ -406,8 +420,8 @@ class MotorController():
         if self.finished:
             await self.set_stop()
             
-        if self.time_started + 90 < time():
-            pass    # drive home
+        if self.time_started + 80 < time():
+            pass # drive home
             
         if self.time_started + 99 < time():
             self.logger.info('Cutoff')

@@ -22,10 +22,7 @@ class Task():
         self.current_action = None
         self.successor = None
         self.color = color
-                
-        self.stopped_since = None
-        self.time_started = 0
-        
+                        
         self.points = 10
         
         self.logger = logging.getLogger(__name__)
@@ -47,6 +44,13 @@ class Task():
         return await self.successor.run()
         
     async def run(self) -> Self:
+        if self.motor_controller.time_started + 80 < time():
+            await self.motor_controller.drive_home(self.color)
+            self.points += 10
+            self.actions = []
+            self.successor = None
+            return self
+        
         if len(self.actions) <= 0:
             if not self.successor: return None
             
@@ -76,7 +80,7 @@ class Task():
                 else:
                     await self.motor_controller.drive_to_point(500, 1100, 0)
                 
-                while self.time_started + 90 > time():
+                while self.motor_controller.time_started + 90 > time():
                     await asyncio.sleep(1)
                 
                 if self.color == 'blue':
@@ -109,14 +113,6 @@ class Task():
                 await asyncio.sleep(20)
                 await self.motor_controller.set_stop()
             case 'cd':  # check cam
-                # await self.motor_controller.drive_distance(200)
-                # if not self.camera.check_cans():
-                #     print(self.camera.check_cans())
-                #     await asyncio.sleep(0.5)
-                #     if not self.camera.check_cans():
-                #         self.logger.info("Skip Camera, since cans not perfectly there")
-                #         return await self.next_task()
-                    
                 await asyncio.sleep(1)
                 print("1")
                 
