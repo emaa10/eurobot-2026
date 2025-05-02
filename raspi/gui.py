@@ -445,7 +445,7 @@ class PicoScene(QtWidgets.QWidget):
         right_grip_group = QtWidgets.QGroupBox()
         right_grip_layout = QtWidgets.QHBoxLayout()
         self.create_command_button("Right Grip Closed", lambda: self.main_controller.pico_controller.set_grip_right(1), right_grip_layout)
-        self.create_command_button("Right Grip Open", lambda: self.main_controller.pico_controller.set_grip_right(2), right_grip_layout)
+        self.create_command_button("Right Grip Open", lambda: self.main_controller.pico_controller.set_grip_right(3), right_grip_layout)
         right_grip_group.setLayout(right_grip_layout)
         main_layout.addWidget(right_grip_group)
 

@@ -62,10 +62,21 @@ class Pico():
     # 1: closed, 2: open
     def set_grip_right(self, command: int):
         if(command == 1):
-            self.set_command("v", 30)
+            self.set_command("v", 55)
         elif(command == 2):
-            self.set_command("v", 80)
+            self.set_command("v", 30)
+        elif(command == 3):
+            self.set_command("v", 60)
 
+    # 1: closed, 2: open
+    def set_grip_left(self, command: int):
+        if(command == 1):
+            self.set_command("y", 80)
+        elif(command == 2):
+            self.set_command("y", 20)
+        elif(command == 3):
+            self.set_command("y", 75)
+            
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def set_servo_rotate_right(self, command: int):
         if(command == 1): self.set_command("w", 5)
@@ -81,14 +92,6 @@ class Pico():
         elif(command == 3): servo_rotate_left.angle = 50
         elif(command == 4): servo_rotate_left.angle = 40
         
-    # 1: closed, 2: open
-    def set_grip_left(self, command: int):
-        if(command == 1):
-            self.set_command("y", 150)
-        elif(command == 2):
-            self.set_command("y", 20)
-        elif(command == 3):
-            self.set_command("y", 75)
 
     def emergency_stop(self):
         self.set_command("e", 0)
@@ -110,6 +113,8 @@ class Pico():
         time.sleep(0.2)
         self.set_grip_right(1)
         time.sleep(0.2)
+        self.set_grip_left(1)
+        time.sleep(0.2)
         self.set_servo_rotate_right(5)
         time.sleep(0.2)
         self.set_servo_rotate_left(1)
@@ -117,9 +122,9 @@ class Pico():
         
     def position_sevors(self):
         self.set_plate_gripper(4)
-        self.set_grip_right(2)
         self.set_servo_rotate_right(2)
         self.set_servo_rotate_left(2)
+        self.set_grip_right(3)
         self.set_grip_left(3)
         
     def home_pico(self):
@@ -131,7 +136,7 @@ class Pico():
 def main():
     serial_manager = Pico()
     
-    # serial_manager.set_command('b', 1000)
+    serial_manager.set_grip_left(1)
     # serial_manager.set_command('s', 0)
     
     # serial_manager.set_command('s', 130)
