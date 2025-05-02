@@ -49,7 +49,7 @@ class Pico():
                         
     # 1: fully open, 2: grip plate, 3: collision avoidance, 4: closed
     def set_plate_gripper(self, command: int):
-        if(command == 1): self.set_command("s", 180)
+        if(command == 1): self.set_command("s", 175)
         elif(command == 2): self.set_command("s", 120)
         elif(command == 3): self.set_command("s", 130)
         elif(command == 4): self.set_command("s", 0)
