@@ -70,9 +70,9 @@ class Pico():
     # 1: closed, 2: open
     def set_grip_left(self, command: int):
         if(command == 1):
-            self.set_command("y", 80)
+            self.set_command("y", 90)
         elif(command == 2):
-            self.set_command("y", 20)
+            self.set_command("y", 50)
         elif(command == 3):
             self.set_command("y", 75)
             
@@ -92,7 +92,7 @@ class Pico():
         elif(command == 2): self.servo_rotate_left.angle = -65
         elif(command == 3): self.servo_rotate_left.angle = 50
         elif(command == 4): self.servo_rotate_left.angle = 40
-        time.sleep(0.5)
+        time.sleep(1)
         self.servo_rotate_left.detach()
         self.servo_rotate_left = None
         
@@ -141,7 +141,7 @@ def main():
     serial_manager = Pico()
     time.sleep(1)
 
-    serial_manager.set_servo_rotate_left(85)
+    serial_manager.set_servo_rotate_left(60)
     
     # serial_manager.set_command('s', 130)
     # serial_manager.set_command('h', 0)
