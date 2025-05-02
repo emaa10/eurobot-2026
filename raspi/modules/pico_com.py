@@ -77,14 +77,14 @@ class Pico():
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def set_servo_rotate_left(self, command: int):
         if(command == 1): servo_rotate_left.angle = 80
-        elif(command == 2): servo_rotate_left.angle = -70
+        elif(command == 2): servo_rotate_left.angle = -65
         elif(command == 3): servo_rotate_left.angle = 50
         elif(command == 4): servo_rotate_left.angle = 40
         
     # 1: closed, 2: open
     def set_grip_left(self, command: int):
         if(command == 1):
-            self.set_command("y", 160)
+            self.set_command("y", 150)
         elif(command == 2):
             self.set_command("y", 20)
         elif(command == 3):

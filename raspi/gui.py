@@ -451,10 +451,10 @@ class PicoScene(QtWidgets.QWidget):
 
         right_rotate_group = QtWidgets.QGroupBox()
         right_rotate_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Right Rotate Outwards", lambda: self.main_controller.pico_controller.servo_rotate_right(1), right_rotate_layout)
-        self.create_command_button("Right Rotate Inwards", lambda: self.main_controller.pico_controller.servo_rotate_right(2), right_rotate_layout)
-        self.create_command_button("Right Rotate Deposit", lambda: self.main_controller.pico_controller.servo_rotate_right(3), right_rotate_layout)
-        self.create_command_button("Right Rotate Mid", lambda: self.main_controller.pico_controller.servo_rotate_right(4), right_rotate_layout)
+        self.create_command_button("Right Rotate Outwards", lambda: self.main_controller.pico_controller.set_servo_rotate_right(1), right_rotate_layout)
+        self.create_command_button("Right Rotate Inwards", lambda: self.main_controller.pico_controller.set_servo_rotate_right(2), right_rotate_layout)
+        self.create_command_button("Right Rotate Deposit", lambda: self.main_controller.pico_controller.set_servo_rotate_right(3), right_rotate_layout)
+        self.create_command_button("Right Rotate Mid", lambda: self.main_controller.pico_controller.set_servo_rotate_right(4), right_rotate_layout)
         right_rotate_group.setLayout(right_rotate_layout)
         main_layout.addWidget(right_rotate_group)
 
@@ -470,10 +470,10 @@ class PicoScene(QtWidgets.QWidget):
 
         left_rotate_group = QtWidgets.QGroupBox()
         left_rotate_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Left Rotate Outwards", lambda: self.main_controller.pico_controller.servo_rotate_left(1), left_rotate_layout)
-        self.create_command_button("Left Rotate Inwards", lambda: self.main_controller.pico_controller.servo_rotate_left(2), left_rotate_layout)
-        self.create_command_button("Left Rotate Deposit", lambda: self.main_controller.pico_controller.servo_rotate_left(3), left_rotate_layout)
-        self.create_command_button("Left Rotate Mid", lambda: self.main_controller.pico_controller.servo_rotate_left(4), left_rotate_layout)
+        self.create_command_button("Left Rotate Outwards", lambda: self.main_controller.pico_controller.set_servo_rotate_left(1), left_rotate_layout)
+        self.create_command_button("Left Rotate Inwards", lambda: self.main_controller.pico_controller.set_servo_rotate_left(2), left_rotate_layout)
+        self.create_command_button("Left Rotate Deposit", lambda: self.main_controller.pico_controller.set_servo_rotate_left(3), left_rotate_layout)
+        self.create_command_button("Left Rotate Mid", lambda: self.main_controller.pico_controller.set_servo_rotate_left(4), left_rotate_layout)
         left_rotate_group.setLayout(left_rotate_layout)
         main_layout.addWidget(left_rotate_group)
 
