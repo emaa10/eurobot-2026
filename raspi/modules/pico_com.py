@@ -114,7 +114,7 @@ class Pico():
         if(position == 1): self.set_mid_stepper(1)
         elif(position == 2): self.set_mid_stepper(2)
         elif(position == 3): self.set_mid_stepper(3)
-        elif(position == 4): self.set_mid_stepper(4)
+        elif(position == 4): self.set_mid_stepper(4)    
         
 def main():
     serial_manager = Pico()
