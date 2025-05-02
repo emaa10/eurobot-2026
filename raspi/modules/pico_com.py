@@ -86,7 +86,7 @@ class Pico():
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def set_servo_rotate_left(self, command: int):
-        if(not self.servo_rotate_left_attached): 
+        if not self.servo_rotate_left: 
             self.servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
         if(command == 1): self.servo_rotate_left.angle = 80
         elif(command == 2): self.servo_rotate_left.angle = -65
