@@ -86,13 +86,15 @@ class Pico():
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def set_servo_rotate_left(self, command: int):
-        if(not servo_rotate_left_attached): 
-            servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
-            servo_rotate_left_attached = True
-        if(command == 1): servo_rotate_left.angle = 80
-        elif(command == 2): servo_rotate_left.angle = -65
-        elif(command == 3): servo_rotate_left.angle = 50
-        elif(command == 4): servo_rotate_left.angle = 40
+        if(not self.servo_rotate_left_attached): 
+            self.servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
+        if(command == 1): self.servo_rotate_left.angle = 80
+        elif(command == 2): self.servo_rotate_left.angle = -65
+        elif(command == 3): self.servo_rotate_left.angle = 50
+        elif(command == 4): self.servo_rotate_left.angle = 40
+        time.sleep(0.5)
+        self.servo_rotate_left.detach()
+        self.servo_rotate_left = None
         
 
     def emergency_stop(self):
@@ -122,7 +124,6 @@ class Pico():
         self.set_servo_rotate_right(5)
         time.sleep(0.2)
         self.set_servo_rotate_left(1)
-        time.sleep(0.2)
         
     def position_sevors(self):
         self.set_plate_gripper(4)
@@ -135,8 +136,6 @@ class Pico():
         self.wait_for_ok()
         self.position_sevors()
         time.sleep(0.5)
-        self.servo_rotate_left.detach()
-        self.servo_rotate_left = None
         
 def main():
     serial_manager = Pico()

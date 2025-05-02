@@ -640,7 +640,6 @@ class DriveScene(QtWidgets.QWidget):
         if not self.robot_running:
             self.robot_running = True
             self.async_runner.run_task(self.run_robot_controller())
-            if not self.main_controller.pico_controller.servo_rotate_left: self.main_controller.pico_controller.servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
             
     def stop_robot(self):
         self.robot_running = False
