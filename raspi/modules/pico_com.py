@@ -3,9 +3,6 @@ import time
 import logging
 from gpiozero import AngularServo
 
-servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
-
-
 class Pico():
     def __init__(self, port="/dev/serial/by-id/usb-Raspberry_Pi_Pico_503558607AD3331F-if00", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=1)
@@ -17,6 +14,8 @@ class Pico():
         time.sleep(1)
         
         self.logger = logging.getLogger(__name__)
+        
+        self.servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
             
     def get_status(self) -> str | None:
         # flush input to get the latest data
@@ -87,6 +86,9 @@ class Pico():
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def set_servo_rotate_left(self, command: int):
+        if(not servo_rotate_left_attached): 
+            servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
+            servo_rotate_left_attached = True
         if(command == 1): servo_rotate_left.angle = 80
         elif(command == 2): servo_rotate_left.angle = -65
         elif(command == 3): servo_rotate_left.angle = 50
@@ -95,7 +97,8 @@ class Pico():
 
     def emergency_stop(self):
         self.set_command("e", 0)
-        servo_rotate_left.detach()
+        self.servo_rotate_left.detach()
+        self.servo_rotate_left = None
 
     # 1: slightly lifted, 2: more lifted, 3: on the plate, 4: on top
     def set_right_stepper(self, position: int):
@@ -132,12 +135,13 @@ class Pico():
         self.wait_for_ok()
         self.position_sevors()
         time.sleep(0.5)
-        servo_rotate_left.detach()
+        self.servo_rotate_left.detach()
+        self.servo_rotate_left = None
         
 def main():
     serial_manager = Pico()
-    
-    serial_manager.set_grip_right(3)
+    time.sleep(1)
+
     # serial_manager.set_command('s', 0)
     
     # serial_manager.set_command('s', 130)
