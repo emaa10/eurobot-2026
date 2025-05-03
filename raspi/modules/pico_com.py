@@ -44,19 +44,19 @@ class Pico():
         elif(command == 3): self.set_command("b", 2650)
         elif(command == 4): self.set_command("b", 3375)
 
-    # 1: asjkdfjkldskflööjkldsköjl
+    # 1: grip_down, 2: anfahren unten, 3: grip up, 4: anfahren oben
     def set_right_stepper(self, command: int):
-        if(command == 1): self.set_command("b", 270)
-        elif(command == 2): self.set_command("b", 600)
-        elif(command == 3): self.set_command("b", 2650)
-        elif(command == 4): self.set_command("b", 3375)
+        if(command == 1): self.set_command("a", 120)
+        elif(command == 2): self.set_command("a", 320)
+        elif(command == 3): self.set_command("a", 720)
+        elif(command == 4): self.set_command("a", 790)
 
-    # 1: up, 2: down
+    # 1: up grip, 2: down grip
     def set_left_servo(self, command: int):
         if(command == 1):
-            self.set_command("r", 0)
+            self.set_command("r", 40)
         else:
-            self.set_command("r", 180)
+            self.set_command("r", 160)
                         
     # 1: fully open, 2: grip plate, 3: collision avoidance, 4: closed
     def set_plate_gripper(self, command: int):
@@ -96,7 +96,7 @@ class Pico():
         elif(command == 2): self.set_command("w", 170)
         elif(command == 3): self.set_command("w", 146)
         elif(command == 4): self.set_command("w", 100)
-        elif(command == 5): self.set_command("w", 95)
+        elif(command == 5): self.set_command("w", 90)
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def set_servo_rotate_left(self, command: int):
@@ -151,7 +151,8 @@ def main():
     serial_manager = Pico()
     time.sleep(1)
 
-    serial_manager.set_servo_rotate_left(3)
+    # serial_manager.set_servo_rotate_left(3)
+    serial_manager.home_pico()
     
     # serial_manager.set_command('s', 130)
     # serial_manager.set_command('h', 0)

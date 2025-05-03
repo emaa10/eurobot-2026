@@ -381,7 +381,7 @@ class MotorController():
                 arena_y = distance * math.cos(arena_angle_rad) + self.y 
                 
                 point_in_arena = 0 <= arena_x <= 3000 and 0 <= arena_y <= 2000
-                # point_in_arena = True
+                point_in_arena = True
                             
                 if (self.direction >= 0 and 0 <= d_y <= 450) and abs(d_x) <= 300 and point_in_arena:
                     self.stop = True
