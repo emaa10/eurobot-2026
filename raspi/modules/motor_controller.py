@@ -313,6 +313,8 @@ class MotorController():
     
     async def drive_to_point(self, x, y, theta):
         points = self.pathfinder.proccess(start=Position(self.x//10, self.y//10), target=Position(int(x)//10, int(y)//10))
+        print(x, y, self.x, self.y)
+        print(points)
         for point in points:
             await self.drive_to(point.x*10, point.y*10)
         
@@ -367,7 +369,7 @@ class MotorController():
             
         latest_scan = None
         
-        if self.latest_scan_time + 0.01 <= time():
+        if self.latest_scan_time + 0.02 <= time():
             latest_scan = self.lidar.get_latest_scan()
             self.latest_scan_time = time()
         
@@ -386,7 +388,6 @@ class MotorController():
                 
                 
                 point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 5cm threshold
-                point_in_arena = True
                             
                 if (self.direction >= 0 and 0 <= d_y <= 750) and abs(d_x) <= 300 and point_in_arena:
                     self.stop = True
