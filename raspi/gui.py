@@ -412,21 +412,23 @@ class PicoScene(QtWidgets.QWidget):
 
         self.create_command_button("Mid stepper unteres brett", lambda: self.main_controller.pico_controller.set_mid_stepper(1), stepper_layout)
         self.create_command_button("Mid Stepper oberes brett", lambda: self.main_controller.pico_controller.set_mid_stepper(2), stepper_layout)
-        self.create_command_button("Right Stepper 2. oben brett", lambda: self.main_controller.pico_controller.set_mid_stepper(3), stepper_layout)
-        self.create_command_button("Right Stepper ganz oben", lambda: self.main_controller.pico_controller.set_mid_stepper(4), stepper_layout)
-
-
-        # --- Stepper2 controls: one row with four buttons ---
-        stepper_right_group = QtWidgets.QGroupBox()
-
-        self.create_command_button("Right stepper", lambda: self.step_mid_up, stepper_layout)
-        self.create_command_button("Right stepper", lambda: self.step_mid_down, stepper_layout)
-        self.create_command_button("Right stepper", lambda: self.step_right_up, stepper_layout)
-        self.create_command_button("Right stepper", lambda: self.step_right_down, stepper_layout)
+        self.create_command_button("Mid Stepper 2. oben brett", lambda: self.main_controller.pico_controller.set_mid_stepper(3), stepper_layout)
+        self.create_command_button("Mid Stepper ganz oben", lambda: self.main_controller.pico_controller.set_mid_stepper(4), stepper_layout)
 
         stepper_group.setLayout(stepper_layout)
-        stepper_right_group.setLayout(stepper_layout)
         main_layout.addWidget(stepper_group)
+
+        # --- Stepper2 controls: one row with four buttons ---
+        stepper_right_layout = QtWidgets.QHBoxLayout()
+        stepper_right_group = QtWidgets.QGroupBox()
+
+        self.create_command_button("Right stepper", lambda: self.step_mid_up, stepper_right_layout)
+        self.create_command_button("Right stepper", lambda: self.step_mid_down, stepper_right_layout)
+        self.create_command_button("Right stepper", lambda: self.step_right_up, stepper_right_layout)
+        self.create_command_button("Right stepper", lambda: self.step_right_down, stepper_right_layout)
+
+        stepper_right_group.setLayout(stepper_right_layout)
+        main_layout.addWidget(stepper_right_group)
 
         # --- Other existing groups ---
         left_servo_group = QtWidgets.QGroupBox()

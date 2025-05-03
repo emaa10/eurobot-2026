@@ -132,7 +132,7 @@ class Pico():
         time.sleep(0.2)
         self.set_grip_left(3)
         time.sleep(0.2)
-        self.set_servo_rotate_right(5)
+        self.set_servo_rotate_right(1)
         time.sleep(0.2)
         self.set_servo_rotate_left(1)
         
