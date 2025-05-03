@@ -174,6 +174,9 @@ class MotorController():
         self.time_started = 9999999999999999
         
         
+        self.gegi = False
+        
+        
     def set_pos(self, x, y, theta):
         self.x = x
         self.y = y
@@ -390,17 +393,18 @@ class MotorController():
                 point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 5cm threshold
                 point_in_arena = True
                             
-                if (self.direction >= 0 and 0 <= d_y <= 500) and abs(d_x) <= 250 and point_in_arena:
+                if (self.direction >= 0 and 0 <= d_y <= 750) and abs(d_x) <= 300 and point_in_arena:
                     self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
                 
-                if  (self.direction <= 0 and 0 >= d_y >= -500) and abs(d_x) <= 250 and point_in_arena:
+                if  (self.direction <= 0 and 0 >= d_y >= -750) and abs(d_x) <= 300 and point_in_arena:
                     self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break       
-                
-        # self.stop = False         
+            
+        if not self.gegi:    
+            self.stop = False         
                     
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None

@@ -75,17 +75,18 @@ class RobotController:
     async def home(self):
         self.logger.info('Homing routine started')
         
-        # self.pico_controller.home_pico()
+        self.pico_controller.home_pico()
         
-        # while True:
-        #     self.home_routine = await self.home_routine.run()
-        #     if not self.home_routine: break
+        while True:
+            self.home_routine = await self.home_routine.run()
+            if not self.home_routine: break
         
         x, y, theta = self.start_positions[self.start_pos]
         self.tactic.motor_controller.set_pos(x, y, theta)
         
     def start(self):
         self.tactic.motor_controller.time_started = time()
+        self.tactic.motor_controller.gegi = True
         self.logger.info(f'Tacitc started')
         
     async def run(self) -> int | None:
