@@ -64,7 +64,7 @@ class Pico():
     # 1: fully open, 2: grip plate, 3: collision avoidance, 4: closed
     def set_plate_gripper(self, command: int):
         if(command == 1): self.set_command("s", 175)
-        elif(command == 2): self.set_command("s", 120)
+        elif(command == 2): self.set_command("s", 123)
         elif(command == 3): self.set_command("s", 130)
         elif(command == 4): self.set_command("s", 0)
 
@@ -78,7 +78,7 @@ class Pico():
     # 1: open, 2: closed 3: home
     def set_grip_right(self, command: int):
         if(command == 1):
-            self.set_command("v", 80)
+            self.set_command("v", 85)
         elif(command == 2):
             self.set_command("v", 40)
         elif(command == 3):
@@ -87,9 +87,9 @@ class Pico():
     # 1: closed, 2: open
     def set_grip_left(self, command: int):
         if(command == 1):
-            self.set_command("y", 130)
+            self.set_command("y", 147)
         elif(command == 2):
-            self.set_command("y", 75)
+            self.set_command("y", 70)
         elif(command == 3):
             self.set_command("y", 110)
             
@@ -109,7 +109,7 @@ class Pico():
         elif(command == 2): self.servo_rotate_left.angle = -60
         elif(command == 3): self.servo_rotate_left.angle = 50
         elif(command == 4): self.servo_rotate_left.angle = 25
-        elif(command == 5): self.servo_rotate_left.angle = 0
+        elif(command == 5): self.servo_rotate_left.angle = -5
         time.sleep(1)
         # self.servo_rotate_left.detach()
         # self.servo_rotate_left = None
@@ -267,7 +267,7 @@ def main():
     # serial_manager.wait_for_ok()
     # print('done')
     
-    serial_manager.set_grip_left(1)
+    serial_manager.set_plate_gripper(1)
         
 if __name__ == '__main__':
     main()

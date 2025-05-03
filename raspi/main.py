@@ -37,7 +37,7 @@ class RobotController:
             # gelb
             1: [200, 850, 90],
             2: [1200, 150, 0],
-            3: [2600, 1800, 180],
+            3: [450, 1800, 180],
             # blau
             4: [400, 1800, 180],
             5: [1800, 150, 0],
@@ -47,7 +47,7 @@ class RobotController:
         self.home_routines = {
             1: [['hh', 'dd50', 'ta-90', 'hh', 'dd100']],
             2: [['hh', 'ta-90', 'hh', 'dd50']],
-            3: [['hh', 'dd50', 'ta90', 'hh', 'dd50']],
+            3: [['hh', 'dd100']],
             4: [['hh', 'dd50', 'ta-90', 'hh', 'dd50']],
             5: [['hh', 'ta90', 'hh', 'dd50']],
             6: [['hh', 'dd50', 'ta90', 'hh', 'dd100']],
@@ -55,9 +55,9 @@ class RobotController:
         }
         
         self.tactix = {
-            1: [['hh', 'fd', 'dd400', 'ip19'], self.task_presets.get_stapel(1, 1),['dh']],
+            1: [self.task_presets.get_stapel(2, 2)],
             2: [['dd500']],
-            3: [['pg', 'dd100', 'gs', 'dd50', 'ds', 'dd-50']],
+            3: [['pg', 'dd190', 'gs', 'dd50', 'ds', 'dd-50']],
             4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']], # safe
         }
         
@@ -79,9 +79,9 @@ class RobotController:
         
         self.pico_controller.home_pico()
         
-        # while True:
-        #     self.home_routine = await self.home_routine.run()
-        #     if not self.home_routine: break
+        while True:
+            self.home_routine = await self.home_routine.run()
+            if not self.home_routine: break
         
         x, y, theta = self.start_positions[self.start_pos]
         self.tactic.motor_controller.set_pos(x, y, theta)
