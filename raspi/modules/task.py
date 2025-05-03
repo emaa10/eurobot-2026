@@ -92,7 +92,7 @@ class Task():
                 if self.color == 'blue':
                     await self.motor_controller.drive_to_point(2500, 1400, 0)
                 else:
-                    await self.motor_controller.drive_to_point(500, 1400, 0)
+                    await self.motor_controller.drive_to_point(500, 1500, 0)
             case 'ta':  # turn angle
                 await self.motor_controller.turn_angle(float(value))                              
                 # return await self.next_action()

@@ -36,7 +36,7 @@ class RobotController:
         self.start_positions = {
             # gelb
             1: [200, 850, 90],
-            2: [1150, 200, 0],
+            2: [1200, 150, 0],
             3: [2600, 1800, 180],
             # blau
             4: [400, 1800, 180],
@@ -46,7 +46,7 @@ class RobotController:
         
         self.home_routines = {
             1: [['hh', 'dd50', 'ta-90', 'hh', 'dd100']],
-            2: [['hh', 'dd50', 'ta-90', 'hh', 'dd50']],
+            2: [['hh', 'ta-90', 'hh', 'dd50']],
             3: [['hh', 'dd50', 'ta90', 'hh', 'dd50']],
             4: [['hh', 'dd50', 'ta-90', 'hh', 'dd50']],
             5: [['hh', 'ta90', 'hh', 'dd100']],
