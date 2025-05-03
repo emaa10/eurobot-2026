@@ -66,7 +66,7 @@ class Task():
         prefix = self.current_action[:2]
         value = self.current_action[2:]
         
-        self.logger.info(prefix)
+        self.logger.info(f'action: {prefix}, {value}')
         
         match prefix:
             case 'sp':  # set pos
@@ -93,8 +93,6 @@ class Task():
                     await self.motor_controller.drive_to_point(2500, 1400, 0)
                 else:
                     await self.motor_controller.drive_to_point(500, 1400, 0)
-                    
-                self.points += 9
             case 'ta':  # turn angle
                 await self.motor_controller.turn_angle(float(value))                              
                 # return await self.next_action()
@@ -102,7 +100,7 @@ class Task():
                 await self.motor_controller.turn_to(float(value))
             case 'fd':  # flag down
                 self.pico_controller.set_drive_flag(2)
-                self.points += 20
+                await asyncio.sleep(1)
             case 'fu':  # flag up
                 self.pico_controller.set_drive_flag(1)
             case 'gs':  # get stapel
@@ -128,6 +126,9 @@ class Task():
                 await self.motor_controller.turn_angle(-90+angle)
                 await self.motor_controller.drive_distance(distance)
                 await self.motor_controller.turn_angle(90)
+            case 'ip':
+                self.points += int(value)
+                self.logger.info(f'points plus: {value}')
 
 
 

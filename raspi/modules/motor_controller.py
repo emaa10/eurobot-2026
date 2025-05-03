@@ -376,7 +376,7 @@ class MotorController():
         
         if latest_scan: 
             self.stop = False
-            self.logger.info('scan')
+            self.logger.info('got scan')
             for angle, distance in latest_scan:
                 # point in relation to bot
                 d_x = distance * math.sin((angle+180) * math.pi / 180)
@@ -403,13 +403,12 @@ class MotorController():
             
         if not self.gegi:    
             self.stop = False     
-            
-        self.logger.info(self.stop)    
-                    
+                                
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None
         
         if self.stop:
+            self.logger.info('stop')
             self.finished = False
             if not self.stopped:
                 await self.override_target()
@@ -417,6 +416,7 @@ class MotorController():
                 self.stopped = True
         
         if self.stopped and not self.stop:
+            self.logger.info('continue')
             await self.set_target()
             self.finished = False
             self.stopped = False

@@ -34,5 +34,5 @@ class TaskPresets:
         
     def flag(self):
         x = 300 if self.color == 'blue' else 1700
-        return [f'hh', 'fd', 'dd150'] #gf fehlt
+        return  #gf fehlt
             

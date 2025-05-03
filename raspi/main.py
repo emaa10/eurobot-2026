@@ -58,7 +58,7 @@ class RobotController:
             1: [['dd1800']],
             2: [['dd500']],
             3: [['cd']],
-            4: [self.task_presets.flag(), ['dh']],
+            4: [['hh', 'fd', 'dd150', 'ip20'], ['dh', 'ip9']],
         }
         
     def set_tactic(self, start_pos_num: int, tactic_num: int):
@@ -69,7 +69,7 @@ class RobotController:
         tactic = self.tactix[tactic_num]
         home_routine = self.home_routines[start_pos_num]
         
-        self.logger.info(f'color: {color}, tactic: {tactic}, home_routine: {home_routine}, startpos: {sta}')
+        self.logger.info(f'color: {color}, tactic: {tactic}, home_routine: {home_routine}, startpos: {start_pos_num}')
                 
         self.tactic = Task(self.motor_controller, self.camera, self.pico_controller, tactic, color)
         self.home_routine = Task(self.motor_controller, self.camera, self.pico_controller, home_routine, color)
@@ -86,6 +86,8 @@ class RobotController:
         x, y, theta = self.start_positions[self.start_pos]
         self.tactic.motor_controller.set_pos(x, y, theta)
         
+        self.logger.info('Homing done')
+        
     def start(self):
         self.tactic.motor_controller.time_started = time()
         self.tactic.motor_controller.gegi = True
@@ -93,7 +95,9 @@ class RobotController:
         
     async def run(self) -> int | None:
         self.tactic = await self.tactic.run()
-        if not self.tactic: return None
+        if not self.tactic: 
+            self.logger.info(f'Tactic complete')
+            return None
         
         return self.tactic.points
 
@@ -101,9 +105,7 @@ async def main():
     try:
         controller = RobotController()
         controller.set_tactic(5, 4)
-        print('before')
         await controller.home()
-        print('after')
         await asyncio.sleep(1)
         controller.start()
         points = 1
