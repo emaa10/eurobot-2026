@@ -37,6 +37,20 @@ class Pico():
         byte_string = str.encode(command_string)
         self.ser.write(byte_string)
 
+    # 1: unteres brett, 2: oberes brett, 3: zweite ebene brett, 4: ganz oben 
+    def set_mid_stepper(self, command: int):
+        if(command == 1): self.set_command("b", 270)
+        elif(command == 2): self.set_command("b", 600)
+        elif(command == 3): self.set_command("b", 2650)
+        elif(command == 4): self.set_command("b", 3375)
+
+    # 1: asjkdfjkldskflööjkldsköjl
+    def set_right_stepper(self, command: int):
+        if(command == 1): self.set_command("b", 270)
+        elif(command == 2): self.set_command("b", 600)
+        elif(command == 3): self.set_command("b", 2650)
+        elif(command == 4): self.set_command("b", 3375)
+
     # 1: up, 2: down
     def set_left_servo(self, command: int):
         if(command == 1):
@@ -76,13 +90,13 @@ class Pico():
         elif(command == 3):
             self.set_command("y", 110)
             
-    # 1: outwards, 2: inwards, 3: deposit, 4: mid
+    # 1: outwards, 2: inwards, 3: deposit, 4: mid, 5: grip cans
     def set_servo_rotate_right(self, command: int):
-        if(command == 1): self.set_command("w", 5)
+        if(command == 1): self.set_command("w", 15)
         elif(command == 2): self.set_command("w", 170)
-        elif(command == 3): self.set_command("w", 155)
+        elif(command == 3): self.set_command("w", 146)
         elif(command == 4): self.set_command("w", 100)
-        elif(command == 5): self.set_command("w", 60)
+        elif(command == 5): self.set_command("w", 95)
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid
     def set_servo_rotate_left(self, command: int):
@@ -106,10 +120,6 @@ class Pico():
     def set_right_stepper(self, position: int):
         self.set_command('a', position)
 
-    # 1-3: plates, 4: on top
-    def set_middle_stepper(self, position: int):
-        self.set_command('b', position)
-        
     def collission_free_sevors(self):
         self.set_drive_flag(1)
         self.set_left_servo(2)

@@ -80,19 +80,13 @@ class Task():
                 print(self.motor_controller.x)
                 print(self.motor_controller.y)
                 print(self.motor_controller.theta)
-            case 'dh':
+            case 'dh':                
                 if self.color == 'blue':
-                    await self.motor_controller.drive_to_point(2500, 1100, 0)
-                else:
-                    await self.motor_controller.drive_to_point(500, 1100, 0)
-                
-                while self.motor_controller.time_started + 90 > time():
-                    await asyncio.sleep(1)
-                
-                if self.color == 'blue':
-                    await self.motor_controller.drive_to_point(2500, 1400, 0)
+                    await self.motor_controller.drive_to_point(2500, 1450, 0)
                 else:
                     await self.motor_controller.drive_to_point(500, 1500, 0)
+                    
+                self.points += 10
             case 'ta':  # turn angle
                 await self.motor_controller.turn_angle(float(value))                              
                 # return await self.next_action()

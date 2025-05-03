@@ -410,12 +410,22 @@ class PicoScene(QtWidgets.QWidget):
         stepper_group = QtWidgets.QGroupBox()
         stepper_layout = QtWidgets.QHBoxLayout()
 
-        self.create_command_button("Mid Stepper Up", self.step_mid_up, stepper_layout)
-        self.create_command_button("Mid Stepper Down", self.step_mid_down, stepper_layout)
-        self.create_command_button("Right Stepper Up", self.step_right_up, stepper_layout)
-        self.create_command_button("Right Stepper Down", self.step_right_down, stepper_layout)
+        self.create_command_button("Mid stepper unteres brett", lambda: self.main_controller.pico_controller.set_mid_stepper(1), stepper_layout)
+        self.create_command_button("Mid Stepper oberes brett", lambda: self.main_controller.pico_controller.set_mid_stepper(2), stepper_layout)
+        self.create_command_button("Right Stepper 2. oben brett", lambda: self.main_controller.pico_controller.set_mid_stepper(3), stepper_layout)
+        self.create_command_button("Right Stepper ganz oben", lambda: self.main_controller.pico_controller.set_mid_stepper(4), stepper_layout)
+
+
+        # --- Stepper2 controls: one row with four buttons ---
+        stepper_right_group = QtWidgets.QGroupBox()
+
+        self.create_command_button("Right stepper", lambda: self.step_mid_up, stepper_layout)
+        self.create_command_button("Right stepper", lambda: self.step_mid_down, stepper_layout)
+        self.create_command_button("Right stepper", lambda: self.step_right_up, stepper_layout)
+        self.create_command_button("Right stepper", lambda: self.step_right_down, stepper_layout)
 
         stepper_group.setLayout(stepper_layout)
+        stepper_right_group.setLayout(stepper_layout)
         main_layout.addWidget(stepper_group)
 
         # --- Other existing groups ---
@@ -439,15 +449,10 @@ class PicoScene(QtWidgets.QWidget):
         drive_flag_layout = QtWidgets.QHBoxLayout()
         self.create_command_button("Flag Up", lambda: self.main_controller.pico_controller.set_drive_flag(1), drive_flag_layout)
         self.create_command_button("Flag Down", lambda: self.main_controller.pico_controller.set_drive_flag(2), drive_flag_layout)
+        self.create_command_button("Right Grip Closed", lambda: self.main_controller.pico_controller.set_grip_right(1), drive_flag_layout)
+        self.create_command_button("Right Grip Open", lambda: self.main_controller.pico_controller.set_grip_right(3), drive_flag_layout)
         drive_flag_group.setLayout(drive_flag_layout)
         main_layout.addWidget(drive_flag_group)
-
-        right_grip_group = QtWidgets.QGroupBox()
-        right_grip_layout = QtWidgets.QHBoxLayout()
-        self.create_command_button("Right Grip Closed", lambda: self.main_controller.pico_controller.set_grip_right(1), right_grip_layout)
-        self.create_command_button("Right Grip Open", lambda: self.main_controller.pico_controller.set_grip_right(3), right_grip_layout)
-        right_grip_group.setLayout(right_grip_layout)
-        main_layout.addWidget(right_grip_group)
 
         right_rotate_group = QtWidgets.QGroupBox()
         right_rotate_layout = QtWidgets.QHBoxLayout()
