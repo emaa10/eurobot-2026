@@ -632,10 +632,11 @@ class DriveScene(QtWidgets.QWidget):
         )
 
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
-        self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
-        time.sleep(1)
-        os.system("pkill python3")
+        pass
+        # self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
+        # self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
+        # time.sleep(1)
+        # os.system("pkill python3")
         
     def show_points(self):
         self.value_label.setText("Points")
