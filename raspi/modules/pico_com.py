@@ -98,8 +98,8 @@ class Pico():
         if(command == 1): self.set_command("w", 15)
         elif(command == 2): self.set_command("w", 170)
         elif(command == 3): self.set_command("w", 146)
-        elif(command == 4): self.set_command("w", 100)
-        elif(command == 5): self.set_command("w", 90)
+        elif(command == 4): self.set_command("w", 110)
+        elif(command == 5): self.set_command("w", 110)
 
     # 1: outwards, 2: inwards, 3: deposit, 4: mid, 5: grip cans
     def set_servo_rotate_left(self, command: int):

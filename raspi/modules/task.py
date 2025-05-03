@@ -97,6 +97,8 @@ class Task():
             case 'ds':  # deposit stapel
                 # self.pico_controller.deposit_stapel()
                 pass
+            case 'rs':
+                self.pico_controller.emergency_stop()
             case 'ge': # gripper einklappen
                 pass
             case 'hh':  # home

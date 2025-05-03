@@ -57,7 +57,7 @@ class RobotController:
         self.tactix = {
             1: [['hh', 'fd', 'dd400', 'ip19'], self.task_presets.get_stapel(1, 1),['dh']],
             2: [['dd500']],
-            3: [['pg', 'dd200', 'gs', 'ta180', 'dd300', 'rs', 'ip12', 'dd-200', 'ge']],
+            3: [['pg', 'dd100', 'gs', 'ta180', 'dd50', 'rs', 'ip12']],
             4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']], # safe
         }
         
@@ -79,9 +79,9 @@ class RobotController:
         
         self.pico_controller.home_pico()
         
-        while True:
-            self.home_routine = await self.home_routine.run()
-            if not self.home_routine: break
+        # while True:
+        #     self.home_routine = await self.home_routine.run()
+        #     if not self.home_routine: break
         
         x, y, theta = self.start_positions[self.start_pos]
         self.tactic.motor_controller.set_pos(x, y, theta)
@@ -104,7 +104,7 @@ class RobotController:
 async def main():
     try:
         controller = RobotController()
-        controller.set_tactic(7, 1)
+        controller.set_tactic(1, 3)
         await controller.home()
         await asyncio.sleep(1)
         controller.start()
