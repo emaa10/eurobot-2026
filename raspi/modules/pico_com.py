@@ -80,14 +80,14 @@ class Pico():
         if(command == 1):
             self.set_command("v", 80)
         elif(command == 2):
-            self.set_command("v", 30)
+            self.set_command("v", 40)
         elif(command == 3):
             self.set_command("v", 50)
 
     # 1: closed, 2: open
     def set_grip_left(self, command: int):
         if(command == 1):
-            self.set_command("y", 150)
+            self.set_command("y", 130)
         elif(command == 2):
             self.set_command("y", 75)
         elif(command == 3):
@@ -155,7 +155,7 @@ class Pico():
 
         if which == 1 or which == 2: self.set_left_servo(2) #runter fahren
         if which == 1 or which == 3: self.set_right_stepper(1)
-        time.sleep(1)
+        time.sleep(2)
 
         if which == 1 or which == 2: self.set_grip_left(1) #zu
         if which == 1 or which == 3: self.set_grip_right(2)
@@ -205,6 +205,8 @@ class Pico():
 
         self.set_mid_stepper(4) # mittleren stepper hoch
         time.sleep(2) 
+        self.set_right_stepper(4) # ganz hoch zum wegdrehen
+        time.sleep(2)
         self.set_servo_rotate_right(1) # right rausdrehen
         time.sleep(2)
         self.set_mid_stepper(3) # zum zweiten brett fahren oben
@@ -265,7 +267,7 @@ def main():
     # serial_manager.wait_for_ok()
     # print('done')
     
-    serial_manager.set_servo_rotate_left(1)
+    serial_manager.set_grip_left(1)
         
 if __name__ == '__main__':
     main()
