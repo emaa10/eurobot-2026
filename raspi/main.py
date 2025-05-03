@@ -68,6 +68,8 @@ class RobotController:
         
         tactic = self.tactix[tactic_num]
         home_routine = self.home_routines[start_pos_num]
+        
+        self.logger.info(f'color: {color}, tactic: {tactic}, home_routine: {home_routine}, startpos: {sta}')
                 
         self.tactic = Task(self.motor_controller, self.camera, self.pico_controller, tactic, color)
         self.home_routine = Task(self.motor_controller, self.camera, self.pico_controller, home_routine, color)
@@ -99,7 +101,9 @@ async def main():
     try:
         controller = RobotController()
         controller.set_tactic(5, 4)
+        print('before')
         await controller.home()
+        print('after')
         await asyncio.sleep(1)
         controller.start()
         points = 1

@@ -389,6 +389,7 @@ class MotorController():
                 
                 
                 point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 5cm threshold
+                point_in_arena = True
                             
                 if (self.direction >= 0 and 0 <= d_y <= 750) and abs(d_x) <= 300 and point_in_arena:
                     self.stop = True
@@ -403,7 +404,7 @@ class MotorController():
         if not self.gegi:    
             self.stop = False     
             
-        self.log.info(self.stop)    
+        self.logger.info(self.stop)    
                     
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None

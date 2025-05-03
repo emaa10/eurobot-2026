@@ -102,7 +102,6 @@ class Task():
                 await self.motor_controller.turn_to(float(value))
             case 'fd':  # flag down
                 self.pico_controller.set_drive_flag(2)
-                self.motor_controller.drive_distance(100)
                 self.points += 20
             case 'fu':  # flag up
                 self.pico_controller.set_drive_flag(1)
