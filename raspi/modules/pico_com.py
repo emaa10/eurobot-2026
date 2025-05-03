@@ -78,7 +78,7 @@ class Pico():
     # 1: open, 2: closed 3: home
     def set_grip_right(self, command: int):
         if(command == 1):
-            self.set_command("v", 70)
+            self.set_command("v", 80)
         elif(command == 2):
             self.set_command("v", 30)
         elif(command == 3):
@@ -138,36 +138,36 @@ class Pico():
         # self.set_mid_stepper(1)
         # self.set_plate_gripper(2)
         self.set_mid_stepper(1)
-        time.sleep(0.75)
+        time.sleep(1)
         self.set_plate_gripper(2)
-        time.sleep(0.75)
+        time.sleep(1)
         self.set_mid_stepper(4)
-        time.sleep(0.75)
+        time.sleep(1)
 
         # reindrehen und hochfahren
         if which == 1 or which == 2: self.set_servo_rotate_left(5) # rein drehen
         if which == 1 or which == 3: self.set_servo_rotate_right(5)
-        time.sleep(0.75)
+        time.sleep(1)
 
         if which == 1 or which == 2: self.set_grip_left(2) #auf
         if which == 1 or which == 3: self.set_grip_right(1)
-        time.sleep(0.75)
+        time.sleep(1)
 
         if which == 1 or which == 2: self.set_left_servo(2) #runter fahren
         if which == 1 or which == 3: self.set_right_stepper(1)
-        time.sleep(0.75)
+        time.sleep(1)
 
         if which == 1 or which == 2: self.set_grip_left(1) #zu
         if which == 1 or which == 3: self.set_grip_right(2)
-        time.sleep(0.75)
+        time.sleep(1)
 
         if which == 1 or which == 2: self.set_left_servo(1) # hoch fahren
         if which == 1 or which == 3: self.set_right_stepper(4)
-        time.sleep(0.75)
+        time.sleep(1)
 
         if which == 1 or which == 2: self.set_servo_rotate_left(1) # raus drehen
         if which == 1 or which == 3: self.set_servo_rotate_right(1)
-        time.sleep(0.75)
+        time.sleep(1)
 
     # 1: beide, 2: nur links, 3: nur rechts
     def deposit_stapel(self, which=1):
@@ -230,13 +230,16 @@ def main():
     time.sleep(1)
 
     # serial_manager.set_servo_rotate_left(3)
-    # serial_manager.home_pico()
+    serial_manager.home_pico()
+    time.sleep(10)
     # serial_manager.set_servo_rotate_left(2)
-    # serial_manager.prepare_gripping()
-    # serial_manager.grip_stapel()
-    serial_manager.set_servo_rotate_left(5)
-    serial_manager.set_servo_rotate_right(5)
-    serial_manager.set_grip_left(2)
+    serial_manager.prepare_gripping()
+    time.sleep(10)
+    serial_manager.grip_stapel()
+    time.sleep(10)
+    # serial_manager.set_servo_rotate_left(5)
+    # serial_manager.set_servo_rotate_right(5)
+    # serial_manager.set_grip_left(2)
     
     # serial_manager.set_command('s', 130)
     # serial_manager.set_command('h', 0)

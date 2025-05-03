@@ -94,7 +94,8 @@ class Task():
                 self.pico_controller.prepare_gripping()
             case 'gs':  # grip stapel
                 self.pico_controller.grip_stapel()
-            case 'rs':  # release stapel
+            case 'ds':  # deposit stapel
+                # self.pico_controller.deposit_stapel()
                 pass
             case 'ge': # gripper einklappen
                 pass
