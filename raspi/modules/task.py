@@ -90,11 +90,13 @@ class Task():
                 await asyncio.sleep(1)
             case 'fu':  # flag up
                 self.pico_controller.set_drive_flag(1)
-            case 'gs':  # get stapel
-                self.motor_controller.abortable = False
-                pass
+            case 'pg': # prepare gripping
+                self.pico_controller.prepare_gripping()
+            case 'gs':  # grip stapel
+                self.pico_controller.grip_stapel()
             case 'rs':  # release stapel
-                self.motor_controller.abortable = True
+                pass
+            case 'ge': # gripper einklappen
                 pass
             case 'hh':  # home
                 await self.motor_controller.home()

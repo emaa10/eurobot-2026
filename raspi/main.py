@@ -1,6 +1,6 @@
 from modules.task import Task
 from modules.camera import Camera
-from modules.task_presets import TaskPresets
+from modules.stapel_presets import StapelPresets
 from modules.motor_controller import MotorController
 from modules.pico_com import Pico
 
@@ -31,7 +31,7 @@ class RobotController:
         self.tactic: Task | None = None
         self.home_routine: Task | None = None
         
-        self.task_presets = TaskPresets()
+        self.task_presets = StapelPresets()
         
         self.start_positions = {
             # gelb
@@ -55,10 +55,10 @@ class RobotController:
         }
         
         self.tactix = {
-            1: [['ta360', 'ta360']],
+            1: [['hh', 'fd', 'dd400', 'ip19'], self.task_presets.get_stapel(1, 1),['dh']],
             2: [['dd500']],
-            3: [['cd']],
-            4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']],
+            3: [['dd500']],
+            4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']], # safe
         }
         
     def set_tactic(self, start_pos_num: int, tactic_num: int):
