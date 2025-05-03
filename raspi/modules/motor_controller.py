@@ -388,7 +388,7 @@ class MotorController():
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
                 
-                if  (self.direction <= 0 and 0 >= d_y >= -400) and abs(d_x) <= 300 and point_in_arena:
+                if  (self.direction <= 0 and 0 >= d_y >= -200) and abs(d_x) <= 300 and point_in_arena:
                     self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break       
