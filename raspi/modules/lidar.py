@@ -78,24 +78,10 @@ class Lidar:
                         current_scan_data.append((angle, distance))
             
             except Exception as e:
-                self.logger.error(f"Error in scan loop: {e}")
+                self.logger.info(f"Error in scan loop: {e}")
                 if not self.running:
                     break
-                    
-                # Try to reconnect
-                self.logger.info("Attempting to reconnect to Lidar...")
-                try:
-                    if self.lidar:
-                        self.lidar.stop()
-                        self.lidar.disconnect()
-                    self.lidar = None
-                    sleep(1)  # Wait a bit before reconnecting
-                    if self.connect():
-                        self.logger.info("Successfully reconnected to Lidar")
-                        continue
-                except Exception as reconnect_error:
-                    self.logger.error(f"Failed to reconnect: {reconnect_error}")
-                    sleep(5)  # Wait longer before next reconnection attempt
+                
     
     def get_latest_scan(self):
         """

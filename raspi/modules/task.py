@@ -27,6 +27,8 @@ class Task():
         
         self.logger = logging.getLogger(__name__)
         
+        self.home = False
+        
                 
         for actions in action_set:
             self.add_task(Task(self.motor_controller, self.camera, self.motor_controller, [actions]))
@@ -44,15 +46,27 @@ class Task():
         return await self.successor.run()
         
     async def run(self) -> Self:
-        if self.motor_controller.time_started + 80 < time():
+        if self.home: return None
+        
+        if self.motor_controller.time_started + 80 < time() and not self.home:
             await self.motor_controller.drive_home(self.color)
             self.points += 10
             self.actions = []
             self.successor = None
+            self.home = True
             return self
         
+        if self.motor_controller.time_started + 97 < time():
+            await self.motor_controller.set_stop()
+            self.pico_controller.emergency_stop()
+            return None
+        
         if len(self.actions) <= 0:
-            if not self.successor: return None
+            if not self.successor:
+                self.motor_controller.drive_home()
+                self.points += 10
+                self.home = True
+                return self
             
             self.successor.points = self.points
             await self.successor.run()

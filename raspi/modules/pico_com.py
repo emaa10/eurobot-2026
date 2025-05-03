@@ -99,7 +99,7 @@ class Pico():
 
     def emergency_stop(self):
         self.set_command("e", 0)
-        self.servo_rotate_left.detach()
+        if self.servo_rotate_left: self.servo_rotate_left.detach()
         self.servo_rotate_left = None
 
     # 1: slightly lifted, 2: more lifted, 3: on the plate, 4: on top
