@@ -47,7 +47,7 @@ int RIGHT_stepperTargetPos = 0;
 int MID_stepperTargetPos = 0;
 
 int RIGHT_stepperStartPos = 325;
-int MID_stepperStartPos = 1725;
+int MID_stepperStartPos = 2100;
 
 bool startupRoutineBool = false;
 
