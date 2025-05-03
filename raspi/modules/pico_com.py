@@ -52,7 +52,7 @@ class Pico():
         if(command == 1): self.set_command("a", 40)
         elif(command == 2): self.set_command("a", 280)
         elif(command == 3): self.set_command("a", 710)
-        elif(command == 4): self.set_command("a", 880)
+        elif(command == 4): self.set_command("a", 810)
 
     # 1: up grip, 2: down grip
     def set_left_servo(self, command: int):
@@ -171,26 +171,26 @@ class Pico():
 
     # 1: beide, 2: nur links, 3: nur rechts
     def deposit_stapel(self, which=1):
-        self.set_servo_rotate_left(3)
+        self.set_servo_rotate_left(2) # in mitte
         time.sleep(2)
-        self.set_left_servo(2)
+        self.set_left_servo(2) # runter fahren
         time.sleep(2)
-        self.set_grip_left(2)
+        self.set_grip_left(2)  #loslassen
         time.sleep(2)
-        self.set_left_servo(1)
+        self.set_left_servo(1) # hoch fahren
         time.sleep(2)
-        self.set_servo_rotate_left(1)
+        self.set_servo_rotate_left(1) # rausdrehen
         time.sleep(2)
 
-        self.set_mid_stepper(1)
+        self.set_mid_stepper(1) # zum unteren brett runter
         time.sleep(2)
-        self.set_plate_gripper(1)
+        self.set_plate_gripper(1) # gripper auf
         time.sleep(2)
-        self.set_mid_stepper(2)
+        self.set_mid_stepper(2) # zum oberen brett
         time.sleep(2)
-        self.set_plate_gripper(2)
+        self.set_plate_gripper(2) # zu machen
         time.sleep(2)
-        self.set_mid_stepper(4)
+        self.set_mid_stepper(4) # ganz hoch fahren
         time.sleep(2)
 
         self.set_servo_rotate_right(3)
@@ -262,7 +262,7 @@ def main():
     # serial_manager.wait_for_ok()
     # print('done')
     
-    serial_manager.servo_rotate_left.angle = 87
+    serial_manager.set_servo_rotate_left(1)
         
 if __name__ == '__main__':
     main()
