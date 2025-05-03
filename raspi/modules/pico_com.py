@@ -178,6 +178,7 @@ class Pico():
         self.set_grip_left(2)  #loslassen
         time.sleep(0.3)
         self.set_left_servo(1) # hoch fahren
+        time.sleep(0.7)
         self.set_servo_rotate_left(1) # rausdrehen
         self.set_grip_left(3)
         time.sleep(1)
