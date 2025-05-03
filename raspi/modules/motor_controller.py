@@ -354,6 +354,12 @@ class MotorController():
         
     async def control_loop(self):        
         self.finished = await self.get_finished()
+        
+        if self.time_started + 96 < time():
+            self.logger.info('Cutoff')
+            await self.set_stop()
+            self.finished = True
+            return
             
         try:
             self.x, self.y, self.theta = self.serial_manager.get_pos()
@@ -369,7 +375,6 @@ class MotorController():
         
         if latest_scan: 
             self.stop = False
-            self.logger.info('got scan')
             for angle, distance in latest_scan:
                 # point in relation to bot
                 d_x = distance * math.sin((angle+180) * math.pi / 180)
@@ -415,14 +420,6 @@ class MotorController():
             
         if self.finished:
             await self.set_stop()
-            
-        if self.time_started + 80 < time():
-            pass # drive home
-            
-        if self.time_started + 96 < time():
-            self.logger.info('Cutoff')
-            await self.set_stop()
-            self.finished = True
         
         if not self.lidar.is_running():
             self.logger.info("Lidar not running")
