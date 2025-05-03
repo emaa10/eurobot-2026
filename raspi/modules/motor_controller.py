@@ -346,18 +346,11 @@ class MotorController():
         await self.set_stop()
         
     async def drive_home(self, color):
+
         if color == 'blue':
-            await self.drive_to_point(2500, 1100, 0)
+            await self.drive_to_point(2500, 1450, 0)
         else:
-            await self.drive_to_point(500, 1100, 0)
-        
-        while self.time_started + 90 > time():
-            await asyncio.sleep(1)
-        
-        if color == 'blue':
-            await self.drive_to_point(2500, 1400, 0)
-        else:
-            await self.drive_to_point(500, 1400, 0)
+            await self.drive_to_point(500, 1500, 0)
         
     async def control_loop(self):        
         self.finished = await self.get_finished()
@@ -388,14 +381,14 @@ class MotorController():
                 arena_y = distance * math.cos(arena_angle_rad) + self.y 
                 
                 point_in_arena = 0 <= arena_x <= 3000 and 0 <= arena_y <= 2000
-                point_in_arena = True
+                # point_in_arena = True
                             
-                if (self.direction >= 0 and 0 <= d_y <= 750) and abs(d_x) <= 300 and point_in_arena:
+                if (self.direction >= 0 and 0 <= d_y <= 450) and abs(d_x) <= 300 and point_in_arena:
                     self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
                 
-                if  (self.direction <= 0 and 0 >= d_y >= -750) and abs(d_x) <= 300 and point_in_arena:
+                if  (self.direction <= 0 and 0 >= d_y >= -400) and abs(d_x) <= 300 and point_in_arena:
                     self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break       
