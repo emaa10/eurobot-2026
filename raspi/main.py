@@ -58,7 +58,7 @@ class RobotController:
             1: [['hh', 'fd', 'dd400', 'ip19'], self.task_presets.get_stapel(1, 1),['dh']],
             2: [['dd500']],
             # 3: [['pg', 'dd140', 'gs', 'dd50', 'ds', 'dd50']],
-            3: [['pg' 'gs', 'ds']],
+            3: [['pg', 'gs', 'ds']],
             4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']], # safe
         }
         
