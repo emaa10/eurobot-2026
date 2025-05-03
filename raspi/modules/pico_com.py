@@ -162,6 +162,7 @@ class Pico():
         time.sleep(1)
 
         if which == 1 or which == 2: self.set_left_servo(1) # hoch fahren
+        time.sleep(2)
         if which == 1 or which == 3: self.set_right_stepper(4)
         time.sleep(1)
 
@@ -181,6 +182,8 @@ class Pico():
         time.sleep(2)
         self.set_servo_rotate_left(1) # rausdrehen
         time.sleep(2)
+        self.set_grip_left(3)
+        time.sleep(2)
 
         self.set_mid_stepper(1) # zum unteren brett runter
         time.sleep(2.5)
@@ -195,7 +198,7 @@ class Pico():
 
         self.set_servo_rotate_right(3) # rechten zum ablegen drehen
         time.sleep(2)
-        self.set_right_stepper(4) # zum ablegen runterfahren
+        self.set_right_stepper(3) # zum ablegen runterfahren
         time.sleep(2)
         self.set_grip_right(1) # aufmachen
         time.sleep(2)
