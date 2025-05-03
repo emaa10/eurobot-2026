@@ -91,16 +91,11 @@ class Task():
             case 'fu':  # flag up
                 self.pico_controller.set_drive_flag(1)
             case 'pg': # prepare gripping
-                print('prepare')
                 self.pico_controller.prepare_gripping()
             case 'gs':  # grip stapel
-                print('grip')
                 self.pico_controller.grip_stapel()
             case 'ds':  # deposit stapel
-                print('deposit')
                 self.pico_controller.deposit_stapel()
-                await asyncio.sleep(1)
-                pass
             case 'rs':
                 self.pico_controller.emergency_stop()
             case 'ge': # gripper einklappen

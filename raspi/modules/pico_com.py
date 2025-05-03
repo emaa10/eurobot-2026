@@ -106,7 +106,7 @@ class Pico():
         if not self.servo_rotate_left: 
             self.servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
         if(command == 1): self.servo_rotate_left.angle = 87
-        elif(command == 2): self.servo_rotate_left.angle = -70
+        elif(command == 2): self.servo_rotate_left.angle = -60
         elif(command == 3): self.servo_rotate_left.angle = 50
         elif(command == 4): self.servo_rotate_left.angle = 25
         elif(command == 5): self.servo_rotate_left.angle = 0
@@ -172,44 +172,44 @@ class Pico():
     # 1: beide, 2: nur links, 3: nur rechts
     def deposit_stapel(self, which=1):
         self.set_servo_rotate_left(3)
-        time.sleep(1)
+        time.sleep(2)
         self.set_left_servo(2)
-        time.sleep(1)
+        time.sleep(2)
         self.set_grip_left(2)
-        time.sleep(1)
+        time.sleep(2)
         self.set_left_servo(1)
-        time.sleep(1)
+        time.sleep(2)
         self.set_servo_rotate_left(1)
-        time.sleep(1)
+        time.sleep(2)
 
         self.set_mid_stepper(1)
-        time.sleep(1)
+        time.sleep(2)
         self.set_plate_gripper(1)
-        time.sleep(1)
+        time.sleep(2)
         self.set_mid_stepper(2)
-        time.sleep(1)
+        time.sleep(2)
         self.set_plate_gripper(2)
-        time.sleep(1)
+        time.sleep(2)
         self.set_mid_stepper(4)
-        time.sleep(1)
+        time.sleep(2)
 
         self.set_servo_rotate_right(3)
-        time.sleep(1)
+        time.sleep(2)
         self.set_right_stepper(4)
-        time.sleep(1)
+        time.sleep(2)
         self.set_grip_right(1)
-        time.sleep(1)
+        time.sleep(2)
 
         self.set_mid_stepper(4)
-        time.sleep(1)
+        time.sleep(2)
         self.set_servo_rotate_right(1)
-        time.sleep(1)
+        time.sleep(2)
         self.set_mid_stepper(3)
-        time.sleep(1)
+        time.sleep(2)
         self.set_plate_gripper(1)
-        time.sleep(1)
+        time.sleep(2)
         self.set_mid_stepper(4)
-        time.sleep(1)
+        time.sleep(2)
 
 
 
@@ -246,13 +246,13 @@ def main():
     time.sleep(1)
 
     # serial_manager.set_servo_rotate_left(3)
-    serial_manager.home_pico()
-    time.sleep(10)
-    # serial_manager.set_servo_rotate_left(2)
-    serial_manager.prepare_gripping()
-    time.sleep(10)
-    serial_manager.grip_stapel()
-    time.sleep(10)
+    # serial_manager.home_pico()
+    # time.sleep(10)
+    # # serial_manager.set_servo_rotate_left(2)
+    # serial_manager.prepare_gripping()
+    # time.sleep(10)
+    # serial_manager.grip_stapel()
+    # time.sleep(10)
     # serial_manager.set_servo_rotate_left(5)
     # serial_manager.set_servo_rotate_right(5)
     # serial_manager.set_grip_left(2)
@@ -261,6 +261,8 @@ def main():
     # serial_manager.set_command('h', 0)
     # serial_manager.wait_for_ok()
     # print('done')
+    
+    serial_manager.servo_rotate_left.angle = 87
         
 if __name__ == '__main__':
     main()
