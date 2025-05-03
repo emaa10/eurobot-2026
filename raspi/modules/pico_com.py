@@ -140,7 +140,7 @@ class Pico():
         self.set_mid_stepper(1)
         time.sleep(1)
         self.set_plate_gripper(2)
-        time.sleep(1)
+        time.sleep(0.5)
         self.set_mid_stepper(4)
         time.sleep(1)
 
@@ -151,7 +151,7 @@ class Pico():
 
         if which == 1 or which == 2: self.set_grip_left(2) #auf
         if which == 1 or which == 3: self.set_grip_right(1)
-        time.sleep(1)
+        time.sleep(0.4)
 
         if which == 1 or which == 2: self.set_left_servo(2) #runter fahren
         if which == 1 or which == 3: self.set_right_stepper(1)
@@ -159,7 +159,7 @@ class Pico():
 
         if which == 1 or which == 2: self.set_grip_left(1) #zu
         if which == 1 or which == 3: self.set_grip_right(2)
-        time.sleep(1)
+        time.sleep(0.5)
 
         if which == 1 or which == 2: self.set_left_servo(1) # hoch fahren
         time.sleep(2)
@@ -168,53 +168,49 @@ class Pico():
 
         if which == 1 or which == 2: self.set_servo_rotate_left(1) # raus drehen
         if which == 1 or which == 3: self.set_servo_rotate_right(1)
-        time.sleep(1)
 
     # 1: beide, 2: nur links, 3: nur rechts
     def deposit_stapel(self, which=1):
         self.set_servo_rotate_left(2) # in mitte
-        time.sleep(2)
+        time.sleep(0.4)
         self.set_left_servo(2) # runter fahren
-        time.sleep(2)
+        time.sleep(0.7)
         self.set_grip_left(2)  #loslassen
-        time.sleep(2)
+        time.sleep(0.3)
         self.set_left_servo(1) # hoch fahren
-        time.sleep(2)
         self.set_servo_rotate_left(1) # rausdrehen
-        time.sleep(2)
         self.set_grip_left(3)
-        time.sleep(2)
+        time.sleep(1)
 
         self.set_mid_stepper(1) # zum unteren brett runter
         time.sleep(2.5)
         self.set_plate_gripper(1) # gripper auf
-        time.sleep(2)
+        time.sleep(0.4)
         self.set_mid_stepper(2) # zum oberen brett
-        time.sleep(2)
+        time.sleep(0.5)
         self.set_plate_gripper(2) # zu machen
-        time.sleep(2)
+        time.sleep(0.4)
         self.set_mid_stepper(4) # ganz hoch fahren
         time.sleep(2)
 
         self.set_servo_rotate_right(3) # rechten zum ablegen drehen
-        time.sleep(2)
+        time.sleep(0.5)
         self.set_right_stepper(3) # zum ablegen runterfahren
-        time.sleep(2)
+        time.sleep(0.5)
         self.set_grip_right(1) # aufmachen
-        time.sleep(2)
+        time.sleep(0.5)
 
         self.set_mid_stepper(4) # mittleren stepper hoch
-        time.sleep(2) 
+        time.sleep(0.5) 
         self.set_right_stepper(4) # ganz hoch zum wegdrehen
-        time.sleep(2)
+        time.sleep(0.7)
         self.set_servo_rotate_right(1) # right rausdrehen
-        time.sleep(2)
+        time.sleep(0.5)
         self.set_mid_stepper(3) # zum zweiten brett fahren oben
-        time.sleep(2)
+        time.sleep(1)
         self.set_plate_gripper(1) # gripper auf
-        time.sleep(2)
+        time.sleep(0.3)
         self.set_mid_stepper(4) # ganz hoch steper
-        time.sleep(2)
 
 
 
