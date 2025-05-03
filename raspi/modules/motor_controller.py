@@ -384,7 +384,7 @@ class MotorController():
                  
                 # point in arena
                 arena_angle_rad = (180 - angle + self.theta) * math.pi / 180 
-                arena_x = distance * math.sin(arena_angle_rad) + self.x 
+                arena_x = -distance * math.sin(arena_angle_rad) + self.x 
                 arena_y = distance * math.cos(arena_angle_rad) + self.y 
                 
                 point_in_arena = 0 <= arena_x <= 3000 and 0 <= arena_y <= 2000

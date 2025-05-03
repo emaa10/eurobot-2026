@@ -58,7 +58,7 @@ class RobotController:
             1: [['ta360', 'ta360']],
             2: [['dd500']],
             3: [['cd']],
-            4: [['hh', 'fd', 'dd400', 'ip19'], ['dh', 'ip4']],
+            4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']],
         }
         
     def set_tactic(self, start_pos_num: int, tactic_num: int):
@@ -104,7 +104,7 @@ class RobotController:
 async def main():
     try:
         controller = RobotController()
-        controller.set_tactic(5, 4)
+        controller.set_tactic(7, 1)
         await controller.home()
         await asyncio.sleep(1)
         controller.start()
