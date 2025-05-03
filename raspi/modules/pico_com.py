@@ -89,7 +89,7 @@ class Pico():
         if not self.servo_rotate_left: 
             self.servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
         if(command == 1): self.servo_rotate_left.angle = 80
-        elif(command == 2): self.servo_rotate_left.angle = -65
+        elif(command == 2): self.servo_rotate_left.angle = -70
         elif(command == 3): self.servo_rotate_left.angle = 50
         elif(command == 4): self.servo_rotate_left.angle = 40
         time.sleep(1)
@@ -141,7 +141,7 @@ def main():
     serial_manager = Pico()
     time.sleep(1)
 
-    serial_manager.set_servo_rotate_left(60)
+    serial_manager.set_servo_rotate_left(3)
     
     # serial_manager.set_command('s', 130)
     # serial_manager.set_command('h', 0)

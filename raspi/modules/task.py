@@ -23,15 +23,12 @@ class Task():
         self.successor = None
         self.color = color
                         
-        self.points = 10
+        self.points = 1
         
-        self.logger = logging.getLogger(__name__)
-        
-        self.home = False
-        
+        self.logger = logging.getLogger(__name__)        
                 
         for actions in action_set:
-            self.add_task(Task(self.motor_controller, self.camera, self.motor_controller, [actions]))
+            self.add_task(Task(self.motor_controller, self.camera, self.motor_controller, [actions], self.color))
         
         self.pathfinder = Pathfinder()
     
@@ -45,15 +42,12 @@ class Task():
     async def next_task(self):
         return await self.successor.run()
         
-    async def run(self) -> Self:
-        if self.home: return None
-        
+    async def run(self) -> Self:        
         if self.motor_controller.time_started + 80 < time() and not self.home:
             await self.motor_controller.drive_home(self.color)
-            self.points += 10
+            self.points += 9
             self.actions = []
             self.successor = None
-            self.home = True
             return self
         
         if self.motor_controller.time_started + 97 < time():
@@ -63,14 +57,10 @@ class Task():
         
         if len(self.actions) <= 0:
             if not self.successor:
-                self.motor_controller.drive_home()
-                self.points += 10
-                self.home = True
-                return self
+                return None
             
             self.successor.points = self.points
-            await self.successor.run()
-            return self.successor
+            return await self.successor.run()
         
         self.current_action = self.actions.pop(0)
         prefix = self.current_action[:2]
@@ -102,7 +92,7 @@ class Task():
                 else:
                     await self.motor_controller.drive_to_point(500, 1400, 0)
                     
-                self.points += 10
+                self.points += 9
             case 'ta':  # turn angle
                 await self.motor_controller.turn_angle(float(value))                              
                 # return await self.next_action()
