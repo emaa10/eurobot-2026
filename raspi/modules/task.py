@@ -43,13 +43,6 @@ class Task():
         return await self.successor.run()
         
     async def run(self) -> Self:        
-        if self.motor_controller.time_started + 80 < time() and not self.home:
-            await self.motor_controller.drive_home(self.color)
-            self.points += 9
-            self.actions = []
-            self.successor = None
-            return self
-        
         if self.motor_controller.time_started + 96 < time():
             await self.motor_controller.set_stop()
             self.pico_controller.emergency_stop()

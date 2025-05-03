@@ -419,11 +419,11 @@ class MotorController():
         if self.time_started + 80 < time():
             pass # drive home
             
-        if self.time_started + 97 < time():
+        if self.time_started + 96 < time():
             self.logger.info('Cutoff')
             await self.set_stop()
             self.finished = True
         
         if not self.lidar.is_running():
-            # self.logger.info("Lidar not running")
+            self.logger.info("Lidar not running")
             pass

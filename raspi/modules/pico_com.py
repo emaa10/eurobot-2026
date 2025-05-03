@@ -37,12 +37,15 @@ class Pico():
         byte_string = str.encode(command_string)
         self.ser.write(byte_string)
 
-    # 1: unteres brett, 2: oberes brett, 3: zweite ebene brett, 4: ganz oben 
+
+
+    # 1: unteres brett, 2: oberes brett, 3: zweite ebene brett, 4: ganz oben, 5: über 2. brett
     def set_mid_stepper(self, command: int):
         if(command == 1): self.set_command("b", 270)
         elif(command == 2): self.set_command("b", 600)
         elif(command == 3): self.set_command("b", 2650)
         elif(command == 4): self.set_command("b", 3375)
+        elif(command == 5): self.set_command("b", 900)
 
     # 1: grip_down, 2: anfahren unten, 3: grip up, 4: anfahren oben
     def set_right_stepper(self, command: int):
@@ -102,7 +105,7 @@ class Pico():
     def set_servo_rotate_left(self, command: int):
         if not self.servo_rotate_left: 
             self.servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
-        if(command == 1): self.servo_rotate_left.angle = 80
+        if(command == 1): self.servo_rotate_left.angle = 87
         elif(command == 2): self.servo_rotate_left.angle = -70
         elif(command == 3): self.servo_rotate_left.angle = 50
         elif(command == 4): self.servo_rotate_left.angle = 25
@@ -110,15 +113,20 @@ class Pico():
         self.servo_rotate_left.detach()
         self.servo_rotate_left = None
         
-
     def emergency_stop(self):
         self.set_command("e", 0)
         if self.servo_rotate_left: self.servo_rotate_left.detach()
         self.servo_rotate_left = None
 
-    # 1: slightly lifted, 2: more lifted, 3: on the plate, 4: on top
-    def set_right_stepper(self, position: int):
-        self.set_command('a', position)
+    def prepareGripping(self):
+        self.set_servo_rotate_right(1)
+        self.set_servo_rotate_left(1)
+        self.set_grip_right(3)
+        self.set_grip_left(3)
+        self.set_left_servo(1)
+        self.set_right_stepper(2)
+        self.set_mid_stepper(5)
+        self.set_drive_flag(1)
 
     def collission_free_sevors(self):
         self.set_drive_flag(1)
@@ -153,6 +161,7 @@ def main():
 
     # serial_manager.set_servo_rotate_left(3)
     serial_manager.home_pico()
+    # serial_manager.prepareGripping()
     
     # serial_manager.set_command('s', 130)
     # serial_manager.set_command('h', 0)
