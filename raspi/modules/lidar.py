@@ -54,28 +54,48 @@ class Lidar:
         current_scan_data = []
         
         while True:
-            for measurement in self.lidar.iter_measures():
+            try:
+                for measurement in self.lidar.iter_measures():
+                    if not self.running:
+                        break
+                    
+                    # Unpack only the values we need
+                    _, quality, angle, distance = measurement[:4]
+                    
+                    # Process only if this is part of a new scan
+                    if measurement[0]:  # new_reading is the first element                        
+                        try:
+                            self.scan_results.put_nowait(current_scan_data)
+                        except queue.Full:
+                            self.scan_results.get_nowait()
+                            self.scan_results.put_nowait(current_scan_data)
+
+                        # Clear scan data for next iteration
+                        current_scan_data = []
+                        
+                    # Store valid measurements
+                    if quality > 10 and distance > 0:  
+                        current_scan_data.append((angle, distance))
+            
+            except Exception as e:
+                self.logger.error(f"Error in scan loop: {e}")
                 if not self.running:
                     break
-                
-                # Unpack only the values we need
-                _, quality, angle, distance = measurement[:4]
-                
-                # Process only if this is part of a new scan
-                if measurement[0]:  # new_reading is the first element                        
-                    try:
-                        self.scan_results.put_nowait(current_scan_data)
-                    except queue.Full:
-                        self.scan_results.get_nowait()
-                        self.scan_results.put_nowait(current_scan_data)
-
-                    # Clear scan data for next iteration
-                    current_scan_data = []
                     
-                # Store valid measurements
-                if quality > 10 and distance > 0:  
-                    current_scan_data.append((angle, distance))
-                
+                # Try to reconnect
+                self.logger.info("Attempting to reconnect to Lidar...")
+                try:
+                    if self.lidar:
+                        self.lidar.stop()
+                        self.lidar.disconnect()
+                    self.lidar = None
+                    sleep(1)  # Wait a bit before reconnecting
+                    if self.connect():
+                        self.logger.info("Successfully reconnected to Lidar")
+                        continue
+                except Exception as reconnect_error:
+                    self.logger.error(f"Failed to reconnect: {reconnect_error}")
+                    sleep(5)  # Wait longer before next reconnection attempt
     
     def get_latest_scan(self):
         """
