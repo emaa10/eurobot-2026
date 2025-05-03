@@ -75,6 +75,8 @@ class RobotController:
     async def home(self):
         self.logger.info('Homing routine started')
         
+        self.pico_controller.home_pico()
+        
         while True:
             self.home_routine = await self.home_routine.run()
             if not self.home_routine: break

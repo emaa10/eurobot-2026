@@ -111,6 +111,7 @@ class Pico():
         self.set_command('b', position)
         
     def collission_free_sevors(self):
+        self.set_drive_flag(1)
         self.set_left_servo(2)
         time.sleep(0.2)
         self.set_plate_gripper(3)
