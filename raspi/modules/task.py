@@ -120,6 +120,8 @@ class Task():
             case 'ip':
                 self.points += int(value)
                 self.logger.info(f'points plus: {value}')
+            case 'ts':
+                await asyncio.sleep(int(value))
 
 
 
