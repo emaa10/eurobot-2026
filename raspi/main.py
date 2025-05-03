@@ -49,7 +49,7 @@ class RobotController:
             2: [['hh', 'ta-90', 'hh', 'dd50']],
             3: [['hh', 'dd50', 'ta90', 'hh', 'dd50']],
             4: [['hh', 'dd50', 'ta-90', 'hh', 'dd50']],
-            5: [['hh', 'ta90', 'hh', 'dd100']],
+            5: [['hh', 'ta90', 'hh', 'dd50']],
             6: [['hh', 'dd50', 'ta90', 'hh', 'dd100']],
 
         }
