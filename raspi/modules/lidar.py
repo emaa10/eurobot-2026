@@ -136,8 +136,7 @@ def main():
                 for angle, distance in scan:
                     # point in relation to bot
                     d_x = distance * math.sin((angle+180) * math.pi / 180)
-                    d_y = distance * math.cos((angle+180) * math.pi / 180)
-                    
+                    d_y = distance * math.cos((angle+180) * math.pi / 180)                    
                     
                     if 0 <= d_y <= 500 and abs(d_x) <= 250:
                         print(f'x: {d_x}, y:{d_y}')

@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import math
 import moteus
-from time import time
+from time import time, sleep
 import logging
 
 from modules.drive_state import DriveState
@@ -400,7 +400,7 @@ class MotorController():
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break       
                 
-        self.stop = False         
+        # self.stop = False         
                     
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None
