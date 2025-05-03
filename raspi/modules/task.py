@@ -95,7 +95,7 @@ class Task():
             case 'gs':  # grip stapel
                 self.pico_controller.grip_stapel()
             case 'ds':  # deposit stapel
-                # self.pico_controller.deposit_stapel()
+                self.pico_controller.deposit_stapel()
                 pass
             case 'rs':
                 self.pico_controller.emergency_stop()

@@ -171,30 +171,46 @@ class Pico():
 
     # 1: beide, 2: nur links, 3: nur rechts
     def deposit_stapel(self, which=1):
-        # plate grippen, ganz hoch fahren wg greifen
-        self.set_plate_gripper(1)
+        self.set_servo_rotate_left(3)
+        time.sleep(1)
+        self.set_left_servo(2)
+        time.sleep(1)
+        self.set_grip_left(2)
+        time.sleep(1)
+        self.set_left_servo(1)
+        time.sleep(1)
+        self.set_servo_rotate_left(1)
+        time.sleep(1)
+
         self.set_mid_stepper(1)
+        time.sleep(1)
+        self.set_plate_gripper(1)
+        time.sleep(1)
+        self.set_mid_stepper(2)
+        time.sleep(1)
         self.set_plate_gripper(2)
+        time.sleep(1)
         self.set_mid_stepper(4)
+        time.sleep(1)
 
-        # reindrehen und hochfahren
-        if which == 1 or which == 2: self.set_servo_rotate_left(5) # rein drehen
-        if which == 1 or which == 3: self.set_servo_rotate_right(5)
+        self.set_servo_rotate_right(3)
+        time.sleep(1)
+        self.set_right_stepper(4)
+        time.sleep(1)
+        self.set_grip_right(1)
+        time.sleep(1)
 
-        if which == 1 or which == 2: self.set_grip_left(2) #auf
-        if which == 1 or which == 3: self.set_grip_right(1)
+        self.set_mid_stepper(4)
+        time.sleep(1)
+        self.set_servo_rotate_right(1)
+        time.sleep(1)
+        self.set_mid_stepper(3)
+        time.sleep(1)
+        self.set_plate_gripper(1)
+        time.sleep(1)
+        self.set_mid_stepper(4)
+        time.sleep(1)
 
-        if which == 1 or which == 2: self.set_left_servo(2) #runter fahren
-        if which == 1 or which == 3: self.set_right_stepper(1)
-
-        if which == 1 or which == 2: self.set_grip_left(1) #zu
-        if which == 1 or which == 3: self.set_grip_right(2)
-
-        if which == 1 or which == 2: self.set_left_servo(1) # hoch fahren
-        if which == 1 or which == 3: self.set_right_stepper(4)
-
-        if which == 1 or which == 2: self.set_servo_rotate_left(1) # raus drehen
-        if which == 1 or which == 3: self.set_servo_rotate_right(1)
 
 
 

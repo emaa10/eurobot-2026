@@ -57,7 +57,7 @@ class RobotController:
         self.tactix = {
             1: [['hh', 'fd', 'dd400', 'ip19'], self.task_presets.get_stapel(1, 1),['dh']],
             2: [['dd500']],
-            3: [['pg', 'dd150', 'gs', 'dd50', 'rs', 'ip12']],
+            3: [['pg', 'dd100', 'gs', 'dd50', 'ds', 'dd50']],
             4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']], # safe
         }
         
