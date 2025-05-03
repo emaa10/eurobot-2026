@@ -47,12 +47,12 @@ class Pico():
         elif(command == 4): self.set_command("b", 3375)
         elif(command == 5): self.set_command("b", 900)
 
-    # 1: grip_down, 2: anfahren unten, 3: grip up, 4: anfahren oben
+    # 1: grip_down, 2: anfahren unten, 3: ablegen oben, 4: vor ablegen oben
     def set_right_stepper(self, command: int):
-        if(command == 1): self.set_command("a", 120)
-        elif(command == 2): self.set_command("a", 320)
-        elif(command == 3): self.set_command("a", 720)
-        elif(command == 4): self.set_command("a", 790)
+        if(command == 1): self.set_command("a", 50)
+        elif(command == 2): self.set_command("a", 280)
+        elif(command == 3): self.set_command("a", 710)
+        elif(command == 4): self.set_command("a", 880)
 
     # 1: up grip, 2: down grip
     def set_left_servo(self, command: int):
@@ -101,7 +101,7 @@ class Pico():
         elif(command == 4): self.set_command("w", 100)
         elif(command == 5): self.set_command("w", 90)
 
-    # 1: outwards, 2: inwards, 3: deposit, 4: mid
+    # 1: outwards, 2: inwards, 3: deposit, 4: mid, 5: grip cans
     def set_servo_rotate_left(self, command: int):
         if not self.servo_rotate_left: 
             self.servo_rotate_left = AngularServo(12, min_pulse_width=0.0006, max_pulse_width=0.0023)
@@ -109,6 +109,7 @@ class Pico():
         elif(command == 2): self.servo_rotate_left.angle = -70
         elif(command == 3): self.servo_rotate_left.angle = 50
         elif(command == 4): self.servo_rotate_left.angle = 25
+        elif(command == 5): self.servo_rotate_left.angle = 25
         time.sleep(1)
         self.servo_rotate_left.detach()
         self.servo_rotate_left = None
@@ -118,7 +119,7 @@ class Pico():
         if self.servo_rotate_left: self.servo_rotate_left.detach()
         self.servo_rotate_left = None
 
-    def prepareGripping(self):
+    def prepare_gripping(self):
         self.set_servo_rotate_right(1)
         self.set_servo_rotate_left(1)
         self.set_grip_right(3)
@@ -127,6 +128,33 @@ class Pico():
         self.set_right_stepper(2)
         self.set_mid_stepper(5)
         self.set_drive_flag(1)
+
+    # 1: beide, 2: nur links, 3: nur rechts
+    def grip_stapel(self, which=1):
+        # plate grippen, ganz hoch fahren wg greifen
+        self.set_plate_gripper(1)
+        self.set_mid_stepper(1)
+        self.set_plate_gripper(2)
+        self.set_mid_stepper(4)
+
+        # reindrehen und hochfahren
+        if which is 1 or 2: self.set_servo_rotate_left(5) # rein drehen
+        if which is 1 or 3: self.set_servo_rotate_right(5)
+
+        if which is 1 or 2: self.set_grip_left(2) #auf
+        if which is 1 or 3: self.set_grip_right(1)
+
+        if which is 1 or 2: self.set_left_servo(2) #runter fahren
+        if which is 1 or 3: self.set_right_stepper(1)
+
+        if which is 1 or 2: self.set_grip_left(1) #zu
+        if which is 1 or 3: self.set_grip_right(2)
+
+        if which is 1 or 2: self.set_left_servo(1) # hoch fahren
+        if which is 1 or 3: self.set_right_stepper(4)
+
+        if which is 1 or 2: self.set_servo_rotate_left(1) # raus drehen
+        if which is 1 or 3: self.set_servo_rotate_right(1)
 
     def collission_free_sevors(self):
         self.set_drive_flag(1)
@@ -161,7 +189,7 @@ def main():
 
     # serial_manager.set_servo_rotate_left(3)
     serial_manager.home_pico()
-    # serial_manager.prepareGripping()
+    # serial_manager.prepare_gripping()
     
     # serial_manager.set_command('s', 130)
     # serial_manager.set_command('h', 0)
