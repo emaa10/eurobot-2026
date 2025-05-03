@@ -66,6 +66,8 @@ class Task():
         prefix = self.current_action[:2]
         value = self.current_action[2:]
         
+        self.logger.info(prefix)
+        
         match prefix:
             case 'sp':  # set pos
                 x, y, theta  = value.split(';')

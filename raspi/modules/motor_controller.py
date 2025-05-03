@@ -376,6 +376,7 @@ class MotorController():
         
         if latest_scan: 
             self.stop = False
+            self.logger.info('scan')
             for angle, distance in latest_scan:
                 # point in relation to bot
                 d_x = distance * math.sin((angle+180) * math.pi / 180)
@@ -400,7 +401,9 @@ class MotorController():
                     break       
             
         if not self.gegi:    
-            self.stop = False         
+            self.stop = False     
+            
+        self.log.info(self.stop)    
                     
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None
