@@ -381,12 +381,11 @@ class MotorController():
                 # point in relation to bot
                 d_x = distance * math.sin((angle+180) * math.pi / 180)
                 d_y = distance * math.cos((angle+180) * math.pi / 180)
-                
+                 
                 # point in arena
-                arena_angle = (-angle) + self.theta
-                arena_x = distance * math.cos(arena_angle * math.pi / 180) + self.x
-                arena_y = distance * math.sin(arena_angle * math.pi / 180) + self.y
-                
+                arena_angle_rad = (angle + self.theta) * math.pi / 180 
+                arena_x = distance * math.sin(arena_angle_rad) + self.x 
+                arena_y = distance * math.cos(arena_angle_rad) + self.y 
                 
                 point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 5cm threshold
                 point_in_arena = True
@@ -415,7 +414,7 @@ class MotorController():
                 await self.set_stop()
                 self.stopped = True
         
-        if self.stopped and not self.stop:
+        if self.stopped and not self.stop and self.time_started + 97 > time():
             self.logger.info('continue')
             await self.set_target()
             self.finished = False
@@ -427,7 +426,7 @@ class MotorController():
         if self.time_started + 80 < time():
             pass # drive home
             
-        if self.time_started + 99 < time():
+        if self.time_started + 97 < time():
             self.logger.info('Cutoff')
             await self.set_stop()
             self.finished = True

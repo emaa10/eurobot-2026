@@ -58,7 +58,7 @@ class RobotController:
             1: [['dd1800']],
             2: [['dd500']],
             3: [['cd']],
-            4: [['hh', 'fd', 'dd150', 'ip20'], ['dh', 'ip9']],
+            4: [['hh', 'fd', 'dd400', 'ip20'], ['dh', 'ip9']],
         }
         
     def set_tactic(self, start_pos_num: int, tactic_num: int):

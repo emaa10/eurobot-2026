@@ -50,7 +50,7 @@ class Task():
             self.successor = None
             return self
         
-        if self.motor_controller.time_started + 97 < time():
+        if self.motor_controller.time_started + 96 < time():
             await self.motor_controller.set_stop()
             self.pico_controller.emergency_stop()
             return None

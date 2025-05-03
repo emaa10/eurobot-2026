@@ -136,16 +136,28 @@ def main():
                 for angle, distance in scan:
                     # point in relation to bot
                     d_x = distance * math.sin((angle+180) * math.pi / 180)
-                    d_y = distance * math.cos((angle+180) * math.pi / 180)                    
+                    d_y = distance * math.cos((angle+180) * math.pi / 180)  
+                    
+                    # point in arena 
+                    arena_angle_rad = (angle + 90) * math.pi / 180 
+                    arena_x = distance * math.sin(arena_angle_rad) + 500 
+                    arena_y = distance * math.cos(arena_angle_rad) + 500 
+                    
+                    point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 5cm threshold
+                    point_in_arena = True                  
                     
                     if 0 <= d_y <= 500 and abs(d_x) <= 250:
-                        print(f'x: {d_x}, y:{d_y}')
+                        # print(f'x: {d_x}, y:{d_y}')
+                        print(f'arena_x: {arena_x}')
+                        print(f'arena_y: {arena_y}')
 
                 
                     if 0 >= d_y >= -500 and abs(d_x) <= 250:
-                        print(f'x: {d_x}, y:{d_y}')
+                        # print(f'x: {d_x}, y:{d_y}')
+                        print(f'arena_x: {arena_x}')
+                        print(f'arena_y: {arena_y}')
                     
-            sleep(0.01)
+            sleep(0.05)
                     
     
     except KeyboardInterrupt:
