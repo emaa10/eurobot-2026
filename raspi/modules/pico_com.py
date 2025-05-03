@@ -49,7 +49,7 @@ class Pico():
 
     # 1: grip_down, 2: anfahren unten, 3: ablegen oben, 4: vor ablegen oben
     def set_right_stepper(self, command: int):
-        if(command == 1): self.set_command("a", 50)
+        if(command == 1): self.set_command("a", 40)
         elif(command == 2): self.set_command("a", 280)
         elif(command == 3): self.set_command("a", 710)
         elif(command == 4): self.set_command("a", 880)
