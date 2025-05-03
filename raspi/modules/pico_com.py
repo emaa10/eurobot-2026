@@ -183,7 +183,7 @@ class Pico():
         time.sleep(2)
 
         self.set_mid_stepper(1) # zum unteren brett runter
-        time.sleep(2)
+        time.sleep(2.5)
         self.set_plate_gripper(1) # gripper auf
         time.sleep(2)
         self.set_mid_stepper(2) # zum oberen brett
@@ -193,22 +193,22 @@ class Pico():
         self.set_mid_stepper(4) # ganz hoch fahren
         time.sleep(2)
 
-        self.set_servo_rotate_right(3)
+        self.set_servo_rotate_right(3) # rechten zum ablegen drehen
         time.sleep(2)
-        self.set_right_stepper(4)
+        self.set_right_stepper(4) # zum ablegen runterfahren
         time.sleep(2)
-        self.set_grip_right(1)
+        self.set_grip_right(1) # aufmachen
         time.sleep(2)
 
-        self.set_mid_stepper(4)
+        self.set_mid_stepper(4) # mittleren stepper hoch
+        time.sleep(2) 
+        self.set_servo_rotate_right(1) # right rausdrehen
         time.sleep(2)
-        self.set_servo_rotate_right(1)
+        self.set_mid_stepper(3) # zum zweiten brett fahren oben
         time.sleep(2)
-        self.set_mid_stepper(3)
+        self.set_plate_gripper(1) # gripper auf
         time.sleep(2)
-        self.set_plate_gripper(1)
-        time.sleep(2)
-        self.set_mid_stepper(4)
+        self.set_mid_stepper(4) # ganz hoch steper
         time.sleep(2)
 
 
