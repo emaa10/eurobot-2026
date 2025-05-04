@@ -1,10 +1,8 @@
 from modules.task import Task
 from modules.camera import Camera
-from modules.stapel_presets import StapelPresets
 from modules.motor_controller import MotorController
 from modules.pico_com import Pico
 
-import math
 import asyncio
 from time import time
 import logging
@@ -30,9 +28,7 @@ class RobotController:
                     
         self.tactic: Task | None = None
         self.home_routine: Task | None = None
-        
-        self.task_presets = StapelPresets()
-        
+                
         self.start_positions = {
             # gelb
             1: [200, 850, 90],
@@ -54,19 +50,25 @@ class RobotController:
 
         }
         
-        self.tactix = {
-            1: [self.task_presets.get_stapel(2, 2)],
-            2: [['dd500']],
-            3: [['hh', 'fd', 'dd400', 'ip19'], self.task_presets.get_stapel(2, 2)], # safe
+        self.tactix_yellow = {
+            1: [['hh', 'fd', 'dd400', 'ip19'], ['dp400;1340;270', 'pg', 'dp270;1340;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # full takitk
+            2: [['dp400;1340;270', 'pg', 'dp270;1340;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # nur stapel
+            3: [['hh', 'fd', 'dd400', 'ip19'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
+            4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']], # safe
+        }
+        
+        self.tactix_blue = {
+            1: [['hh', 'fd', 'dd400', 'ip19'], ['dp2600;1340;90', 'pg', 'dp2730;1340;90', 'gs', 'dd-100', 'dp2600;1720;0', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # full takitk
+            2: [['dp2600;1340;90', 'pg', 'dp2730;1340;90', 'gs', 'dd-100', 'dp2600;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # nur stapel
+            3: [['hh', 'fd', 'dd400', 'ip19'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
             4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']], # safe
         }
         
     def set_tactic(self, start_pos_num: int, tactic_num: int):
         color = 'yellow' if start_pos_num <= 3 else 'blue'
         self.start_pos = start_pos_num
-        self.task_presets.color = color
         
-        tactic = self.tactix[tactic_num]
+        tactic = self.tactix_blue[tactic_num] if color == 'blue' else self.tactix_yellow[tactic_num]
         home_routine = self.home_routines[start_pos_num]
         
         self.logger.info(f'color: {color}, tactic: {tactic}, home_routine: {home_routine}, startpos: {start_pos_num}')

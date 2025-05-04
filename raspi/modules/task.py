@@ -70,10 +70,15 @@ class Task():
             case 'dp':  # drive to point
                 x, y, theta  = value.split(';')
                 await self.motor_controller.drive_to_point(x, y, theta)
-                print(self.motor_controller.x)
-                print(self.motor_controller.y)
-                print(self.motor_controller.theta)
-            case 'dh':                
+            case 'dh':  
+                if self.color == 'blue':
+                    await self.motor_controller.drive_to_point(2500, 1150, 0)
+                else:
+                    await self.motor_controller.drive_to_point(500, 1200, 0)
+                    
+                while self.motor_controller.time_started + 87 > time():
+                    await asyncio.sleep(1)              
+                    
                 if self.color == 'blue':
                     await self.motor_controller.drive_to_point(2500, 1450, 0)
                 else:
