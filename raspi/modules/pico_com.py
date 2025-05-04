@@ -4,7 +4,7 @@ import logging
 from gpiozero import AngularServo
 
 class Pico():
-    def __init__(self, port="/dev/serial/by-id/usb-Raspberry_Pi_Pico_503558607AD3331F-if00", baud_rate=115200) -> None:
+    def __init__(self, port="/dev/serial/by-id/usb-Raspberry_Pi_Pico_4250305031373003-if00", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=1)
         
         self.ser.setDTR(False)
@@ -214,6 +214,8 @@ class Pico():
         self.set_plate_gripper(1) # gripper auf
         time.sleep(0.3)
         self.set_mid_stepper(4) # ganz hoch steper
+
+
 
 
 
