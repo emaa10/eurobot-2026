@@ -72,9 +72,9 @@ class Task():
                 await self.motor_controller.drive_to_point(x, y, theta)
             case 'dh':  
                 if self.color == 'blue':
-                    await self.motor_controller.drive_to_point(2500, 1150, 0)
+                    await self.motor_controller.drive_to_point(2500, 1250, 0)
                 else:
-                    await self.motor_controller.drive_to_point(500, 1200, 0)
+                    await self.motor_controller.drive_to_point(500, 1250, 0)
                     
                 while self.motor_controller.time_started + 87 > time():
                     await asyncio.sleep(1)              
@@ -103,8 +103,8 @@ class Task():
                 self.pico_controller.deposit_stapel()
             case 'rs':
                 self.pico_controller.emergency_stop()
-            case 'ge': # gripper einklappen
-                pass
+            case 'ga': # gripper ausklappen
+                self.pico_controller.ausklappen()
             case 'hh':  # home
                 await self.motor_controller.home()
             case 'cw':  # clean wheels

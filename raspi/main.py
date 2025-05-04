@@ -51,24 +51,27 @@ class RobotController:
         }
         
         self.tactix_yellow = {
-            1: [['hh', 'fd', 'dd400', 'ip19'], ['dp400;1340;270', 'pg', 'dp270;1340;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # full takitk
-            2: [['dp400;1340;270', 'pg', 'dp270;1340;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # nur stapel
+            1: [['hh', 'fd', 'dd400', 'ip19', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1150;400;180', 'ds', 'ip12', 'dd-200', 'ge', ], ['dh']], # full takitk
+            2: [['hh', 'fd', 'dd400', 'ip19', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1150;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
             3: [['hh', 'fd', 'dd400', 'ip19'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
             4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']], # safe
         }
         
         self.tactix_blue = {
-            1: [['hh', 'fd', 'dd400', 'ip19'], ['dp2600;1340;90', 'pg', 'dp2730;1340;90', 'gs', 'dd-100', 'dp2600;1720;0', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # full takitk
-            2: [['dp2600;1340;90', 'pg', 'dp2730;1340;90', 'gs', 'dd-100', 'dp2600;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # nur stapel
+            1: [['hh', 'fd', 'dd400', 'ip19', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1850;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # full takitk
+            2: [['hh', 'fd', 'dd400', 'ip19', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1850;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
             3: [['hh', 'fd', 'dd400', 'ip19'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
             4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']], # safe
         }
+        
         
     def set_tactic(self, start_pos_num: int, tactic_num: int):
         color = 'yellow' if start_pos_num <= 3 else 'blue'
         self.start_pos = start_pos_num
         
         tactic = self.tactix_blue[tactic_num] if color == 'blue' else self.tactix_yellow[tactic_num]
+        
+        print(tactic)
         home_routine = self.home_routines[start_pos_num]
         
         self.logger.info(f'color: {color}, tactic: {tactic}, home_routine: {home_routine}, startpos: {start_pos_num}')
