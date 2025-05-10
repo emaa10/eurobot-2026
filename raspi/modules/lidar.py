@@ -22,7 +22,7 @@ class Lidar:
     def connect(self):
         """Connect to the Lidar device"""
         try:
-            self.lidar = RPLidar(self.port)
+            self.lidar = RPLidar(self.port, baudrate=460800)
             self.logger.info("Lidar connected successfully")
             return True
         except Exception as e:
