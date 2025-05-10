@@ -1,46 +1,35 @@
-import math
 from typing import Self
 from time import time
 import logging
+import asyncio
 
 from modules.motor_controller import MotorController
 from modules.camera import Camera
 from modules.pathfinding import Pathfinder
-from modules.position import Position
-from modules.drive_state import DriveState
 from modules.pico_com import Pico
 
-import asyncio
 
 class Task():
     def __init__(self, motor_controller: MotorController, camera: Camera, pico_controller: Pico, action_set: list[list[str]], color: str):
         self.motor_controller = motor_controller
-        self.camera = camera
         self.pico_controller = pico_controller
-        self.initial_actions = action_set[0]# if we abort and want to add task to end
-        self.actions = action_set.pop(0)
-        self.current_action = None
-        self.successor = None
+        self.camera = camera
+        
+        self.action_set = action_set
+        self.initial_actions = self.action_set[0] # if we abort and want to add task to end
+        self.actions = self.action_set.pop(0)
+        
         self.color = color
                         
-        self.points = 1
+        self.points = 0
         
         self.logger = logging.getLogger(__name__)        
-                
-        for actions in action_set:
-            self.add_task(Task(self.motor_controller, self.camera, self.motor_controller, [actions], self.color))
         
         self.pathfinder = Pathfinder()
     
-    def add_task(self, task: Self) -> Self:
-        if not self.successor:
-            self.successor = task
-            return
-
-        self.successor.add_task(task)
-    
-    async def next_task(self):
-        return await self.successor.run()
+    def next_task(self):
+        self.initial_actions = self.action_set[0]
+        self.actions = self.action_set.pop(0)
         
     async def run(self) -> Self:        
         if self.motor_controller.time_started + 96 < time():
@@ -49,15 +38,14 @@ class Task():
             return None
         
         if len(self.actions) <= 0:
-            if not self.successor:
+            if len(self.action_set <= 0):
                 return None
             
-            self.successor.points = self.points
-            return await self.successor.run()
+            self.next_task()
         
-        self.current_action = self.actions.pop(0)
-        prefix = self.current_action[:2]
-        value = self.current_action[2:]
+        current_action = self.actions.pop(0)
+        prefix = current_action[:2]
+        value = current_action[2:]
         
         self.logger.info(f'action: {prefix}, {value}')
         
@@ -79,7 +67,6 @@ class Task():
                 self.points += 10
             case 'ta':  # turn angle
                 await self.motor_controller.turn_angle(float(value))                              
-                # return await self.next_action()
             case 'tt':  # turn to angle
                 await self.motor_controller.turn_to(float(value))
             case 'fd':  # flag down
@@ -105,7 +92,6 @@ class Task():
                 await self.motor_controller.set_stop()
             case 'cd':  # check cam
                 await asyncio.sleep(1)
-                print("1")
                 
                 angle, distance = self.camera.get_distance()
                 print(distance)
@@ -119,8 +105,6 @@ class Task():
                 self.logger.info(f'points plus: {value}')
             case 'ts':
                 await asyncio.sleep(int(value))
-
-
 
         await asyncio.sleep(0.3)
         

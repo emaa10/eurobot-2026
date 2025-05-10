@@ -51,17 +51,17 @@ class RobotController:
         }
         
         self.tactix_yellow = {
-            1: [['hh', 'fd', 'dd400', 'ip19', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'dp790;500;180', 'dp790;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
-            2: [['hh', 'fd', 'dd400', 'ip19', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
-            3: [['hh', 'fd', 'dd400', 'ip19'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
-            4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']], # safe
+            1: [['hh', 'fd', 'dd400', 'ip20', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'dp790;500;180', 'dp790;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
+            2: [['hh', 'fd', 'dd400', 'ip20', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
+            3: [['hh', 'fd', 'dd400', 'ip20'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
+            4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
         }
         
         self.tactix_blue = {
-            1: [['hh', 'fd', 'dd400', 'ip19', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'dp2250;500;180', 'dp2250;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
-            2: [['hh', 'fd', 'dd400', 'ip19', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
-            3: [['hh', 'fd', 'dd400', 'ip19'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
-            4: [['hh', 'fd', 'dd400', 'ip19'], ['dh']], # safe
+            1: [['hh', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'dp2250;500;180', 'dp2250;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
+            2: [['hh', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
+            3: [['hh', 'fd', 'dd400', 'ip20'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
+            4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
         }
         
         
@@ -98,11 +98,11 @@ class RobotController:
         self.tactic.motor_controller.gegi = True
         self.logger.info(f'Tacitc started')
         
-    async def run(self) -> int | None:
+    async def run(self) -> int:
         self.tactic = await self.tactic.run()
         if not self.tactic: 
             self.logger.info(f'Tactic complete')
-            return None
+            return -1
         
         return self.tactic.points
 
@@ -113,10 +113,9 @@ async def main():
         await controller.home()
         await asyncio.sleep(1)
         controller.start()
-        points = 1
         while True: 
             points = await controller.run()
-            if not points: break
+            if points == -1: break
             
         await controller.motor_controller.set_stop()
         await asyncio.sleep(0.5)

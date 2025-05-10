@@ -1,15 +1,14 @@
-import sys
-import os
-import subprocess
-import RPi.GPIO as GPIO
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QTimer
-import random
-from main import RobotController
-import asyncio
-import threading
+import RPi.GPIO as GPIO
+import sys
+import os
 import time
-from gpiozero import AngularServo
+import asyncio
+import subprocess
+import threading
+
+from main import RobotController
 
 # pin
 pullcord = 22
@@ -656,7 +655,7 @@ class DriveScene(QtWidgets.QWidget):
         self.main_controller.start()
         while True: 
             points = await controller.run()
-            if not points: break
+            if points == -1: break
             
             self.points = points
                 
