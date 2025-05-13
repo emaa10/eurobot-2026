@@ -1,75 +1,27 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QTimer
-import RPi.GPIO as GPIO
 import sys
 import os
 import time
 import asyncio
 import subprocess
 import threading
+import socket
 
-from main import RobotController
-
-# pin
-pullcord = 22
-
-# Create a global event loop for the asyncio tasks
-event_loop = None
-thread = None
-
-def run_async_task(task):
-    """Helper function to run async tasks in the existing event loop"""
-    if event_loop is not None:
-        return asyncio.run_coroutine_threadsafe(task, event_loop)
-    else:
-        print("Event loop not initialized!")
-        return None
-
-class AsyncRunner:
-    def __init__(self):
-        self.loop = None
-        self.thread = None
-        self.running = False
-        
-    def start(self):
-        def run_event_loop():
-            self.loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self.loop)
-            self.running = True
-            self.loop.run_forever()
-        
-        if not self.running:
-            self.thread = threading.Thread(target=run_event_loop, daemon=True)
-            self.thread.start()
-            # Wait a moment for the loop to start
-            time.sleep(0.1)
-    
-    def stop(self):
-        if self.running and self.loop:
-            self.loop.call_soon_threadsafe(self.loop.stop)
-            self.thread.join(timeout=1.0)
-            self.running = False
-    
-    def run_task(self, coro):
-        if self.running and self.loop:
-            return asyncio.run_coroutine_threadsafe(coro, self.loop)
-        return None
+HOST = '127.0.0.1'
+PORT = 5001
 
 class MainScene(QtWidgets.QWidget):
-    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
+    def __init__(self):
         super().__init__()
         self.selected_color = None
         self.selected_position : int | None = None
         self.selected_tactic = None
         self.pullcord_active = False
-        
-        self.main_controller = main_controller
-        self.async_runner = async_runner
 
-        self.main_controller.pico_controller.set_command('i', 0)
+        self.receive_thread = threading.Thread(target=self.receive_messages, daemon=True)
+        self.receive_thread.start()
         
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         self.initUI()
 
     def initUI(self):
@@ -239,11 +191,9 @@ class MainScene(QtWidgets.QWidget):
 
 
 class DebugScene(QtWidgets.QWidget):
-    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
+    def __init__(self):
         super().__init__()
         self.robot_data = {'x': 0.0, 'y': 0.0, 'angle': 0.0, 'goal_x': 100.0, 'goal_y': 200.0}
-        self.main_controller = main_controller
-        self.async_runner = async_runner
         self.initUI()
 
     def initUI(self):
@@ -326,10 +276,8 @@ class DebugScene(QtWidgets.QWidget):
 
 
 class TestCodesScene(QtWidgets.QWidget):
-    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
+    def __init__(self):
         super().__init__()
-        self.main_controller = main_controller
-        self.async_runner = async_runner
         self.initUI()
 
     def driveDistance(self, distance: int):
@@ -390,10 +338,8 @@ class TestCodesScene(QtWidgets.QWidget):
         os.system("pkill python3")
 
 class PicoScene(QtWidgets.QWidget):
-    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
+    def __init__(self):
         super().__init__()
-        self.main_controller = main_controller
-        self.async_runner = async_runner
         self.mid_stepper_value = 20    # "left"/mid stepper default
         self.right_stepper_value = 100  # right stepper default
         self.initUI()
@@ -463,9 +409,6 @@ class PicoScene(QtWidgets.QWidget):
         self.create_command_button("Right Rotate Mid", lambda: self.main_controller.pico_controller.set_servo_rotate_right(4), right_rotate_layout)
         right_rotate_group.setLayout(right_rotate_layout)
         main_layout.addWidget(right_rotate_group)
-
-
-
 
         left_grip_group = QtWidgets.QGroupBox()
         left_grip_layout = QtWidgets.QHBoxLayout()
@@ -548,10 +491,8 @@ class PicoScene(QtWidgets.QWidget):
 
 
 class DriveScene(QtWidgets.QWidget):
-    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
+    def __init__(self):
         super().__init__()
-        self.main_controller = main_controller
-        self.async_runner = async_runner
         self.points = 0
         self.robot_running = False
         self.initUI()
@@ -643,40 +584,36 @@ class DriveScene(QtWidgets.QWidget):
         self.points_visible = True
         self.value_label.setStyleSheet("font-size: 60px; font-weight: bold;")
         
-    def start_robot(self):
-        if not self.robot_running:
-            self.robot_running = True
-            self.async_runner.run_task(self.run_robot_controller())
+    # def start_robot(self):
+    #     if not self.robot_running:
+    #         self.robot_running = True
+    #         self.async_runner.run_task(self.run_robot_controller())
             
-    def stop_robot(self):
-        self.robot_running = False
+    # def stop_robot(self):
+    #     self.robot_running = False
         
-    async def run_robot_controller(self):
-        self.main_controller.start()
-        while True: 
-            points = await controller.run()
-            if points == -1: break
+    # async def run_robot_controller(self):
+    #     self.main_controller.start()
+    #     while True: 
+    #         points = await controller.run()
+    #         if points == -1: break
             
-            self.points = points
+    #         self.points = points
                 
-            # Update points display logic
-            if self.points_visible:
-                QtCore.QMetaObject.invokeMethod(
-                    self.points_label, "setText", 
-                    QtCore.Qt.QueuedConnection,
-                    QtCore.Q_ARG(str, str(self.points))
-                )
+    #         # Update points display logic
+    #         if self.points_visible:
+    #             QtCore.QMetaObject.invokeMethod(
+    #                 self.points_label, "setText", 
+    #                 QtCore.Qt.QueuedConnection,
+    #                 QtCore.Q_ARG(str, str(self.points))
+    #             )
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, main_controller: RobotController, async_runner: AsyncRunner):
+    def __init__(self):
         super().__init__()
-        self.main_controller = main_controller
-        self.async_runner = async_runner
         self.setup_complete = False
         self.initUI()
         self.showFullScreen()
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.update_pullcord)
 
         self.homingComplete = False
 
@@ -699,12 +636,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_scene.debug_btn.clicked.connect(lambda: self.stacked.setCurrentIndex(1))
         self.main_scene.start_btn.clicked.connect(self.show_waiting_screen)
         
-    def update_pullcord(self):
-        if GPIO.input(pullcord) == GPIO.HIGH and not self.main_scene.pullcord_active and self.setup_complete:
-            self.main_scene.pullcord_active = True
-            self.drive_scene.show_points()
-            self.drive_scene.start_robot()
-            
     def show_waiting_screen(self):
         self.stacked.setCurrentIndex(2)
         self.drive_scene.setStyleSheet("background-color: white;")
@@ -757,19 +688,12 @@ blue_positions = [
 ]
 
 if __name__ == '__main__':
-    # Initialize the asyncio runner in a separate thread
-    async_runner = AsyncRunner()
-    async_runner.start()
-    
-    # Initialize robot controller
-    controller = RobotController()
     
     # Start PyQt application
     app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow(controller, async_runner)
+    window = MainWindow()
     window.show()
     
     # Clean up on exit
     result = app.exec_()
-    async_runner.stop()
     sys.exit(result)

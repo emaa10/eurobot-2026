@@ -1,17 +1,26 @@
+
+# !! ein loop, der einfach nie aufhört und auf befehle wartet. wir starten main von der gui aus und schicken dann aufforderungen rüber. auch sowas wie set servo und so
+
+
 from modules.task import Task
 from modules.camera import Camera
 from modules.motor_controller import MotorController
 from modules.pico_com import Pico
 
+import RPi.GPIO as GPIO
 import asyncio
 from time import time
 import logging
 
+pullcord = 22
 
 class RobotController:
     def __init__(self):
         CAM = False
-        
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
         self.start_pos = 0
         self.points = 0
         
@@ -21,6 +30,9 @@ class RobotController:
         self.motor_controller = MotorController()
         self.camera = Camera() if CAM else None
         self.pico_controller = Pico()
+
+        self.pico_controller.set_command('i', 0)
+        # !! muss des hier?
 
         if CAM:
             self.camera.start()
