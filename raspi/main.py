@@ -83,15 +83,27 @@ class RobotController:
         }
         
         
-    # define commands here
-    def process_command(self, cmd):
-        if cmd.startswith("p"):
-            try:
-                num = int(cmd[1:])
-                return f"r{num * 3}"
-            except ValueError:
-                return "rERR"
-        return "r???"
+    # define commands here, example: t1,2
+    async def process_command(self, cmd):
+        command = cmd[0]
+        value1 = int(cmd[1:])
+        value2 = 0
+        if(len(cmd>3)): value2=int(cmd[3])
+
+        if command == "t": #start tactic
+            self.set_tactic(value1, value2)
+            await self.home()
+            await asyncio.sleep(1)
+            self.start()
+            while True:
+                points = await self.run()
+                if points == -1: break
+
+            await self.motor_controller.set_stop()
+            await asyncio.sleep(0.5)
+            self.motor_controller.lidar.stop()
+        if command == "p": #set pico command
+            pass
 
     def handle_client(self, conn, addr):
         with conn:
@@ -162,8 +174,11 @@ class RobotController:
 # main bot loop now
 async def main():
     controller = RobotController()
-
-    
+    if len(sys.argv) > 1:
+        cmd = sys.argv[1]
+        print(controller.process_command(cmd))
+    else:
+        controller.run_server()
 
 if __name__ == '__main__':
     asyncio.run(main())
