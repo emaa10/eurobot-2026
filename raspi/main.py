@@ -11,8 +11,14 @@ import RPi.GPIO as GPIO
 import asyncio
 from time import time
 import logging
+import socket
+import threading
+import sys
 
 pullcord = 22
+
+HOST = '127.0.0.1'
+PORT = 5001
 
 class RobotController:
     def __init__(self):
@@ -77,6 +83,41 @@ class RobotController:
         }
         
         
+    # define commands here
+    def process_command(self, cmd):
+        if cmd.startswith("p"):
+            try:
+                num = int(cmd[1:])
+                return f"r{num * 3}"
+            except ValueError:
+                return "rERR"
+        return "r???"
+
+    def handle_client(self, conn, addr):
+        with conn:
+            print(f"Verbunden mit {addr}")
+            try:
+                while True:
+                    data = conn.recv(1024)
+                    if not data:
+                        break
+                    msg = data.decode().strip()
+                    print(f"Empfangen: {msg}")
+                    result = self.process_command(msg)
+                    conn.sendall(result.encode())
+            except Exception as e:
+                print(f"Fehler: {e}")
+
+    def run_server(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind((HOST, PORT))
+            s.listen()
+            print(f"Server läuft auf {HOST}:{PORT}")
+            while True:
+                conn, addr = s.accept()
+                threading.Thread(target=self.handle_client, args=(conn, addr), daemon=True).start()
+
     def set_tactic(self, start_pos_num: int, tactic_num: int):
         color = 'yellow' if start_pos_num <= 3 else 'blue'
         self.start_pos = start_pos_num
@@ -118,22 +159,10 @@ class RobotController:
         
         return self.tactic.points
 
+# main bot loop now
 async def main():
-    try:
-        controller = RobotController()
-        controller.set_tactic(1, 3)
-        await controller.home()
-        await asyncio.sleep(1)
-        controller.start()
-        while True: 
-            points = await controller.run()
-            if points == -1: break
-            
-        await controller.motor_controller.set_stop()
-        await asyncio.sleep(0.5)
-    finally:
-        await controller.motor_controller.set_stop()
-        controller.motor_controller.lidar.stop()
+    controller = RobotController()
+
     
 
 if __name__ == '__main__':

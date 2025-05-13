@@ -11,9 +11,44 @@ import socket
 HOST = '127.0.0.1'
 PORT = 5001
 
+class main():
+    def __init__(self):
+        pass
+
+    def send_value(self, command:str, value:int):
+        # Starte main.py mit argument
+        process = subprocess.Popen(["python3", "/home/eurobot/main-bot/raspi/main.py", f"{command}{value}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        time.sleep(0.3)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((HOST, PORT))
+            s.sendall(str(value).encode())
+            # result = s.recv(1024).decode()
+            # self.update_result(f"Ergebnis: {result}")
+        try:
+            process.terminate()
+        except Exception:
+            pass
+
+    def receive_messages(self):
+        while True:
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.connect((HOST, PORT))
+                    s.settimeout(5)
+                    data = s.recv(1024).decode()
+                    if data:
+                        self.update_result(f"Empfangen: {data}")
+            except Exception as e:
+                pass
+
 class MainScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+
+        Main = main()
+        
         self.selected_color = None
         self.selected_position : int | None = None
         self.selected_tactic = None
@@ -193,6 +228,9 @@ class MainScene(QtWidgets.QWidget):
 class DebugScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+
+        Main = main()
+
         self.robot_data = {'x': 0.0, 'y': 0.0, 'angle': 0.0, 'goal_x': 100.0, 'goal_y': 200.0}
         self.initUI()
 
@@ -278,6 +316,9 @@ class DebugScene(QtWidgets.QWidget):
 class TestCodesScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+
+        Main = main()
+
         self.initUI()
 
     def driveDistance(self, distance: int):
@@ -340,6 +381,9 @@ class TestCodesScene(QtWidgets.QWidget):
 class PicoScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+
+        Main = main()
+
         self.mid_stepper_value = 20    # "left"/mid stepper default
         self.right_stepper_value = 100  # right stepper default
         self.initUI()
@@ -493,6 +537,9 @@ class PicoScene(QtWidgets.QWidget):
 class DriveScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+
+        Main = main()
+
         self.points = 0
         self.robot_running = False
         self.initUI()
@@ -611,6 +658,9 @@ class DriveScene(QtWidgets.QWidget):
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
+
+        Main = main()
+
         self.setup_complete = False
         self.initUI()
         self.showFullScreen()
