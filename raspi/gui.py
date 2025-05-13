@@ -313,7 +313,7 @@ class DebugScene(QtWidgets.QWidget):
         self.async_runner.run_task(self.main_controller.motor_controller.clean_wheels())
     def on_show_camera(self):
         subprocess.Popen(
-            ['lxterminal', '-e', f'python3 /home/eurobot/main-bot/raspi/camera_window.py'],
+            ['lxterminal', '-e', f'python3 /home/eurobot/main-bot/raspi/camera/camera_window.py'],
             env=dict(os.environ)
         )
     def on_log_tail(self):
