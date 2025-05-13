@@ -128,7 +128,8 @@ class RobotController:
             print(f"Server läuft auf {HOST}:{PORT}")
             while True:
                 conn, addr = s.accept()
-                threading.Thread(target=self.handle_client, args=(conn, addr), daemon=True).start()
+                # threading.Thread(target=self.handle_client, args=(conn, addr), daemon=True).start()
+                self.handle_client(conn, addr)
 
     def set_tactic(self, start_pos_num: int, tactic_num: int):
         color = 'yellow' if start_pos_num <= 3 else 'blue'

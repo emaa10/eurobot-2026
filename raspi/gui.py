@@ -11,48 +11,56 @@ import socket
 HOST = '127.0.0.1'
 PORT = 5001
 
-class main():
+class general:
     def __init__(self):
-        pass
+        self.pullcord_pulled = False
 
-    def send_value(self, command:str, value:int):
-        # Starte main.py mit argument
-        process = subprocess.Popen(["python3", "/home/eurobot/main-bot/raspi/main.py", f"{command}{value}"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.start_server()
+        threading.Thread(target=self.receive_messages, daemon=True).start()
 
-        time.sleep(0.3)
-
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.connect((HOST, PORT))
-            s.sendall(str(value).encode())
-            # result = s.recv(1024).decode()
-            # self.update_result(f"Ergebnis: {result}")
+        
+    ## ! ggf umschreiben dass es im terminal minimiert aufgeht
+    def start_server(self):
         try:
-            process.terminate()
-        except Exception:
-            pass
+            with socket.create_connection((HOST, PORT), timeout=1):
+                pass
+        except:
+            subprocess.Popen(["python3", "main.py"])
+
+    def send_input(self, msg):
+        # msg = self.input_field.text().strip()
+        if not msg:
+            return
+        with socket.create_connection((HOST, PORT), timeout=1) as s:
+            s.sendall(msg.encode())
 
     def receive_messages(self):
         while True:
             try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((HOST, PORT))
-                    s.settimeout(5)
+                with socket.create_connection((HOST, PORT), timeout=1) as s:
                     data = s.recv(1024).decode()
                     if data:
-                        self.update_result(f"Empfangen: {data}")
+                        command = data[0]
+                        value1 = int(data[1:])
+                        value2 = 0
+                        if(len(data)): value2=int(data[3])
+
+                        if command == "p":
+                            if(value1 == 1): self.pullcord_pulled = True 
+                            else: self.pullcord_pulled = False
             except Exception as e:
-                pass
+                print(f"Fehler beim Empfangen von Nachrichten: {e}")
+
 
 class MainScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
-        Main = main()
+        General = general()
         
         self.selected_color = None
         self.selected_position : int | None = None
         self.selected_tactic = None
-        self.pullcord_active = False
 
         self.receive_thread = threading.Thread(target=self.receive_messages, daemon=True)
         self.receive_thread.start()
@@ -229,7 +237,8 @@ class DebugScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
-        Main = main()
+        # Main = main()
+        General = general()
 
         self.robot_data = {'x': 0.0, 'y': 0.0, 'angle': 0.0, 'goal_x': 100.0, 'goal_y': 200.0}
         self.initUI()
@@ -317,7 +326,8 @@ class TestCodesScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
-        Main = main()
+        # Main = main()
+        General = general()
 
         self.initUI()
 
@@ -382,7 +392,8 @@ class PicoScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
-        Main = main()
+        # Main = main()
+        General = general()
 
         self.mid_stepper_value = 20    # "left"/mid stepper default
         self.right_stepper_value = 100  # right stepper default
@@ -538,7 +549,8 @@ class DriveScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
-        Main = main()
+        # Main = main()
+        General = general()
 
         self.points = 0
         self.robot_running = False
@@ -659,7 +671,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
-        Main = main()
+        self.General = general()
 
         self.setup_complete = False
         self.initUI()
@@ -723,7 +735,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.drive_scene.points_label.hide()
         self.drive_scene.value_label.setText("Waiting for pullcord...")
         self.drive_scene.value_label.setStyleSheet("font-size: 40px;")
-        self.main_scene.pullcord_active = False
+        self.General.pullcord_pulled = False
 
 # Positionsangaben für das Spielfeld
 yellow_positions = [
