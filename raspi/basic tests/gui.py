@@ -1,5 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout
+import socket
+import threading
 
 HOST = '127.0.0.1'
 PORT = 5001
