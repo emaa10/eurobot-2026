@@ -85,7 +85,7 @@ class Communication:
                     continue
                 print(f"Received: {data}")
 
-                if len(data) >= 2:
+                if len(data) >= 1:
                     command = data[0]
                     
                     if command == "p":
@@ -101,6 +101,8 @@ class Communication:
                     elif command == "c":
                         points = int(data[1:])
                         print(f"points: {points}")
+                    else:
+                        print(f"got shit: {data}")
 
                         
             except Exception as e:
@@ -126,18 +128,18 @@ class SimpleGUI(QWidget):
         layout.addWidget(self.status_label)
         
         # Button 1
-        self.button_d1 = QPushButton("Send D1")
-        self.button_d1.clicked.connect(self.send_d1)
+        self.button_d1 = QPushButton("Send t1,2")
+        self.button_d1.clicked.connect(self.send_t)
         layout.addWidget(self.button_d1)
         
         # Button 2
-        self.button_t1 = QPushButton("Send T1")
-        self.button_t1.clicked.connect(self.send_t1)
+        self.button_t1 = QPushButton("Send ptest")
+        self.button_t1.clicked.connect(self.send_ptest)
         layout.addWidget(self.button_t1)
         
         # Button 3
-        self.button_p4 = QPushButton("Send P4")
-        self.button_p4.clicked.connect(self.send_p4)
+        self.button_p4 = QPushButton("Send d100")
+        self.button_p4.clicked.connect(self.send_d)
         layout.addWidget(self.button_p4)
         
         # Update status periodically
@@ -153,17 +155,17 @@ class SimpleGUI(QWidget):
             self.status_label.setText(f"Status: {status} | Pullcord: {cord}")
             time.sleep(0.5)
     
-    def send_d1(self):
-        self.comm.send_command("d1")
-        print("send_d1 called")
+    def send_t(self):
+        self.comm.send_command("t1,2")
+        print("t1,2 sent")
     
-    def send_t1(self):
-        self.comm.send_command("t1")
-        print("send_t1 called")
+    def send_ptest(self):
+        self.comm.send_command("ptest")
+        print("ptest sent")
     
-    def send_p4(self):
-        self.comm.send_command("p4")
-        print("send_p4 called")
+    def send_d(self):
+        self.comm.send_command("d100")
+        print("d100 sent")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
