@@ -97,6 +97,7 @@ class RobotController:
                     startpos = int(message[1:message.index(",")])
                     tactic = int(message[message.index(",")+1:])
                     print(f"Tactic set: Startpos: {startpos} - tactic: {tactic}")
+                    self.set_tactic(startpos, tactic)
                 elif cmd == "p":
                     pcmd = message[1:]
                     print(f"pico command: {pcmd}")
@@ -205,7 +206,7 @@ async def main():
         print(controller.process_command(cmd))
     else:
         controller.GUI = True
-        controller.run_listener()
+        controller.start_server()
 
 if __name__ == '__main__':
     asyncio.run(main())
