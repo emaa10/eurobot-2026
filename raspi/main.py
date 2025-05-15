@@ -1,4 +1,3 @@
-
 from modules.task import Task
 from modules.camera import Camera
 from modules.motor_controller import MotorController
@@ -16,6 +15,8 @@ pullcord = 22
 
 HOST = '127.0.0.1'
 PORT = 5001
+
+client_socket = None
 
 class RobotController:
     def __init__(self):
@@ -80,50 +81,79 @@ class RobotController:
             4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
         }
         
-        
-    # define commands here, example: t1,2
-    async def process_command(self, cmd):
-        command = cmd[0]
-        value1 = int(cmd[1:])
-        value2 = 0
-        ## ! des noch shit
-        if(len(cmd>3)): value2=int(cmd[3])
 
-        if command == "t": #start tactic
-            self.set_tactic(value1, value2)
-            await self.home()
-            await asyncio.sleep(1)
-            self.start()
+    def get_commands(self, client_socket, address):
+        try:
             while True:
-                points = await self.run()
-                if points == -1: break
+                data = client_socket.recv(1024)
+                if not data:
+                    print(f"Client {address} disconnected")
+                    break
+                    
+                message = data.decode().strip()
+                print(f"Received from {address}: {message}")
+                cmd = message[0]
+                if cmd == "t":
+                    startpos = int(message[1:message.index(",")])
+                    tactic = int(message[message.index(",")+1:])
+                    print(f"Tactic set: Startpos: {startpos} - tactic: {tactic}")
+                elif cmd == "p":
+                    pcmd = message[1:]
+                    print(f"pico command: {pcmd}")
+                elif cmd == "d":
+                    dist = int(message[1:])
+                    print(f"drive distance: {dist}")
+                elif cmd == "a":
+                    angle = int(message[1:])
+                    print(f"angle: {angle}")
+                elif cmd == "e0":
+                    print("emergency stop")
+                else:
+                    print(f"got shit: {message}")
+        except Exception as e:
+            print(f"Error handling client {address}: {e}")
+        finally:
+            client_socket.close()
 
-            await self.motor_controller.set_stop()
-            await asyncio.sleep(0.5)
-            self.motor_controller.lidar.stop()
-        if command == "p": #set pico command
-            pass
+    # h: homing done
+    # p: pullcord pulled
+    # c<count>: set count points
+    def send_message(self, client_socket, msg: str):
+        """Send a string message to the connected client"""
+        try:
+            client_socket.sendall(msg.encode())
+            print(f"Sent to client: {msg}")
+            return True
+        except Exception as e:
+            print(f"Error sending message: {e}")
+            return False
 
-    def run_listener(self):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.bind((HOST, PORT))
-            s.listen()
-            print(f"Server läuft auf {HOST}:{PORT}")
+    def start_server(self):
+        global client_socket
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            server_socket.bind((HOST, PORT))
+            server_socket.listen(5)
+            print(f"Server running on {HOST}:{PORT}")
+            
             while True:
-                conn, addr = s.accept()
-                with conn:
-                    print(f"Verbunden mit {addr}")
-                    try:
-                        while True:
-                            data = conn.recv(1024)
-                            if not data:
-                                break
-                            msg = data.decode().strip()
-                            print(f"Empfangen: {msg}")
-                    except Exception as e:
-                        print(f"Fehler: {e}")
-                
+                client_socket, address = server_socket.accept()
+                print(f"Connected to client at {address}")
+                client_handler = threading.Thread(
+                    target=self.get_commands,
+                    args=(client_socket, address),
+                    daemon=True
+                )
+                client_handler.start()
+        except KeyboardInterrupt:
+            print("Server shutting down...")
+        except Exception as e:
+            print(f"Server error: {e}")
+        finally:
+            server_socket.close()
+            print("Server stopped")
+
 
     def set_tactic(self, start_pos_num: int, tactic_num: int):
         color = 'yellow' if start_pos_num <= 3 else 'blue'
