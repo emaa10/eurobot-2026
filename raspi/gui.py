@@ -25,7 +25,8 @@ class general:
             with socket.create_connection((HOST, PORT), timeout=1):
                 pass
         except:
-            subprocess.Popen(["python3", "main.py"])
+            # subprocess.Popen(["python3", "main.py"])
+            pass
 
     def send_input(self, msg):
         # msg = self.input_field.text().strip()

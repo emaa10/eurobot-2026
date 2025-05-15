@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout
 import socket
 import threading
+import subprocess
 
 HOST = '127.0.0.1'
 PORT = 5001
@@ -14,18 +15,23 @@ class general:
         threading.Thread(target=self.receive_messages, daemon=True).start()
 
         
-    ## ! ggf umschreiben dass es im terminal minimiert aufgeht
+    # ! ggf umschreiben dass es im terminal minimiert aufgeht
     def start_server(self):
         try:
             with socket.create_connection((HOST, PORT), timeout=1):
                 pass
         except:
-            subprocess.Popen(["python3", "main.py"])
+            # subprocess.Popen(["python3", "main.py"])
+            pass
 
-    def send_input(self, msg):
-        # msg = self.input_field.text().strip()
+    # t<startpos>,<tactic>: taktik
+    # p<picocommand>: pico command
+    # d<distance in mm>: drive distance in mm
+    # a<angle>: turn angle
+    # e0: emergency stop
+    def send_command(self, msg):
         if not msg:
-            return
+            print("empty msg")
         with socket.create_connection((HOST, PORT), timeout=1) as s:
             s.sendall(msg.encode())
 

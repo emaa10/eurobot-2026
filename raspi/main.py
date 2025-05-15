@@ -1,7 +1,4 @@
 
-# !! ein loop, der einfach nie aufhört und auf befehle wartet. wir starten main von der gui aus und schicken dann aufforderungen rüber. auch sowas wie set servo und so
-
-
 from modules.task import Task
 from modules.camera import Camera
 from modules.motor_controller import MotorController
@@ -106,22 +103,7 @@ class RobotController:
         if command == "p": #set pico command
             pass
 
-    def handle_client(self, conn, addr):
-        with conn:
-            print(f"Verbunden mit {addr}")
-            try:
-                while True:
-                    data = conn.recv(1024)
-                    if not data:
-                        break
-                    msg = data.decode().strip()
-                    print(f"Empfangen: {msg}")
-                    result = self.process_command(msg)
-                    conn.sendall(result.encode())
-            except Exception as e:
-                print(f"Fehler: {e}")
-
-    def run_server(self):
+    def run_listener(self):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((HOST, PORT))
@@ -129,8 +111,20 @@ class RobotController:
             print(f"Server läuft auf {HOST}:{PORT}")
             while True:
                 conn, addr = s.accept()
-                # threading.Thread(target=self.handle_client, args=(conn, addr), daemon=True).start()
-                self.handle_client(conn, addr)
+                with conn:
+                    print(f"Verbunden mit {addr}")
+                    try:
+                        while True:
+                            data = conn.recv(1024)
+                            if not data:
+                                break
+                            msg = data.decode().strip()
+                            print(f"Empfangen: {msg}")
+                            result = self.process_command(msg)
+                            conn.sendall(result.encode())
+                    except Exception as e:
+                        print(f"Fehler: {e}")
+                
 
     def set_tactic(self, start_pos_num: int, tactic_num: int):
         color = 'yellow' if start_pos_num <= 3 else 'blue'
@@ -177,12 +171,12 @@ class RobotController:
 async def main():
     controller = RobotController()
     if len(sys.argv) > 1:
-        GUI = False
+        controller.GUI = False
         cmd = sys.argv[1]
         print(controller.process_command(cmd))
     else:
-        GUI = True
-        controller.run_server()
+        controller.GUI = True
+        controller.run_listener()
 
 if __name__ == '__main__':
     asyncio.run(main())
