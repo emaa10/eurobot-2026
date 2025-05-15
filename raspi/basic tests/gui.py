@@ -13,33 +13,24 @@ class Communication:
         self.pullcord_pulled = False
         self.connected = False
         self.socket = None
-        self.lock = threading.Lock()  # For thread-safe operations
+        self.lock = threading.Lock()
         
-        # Try to start server if not running
         self.start_server()
-        
-        # Start a persistent connection
         self.connect()
-        
-        # Start receiving thread
         threading.Thread(target=self.receive_messages, daemon=True).start()
     
     def start_server(self):
-        """Check if server is running, if not try to start it"""
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as test_socket:
                 test_socket.connect((HOST, PORT))
                 return  # Server is running
         except:
-            # Uncomment to auto-start the server if needed
             # subprocess.Popen(["python3", "main.py"])
             print("Server not found - please start main.py")
     
     def connect(self):
-        """Establish a persistent connection to the server"""
         if self.connected:
             return
-            
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.connect((HOST, PORT))
@@ -50,7 +41,6 @@ class Communication:
             self.connected = False
     
     def send_command(self, msg):
-        """Send a command to the server"""
         if not msg:
             print("Empty message")
             return False
@@ -73,11 +63,10 @@ class Communication:
                 return False
     
     def receive_messages(self):
-        """Continuously receive messages from the server"""
         while True:
             if not self.connected:
                 self.connect()
-                time.sleep(1)  # Avoid rapid reconnection attempts
+                time.sleep(0.5)
                 continue
                 
             try:
@@ -87,31 +76,29 @@ class Communication:
                     self.connected = False
                     self.socket.close()
                     continue
-                    
                 print(f"Received: {data}")
-                
-                # Process received data
+
                 if len(data) >= 2:
                     command = data[0]
-                    value1 = int(data[1:])
                     
-                    if command == "p" and value1 == 1:
-                        self.pullcord_pulled = True
-                    elif command == "p" and value1 == 0:
-                        self.pullcord_pulled = False
+                    if command == "p":
+                        value1 = int(data[1:])
+                        if(value1==1): 
+                            self.pullcord_pulled = True
+                        else: 
+                            self.pullcord_pulled = False
                         
             except Exception as e:
                 print(f"Receive error: {e}")
                 self.connected = False
                 self.socket.close()
-                time.sleep(1)  # Avoid rapid reconnection attempts
+                time.sleep(1)
 
 class SimpleGUI(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Daten Sender")
-        
-        # Create a single communication instance
+
         self.comm = Communication()
         
         self.init_ui()
@@ -145,7 +132,6 @@ class SimpleGUI(QWidget):
         self.setLayout(layout)
     
     def update_status(self):
-        """Update connection status display"""
         while True:
             status = "Connected" if self.comm.connected else "Not connected"
             cord = "Pulled" if self.comm.pullcord_pulled else "Not pulled"
