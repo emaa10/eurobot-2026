@@ -1,6 +1,7 @@
 import socket
 import threading
 import sys
+import time
 
 HOST = '127.0.0.1'
 PORT = 5001
@@ -16,13 +17,14 @@ def start_server():
         while True:
             client_socket, address = server_socket.accept()
             print(f"Connected to client at {address}")
-            
-            client_handler = threading.Thread(
-                target=get_commands,
-                args=(client_socket, address),
-                daemon=True
-            )
-            client_handler.start()
+
+            get_commands(client_socket, address)
+            # client_handler = threading.Thread(
+            #     target=get_commands,
+            #     args=(client_socket, address),
+            #     daemon=True
+            # )
+            # client_handler.start()
     except KeyboardInterrupt:
         print("Server shutting down...")
     except Exception as e:
@@ -44,6 +46,7 @@ def get_commands(client_socket, address):
             if message == "p4":
                 response = str(int(message[1])*3)
                 client_socket.sendall(response.encode())
+                time.sleep(5)
                 print(f"Sent to {address}: {response}")
                 
     except Exception as e:
