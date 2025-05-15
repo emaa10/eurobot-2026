@@ -38,7 +38,7 @@ class general:
     def receive_messages(self):
         while True:
             try:
-                with socket.create_connection((HOST, PORT), timeout=1) as s:
+                with socket.create_connection((HOST, PORT), timeout = 1) as s:
                     data = s.recv(1024).decode()
                     if data:
                         command = data[0]
@@ -50,11 +50,13 @@ class general:
                             if(value1 == 1): self.pullcord_pulled = True 
                             else: self.pullcord_pulled = False
             except Exception as e:
-                print(f"Fehler beim Empfangen von Nachrichten: {e}")
+                # print(f"Fehler beim Empfangen von Nachrichten: {e}")
+                pass
 
 class SimpleGUI(QWidget):
     def __init__(self):
         super().__init__()
+        General = general()
         self.setWindowTitle("Daten Sender")
         self.init_ui()
 
@@ -79,7 +81,9 @@ class SimpleGUI(QWidget):
         self.setLayout(layout)
 
     def send_d1(self):
+        General = general()
         # Deine Implementierung hier
+        General.send_command("d1")
         print("send_d1 aufgerufen")
 
     def send_t1(self):
