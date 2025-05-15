@@ -95,12 +95,7 @@ class RobotController:
                     self.set_tactic(startpos, tactic)
                     await self.home()
                     await asyncio.sleep(1)
-                    self.start()
-                    while True:
-                        points = await self.run()
-                        self.send_message(client_socket, f"c{points}")
-                        if points == -1: break
-                    await self.motor_controller.set_stop()
+                    self.tactic_task = asyncio.create_task(self.run_tactic(client_socket))
                     await asyncio.sleep(0.5)
                 elif cmd == "p":
                     pcmd = message[1:]
@@ -175,6 +170,15 @@ class RobotController:
                 
         self.tactic = Task(self.motor_controller, self.camera, self.pico_controller, tactic, color)
         self.home_routine = Task(self.motor_controller, self.camera, self.pico_controller, home_routine, color)
+
+    async def run_tactic(self, client_socket):
+        self.start()
+        while True:
+            points = await self.run()
+            await self.send_message(client_socket, f"c{points}")
+            if points == -1: 
+                break
+        await self.motor_controller.set_stop()
         
     async def home(self):
         self.logger.info('Homing routine started')
