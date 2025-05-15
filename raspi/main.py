@@ -86,6 +86,7 @@ class RobotController:
         command = cmd[0]
         value1 = int(cmd[1:])
         value2 = 0
+        ## ! des noch shit
         if(len(cmd>3)): value2=int(cmd[3])
 
         if command == "t": #start tactic
@@ -120,8 +121,6 @@ class RobotController:
                                 break
                             msg = data.decode().strip()
                             print(f"Empfangen: {msg}")
-                            result = self.process_command(msg)
-                            conn.sendall(result.encode())
                     except Exception as e:
                         print(f"Fehler: {e}")
                 
