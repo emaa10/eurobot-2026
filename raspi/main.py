@@ -8,7 +8,6 @@ import asyncio
 from time import time
 import logging
 import socket
-import threading
 import sys
 
 pullcord = 22
@@ -16,30 +15,28 @@ pullcord = 22
 HOST = '127.0.0.1'
 PORT = 5001
 
-client_socket = None
-
 class RobotController:
     def __init__(self):
-        CAM = False
-        GUI = True
+        self.CAM = False
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
         self.start_pos = 0
         self.points = 0
+        self.client_socket = None
         
         logging.basicConfig(filename='/home/eurobot/main-bot/raspi/eurobot.log', level=logging.INFO)
         self.logger = logging.getLogger(__name__)
                 
         self.motor_controller = MotorController()
-        self.camera = Camera() if CAM else None
+        self.camera = Camera() if self.CAM else None
         self.pico_controller = Pico()
 
         self.pico_controller.set_command('i', 0)
-        # !! muss des hier?
+        ## ! muss das hier?
 
-        if CAM:
+        if self.CAM:
             self.camera.start()
             self.logger.info("Camera started")
                     
@@ -64,7 +61,6 @@ class RobotController:
             4: [['hh', 'dd100']],
             5: [['hh', 'ta90', 'hh', 'dd50']],
             6: [['hh', 'dd50', 'ta90', 'hh', 'dd100']],
-
         }
         
         self.tactix_yellow = {
@@ -80,12 +76,11 @@ class RobotController:
             3: [['hh', 'fd', 'dd400', 'ip20'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
             4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
         }
-        
 
     async def get_commands(self, client_socket, address):
         try:
             while True:
-                data = client_socket.recv(1024)
+                data = await asyncio.get_event_loop().sock_recv(client_socket, 1024)
                 if not data:
                     print(f"Client {address} disconnected")
                     break
@@ -101,6 +96,12 @@ class RobotController:
                     await self.home()
                     await asyncio.sleep(1)
                     self.start()
+                    while True:
+                        points = await self.run()
+                        self.send_message(client_socket, f"c{points}")
+                        if points == -1: break
+                    await self.motor_controller.set_stop()
+                    await asyncio.sleep(0.5)
                 elif cmd == "p":
                     pcmd = message[1:]
                     print(f"pico command: {pcmd}")
@@ -127,34 +128,32 @@ class RobotController:
     # h: homing done
     # p: pullcord pulled
     # c<count>: set count points
-    def send_message(self, client_socket, msg: str):
+    async def send_message(self, client_socket, msg: str):
         """Send a string message to the connected client"""
         try:
-            client_socket.sendall(msg.encode())
+            await asyncio.get_event_loop().sock_sendall(client_socket, msg.encode())
             print(f"Sent to client: {msg}")
             return True
         except Exception as e:
             print(f"Error sending message: {e}")
             return False
 
-    def start_server(self):
-        global client_socket
+    async def start_server(self):
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.setblocking(False)
+        
         try:
             server_socket.bind((HOST, PORT))
             server_socket.listen(5)
             print(f"Server running on {HOST}:{PORT}")
             
             while True:
-                client_socket, address = server_socket.accept()
+                client_socket, address = await asyncio.get_event_loop().sock_accept(server_socket)
                 print(f"Connected to client at {address}")
-                client_handler = threading.Thread(
-                    target=self.get_commands,
-                    args=(client_socket, address),
-                    daemon=True
-                )
-                client_handler.start()
+                self.client_socket = client_socket
+                asyncio.create_task(self.get_commands(client_socket, address))
+                
         except KeyboardInterrupt:
             print("Server shutting down...")
         except Exception as e:
@@ -162,7 +161,6 @@ class RobotController:
         finally:
             server_socket.close()
             print("Server stopped")
-
 
     def set_tactic(self, start_pos_num: int, tactic_num: int):
         color = 'yellow' if start_pos_num <= 3 else 'blue'
@@ -195,26 +193,59 @@ class RobotController:
     def start(self):
         self.tactic.motor_controller.time_started = time()
         self.tactic.motor_controller.gegi = True
-        self.logger.info(f'Tacitc started')
+        self.logger.info(f'Tactic started')
         
     async def run(self) -> int:
+        if not self.tactic:
+            return -1
+            
         self.tactic = await self.tactic.run()
         if not self.tactic: 
             self.logger.info(f'Tactic complete')
             return -1
         
         return self.tactic.points
-
+        
 # main bot loop now
-async def main():
+async def main(self):
     controller = RobotController()
     if len(sys.argv) > 1:
-        controller.GUI = False
-        cmd = sys.argv[1]
-        print(controller.process_command(cmd))
+        message = sys.argv[1]
+        cmd = message[0]
+        if cmd == "t":
+            startpos = int(message[1:message.index(",")])
+            tactic = int(message[message.index(",")+1:])
+            print(f"Tactic set: Startpos: {startpos} - tactic: {tactic}")
+            self.set_tactic(startpos, tactic)
+            await self.home()
+            await asyncio.sleep(1)
+            self.start()
+            while True:
+                points = await self.run()
+                self.send_message(self.client_socket, f"c{points}")
+                if points == -1: break
+            await self.motor_controller.set_stop()
+            await asyncio.sleep(0.5)
+        elif cmd == "p":
+            pcmd = message[1:]
+            print(f"pico command: {pcmd}")
+            self.pico_controller.set_command(pcmd[0], int(pcmd[1:]))
+        elif cmd == "d":
+            dist = int(message[1:])
+            print(f"drive distance: {dist}")
+            self.motor_controller.drive_distance(dist)
+        elif cmd == "a":
+            angle = int(message[1:])
+            print(f"angle: {angle}")
+            self.motor_controller.turn_angle(angle)
+        elif cmd == "e0":
+            print("emergency stop")
+            self.pico_controller.set_command('e', 0)
+            await self.motor_controller.set_stop()
+        else:
+            print(f"got shit: {message}")
     else:
-        controller.GUI = True
-        controller.start_server()
+        await controller.start_server()
 
 if __name__ == '__main__':
     asyncio.run(main())
