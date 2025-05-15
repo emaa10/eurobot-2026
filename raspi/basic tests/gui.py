@@ -11,6 +11,8 @@ PORT = 5001
 class Communication:
     def __init__(self):
         self.pullcord_pulled = False
+        self.homing_1_done = False
+        self.homing_2_done = False
         self.connected = False
         self.socket = None
         self.lock = threading.Lock()
@@ -40,6 +42,11 @@ class Communication:
             print(f"Connection error: {e}")
             self.connected = False
     
+    # t<startpos>,<tactic>: taktik
+    # p<picocommand>: pico command
+    # d<distance in mm>: drive distance in mm
+    # a<angle>: turn angle
+    # e0: emergency stop
     def send_command(self, msg):
         if not msg:
             print("Empty message")
@@ -82,11 +89,19 @@ class Communication:
                     command = data[0]
                     
                     if command == "p":
-                        value1 = int(data[1:])
-                        if(value1==1): 
-                            self.pullcord_pulled = True
-                        else: 
-                            self.pullcord_pulled = False
+                        self.pullcord_pulled = True
+                        print("pullcord pulled")
+                    elif command == "h":
+                        if(self.homing_1_done == False):
+                            self.homing_1_done = True
+                            print("homing 1 done")
+                        else:
+                            self.homing_2_done = True
+                            print("homing 2 done")
+                    elif command == "c":
+                        points = int(data[1:])
+                        print(f"points: {points}")
+
                         
             except Exception as e:
                 print(f"Receive error: {e}")
