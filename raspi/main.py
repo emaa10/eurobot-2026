@@ -82,7 +82,7 @@ class RobotController:
         }
         
 
-    def get_commands(self, client_socket, address):
+    async def get_commands(self, client_socket, address):
         try:
             while True:
                 data = client_socket.recv(1024)
@@ -98,17 +98,25 @@ class RobotController:
                     tactic = int(message[message.index(",")+1:])
                     print(f"Tactic set: Startpos: {startpos} - tactic: {tactic}")
                     self.set_tactic(startpos, tactic)
+                    await self.home()
+                    await asyncio.sleep(1)
+                    self.start()
                 elif cmd == "p":
                     pcmd = message[1:]
                     print(f"pico command: {pcmd}")
+                    self.pico_controller.set_command(pcmd[0], int(pcmd[1:]))
                 elif cmd == "d":
                     dist = int(message[1:])
                     print(f"drive distance: {dist}")
+                    self.motor_controller.drive_distance(dist)
                 elif cmd == "a":
                     angle = int(message[1:])
                     print(f"angle: {angle}")
+                    self.motor_controller.turn_angle(angle)
                 elif cmd == "e0":
                     print("emergency stop")
+                    self.pico_controller.set_command('e', 0)
+                    await self.motor_controller.set_stop()
                 else:
                     print(f"got shit: {message}")
         except Exception as e:
