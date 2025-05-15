@@ -23,6 +23,7 @@ PORT = 5001
 class RobotController:
     def __init__(self):
         CAM = False
+        GUI = True
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -176,9 +177,11 @@ class RobotController:
 async def main():
     controller = RobotController()
     if len(sys.argv) > 1:
+        GUI = False
         cmd = sys.argv[1]
         print(controller.process_command(cmd))
     else:
+        GUI = True
         controller.run_server()
 
 if __name__ == '__main__':
