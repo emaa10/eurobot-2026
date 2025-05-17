@@ -2,20 +2,24 @@ import sys
 import os
 import time
 
+from serial.tools import list_ports
+
 from STservo_sdk import * 
 
 # Default setting
 BAUDRATE                    = 1000000           # STServo default baudrate : 1000000
-DEVICENAME                  = 'PLACEHOLDER'           # Check which port is being used on your controller
-                                                # ex) Windows: "COM1"   Linux: "/dev/ttyUSB0" Mac: "/dev/tty.usbserial-*"
+VID = "1a86"
+PID = "55d3"
 
 STS_MOVING_SPEED            = 2400          # SCServo moving speed
 STS_MOVING_ACC              = 50            # SCServo moving acc
 
+PORT = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46084031-if00"
+
 # Initialize PortHandler instance
 # Set the port path
-# Get methods and members of PortHandlerLinux or PortHandlerWindows
-portHandler = PortHandler(DEVICENAME)
+# Get methods and members of PortHandlerLinux
+portHandler = PortHandler(PORT)
 
 # Initialize PacketHandler instance
 # Get methods and members of Protocol
