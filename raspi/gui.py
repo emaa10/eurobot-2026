@@ -36,7 +36,7 @@ class Communication(threading.Thread):
             print("Debug: Server already running.")
         except:
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            main_path = os.path.join(script_dir, 'basic\ tests/main.py')
+            main_path = os.path.join(script_dir, 'main.py')
             subprocess.Popen(['lxterminal', '-e', f'python3 {main_path}'], cwd=script_dir)
             print("Debug: Started main.py in new terminal.")
             time.sleep(1)
@@ -112,7 +112,7 @@ class MainWindow(QWidget):
         self.selected_rect_id = None
         self.selected_tactic = None
         self.color = None
-        self.game_state = 0  # 0 idle,1 wait pull,2 homing,3 ask,4 wait homing2,5 points
+        self.game_state = 0
         self.init_ui()
 
     def init_ui(self):
@@ -120,8 +120,9 @@ class MainWindow(QWidget):
         self.stack = QStackedWidget(self)
         self.init_start_screen()
         self.init_game_screen()
-        self.stack.addWidget(QWidget())
+        # Debug screen next
         self.init_debug_menu()
+        # Dummy screens
         self.init_dummy_screens()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -146,7 +147,8 @@ class MainWindow(QWidget):
         pix = QPixmap('map.png').scaled(800, 300, Qt.KeepAspectRatioByExpanding)
         self.scene.addPixmap(pix); self.view.setScene(self.scene); v.addWidget(self.view)
         self.rect_items = {col: [] for col in ['#FFD600', '#2979FF']}
-        coords = {'#FFD600': [(50, 50), (150, 80), (250, 100)], '#2979FF': [(60, 150), (160, 180), (260, 200)]}
+        coords = {'#FFD600': [(50, 50), (150, 80), (250, 100)],
+                  '#2979FF': [(60, 150), (160, 180), (260, 200)]}
         for col, pts in coords.items():
             for i, (x, y) in enumerate(pts):
                 r = QGraphicsRectItem(QRectF(x, y, 40, 40))
@@ -156,14 +158,13 @@ class MainWindow(QWidget):
                 self.rect_items[col].append(r); self.scene.addItem(r)
         hb2 = QHBoxLayout()
         for i in range(1, 5):
-            b = QPushButton(f'T{i}')
-            b.clicked.connect(lambda _, x=i: self.select_tactic(x))
-            hb2.addWidget(b)
+            b = QPushButton(f'T{i}'); b.clicked.connect(lambda _, x=i: self.select_tactic(x)); hb2.addWidget(b)
         v.addLayout(hb2)
         hb3 = QHBoxLayout()
-        for txt, fn in [('START', self.start_game), ('DEBUG', lambda: self.stack.setCurrentIndex(2)), ('STOP', lambda: self.comm.send_command('e0'))]:
-            b = QPushButton(txt); b.clicked.connect(fn)
-            hb3.addWidget(b)
+        for txt, fn in [('START', self.start_game),
+                        ('DEBUG', lambda: self.stack.setCurrentIndex(2)),
+                        ('STOP', lambda: self.comm.send_command('e0'))]:
+            b = QPushButton(txt); b.clicked.connect(fn); hb3.addWidget(b)
         v.addLayout(hb3); w.setLayout(v); self.stack.addWidget(w)
 
     def select_color(self, col):
@@ -173,20 +174,17 @@ class MainWindow(QWidget):
                 item.setVisible(item.color == col)
         print(f"Debug: Selected color {col}.")
 
-    def select_tactic(self, t):
-        self.selected_tactic = t
-        print(f"Debug: Selected tactic {t}.")
+    def select_tactic(self, t): print(f"Debug: Selected tactic {t}."); self.selected_tactic = t
 
     def start_game(self):
         items = [i for i in self.rect_items.get(self.color, []) if i.isSelected()]
         if not items or not self.selected_tactic:
-            QMessageBox.warning(self, 'Warn', 'Select start pos and tactic')
-            return
+            QMessageBox.warning(self, 'Warn', 'Select start pos and tactic'); return
         cmd = f't{items[0].rect_id},{self.selected_tactic}'
-        self.comm.send_command(cmd)
-        print(f"Debug: Game started with command {cmd}.")
+        self.comm.send_command(cmd); print(f"Debug: Game started with command {cmd}.")
         self.stack.setCurrentIndex(1); self.game_state = 1
         self.timer = QTimer(self); self.timer.timeout.connect(self.update_game); self.timer.start(100)
+
 
     def update_game(self):
         if self.game_state == 1 and self.comm.pullcord_pulled:
