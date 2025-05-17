@@ -111,6 +111,9 @@ class RobotController:
                     self.pico_controller.set_command('e', 0)
                     self.l(f"emergency stop !")
                     await self.motor_controller.set_stop()
+                elif msg.startswith('c'):
+                    self.motor_controller.clean_wheels()
+                    self.l(f"clean wheels")
                 else:
                     self.l(f"Unknown msg: {msg}")
         except Exception as e:

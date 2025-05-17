@@ -66,14 +66,14 @@ class MainScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
-        General = general()
+        self.General = general()
         
         self.selected_color = None
         self.selected_position : int | None = None
         self.selected_tactic = None
 
-        self.receive_thread = threading.Thread(target=self.receive_messages, daemon=True)
-        self.receive_thread.start()
+        # self.receive_thread = threading.Thread(target=self.receive_messages, daemon=True)
+        # self.receive_thread.start()
         
         self.initUI()
 
@@ -192,10 +192,8 @@ class MainScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
-        self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
-        time.sleep(1)
-        os.system("pkill python3")
+        self.General.send_input('e0')
+        window.stacked.setCurrentIndex(1)
 
     def on_color_changed(self, button, checked):
         if checked:
@@ -248,7 +246,7 @@ class DebugScene(QtWidgets.QWidget):
         super().__init__()
 
         # Main = main()
-        General = general()
+        self.General = general()
 
         self.robot_data = {'x': 0.0, 'y': 0.0, 'angle': 0.0, 'goal_x': 100.0, 'goal_y': 200.0}
         self.initUI()
@@ -302,10 +300,8 @@ class DebugScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
-        self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
-        time.sleep(1)
-        os.system("pkill python3")
+        self.General.send_input('e0')
+        window.stacked.setCurrentIndex(1)
 
     ###############################################################
     def on_shutdown(self): os.system("sudo shutdown now")
@@ -317,7 +313,7 @@ class DebugScene(QtWidgets.QWidget):
             env=dict(os.environ)
         )
     def on_clean_wheels(self): 
-        self.async_runner.run_task(self.main_controller.motor_controller.clean_wheels())
+        self.General.send_input('c1')
     def on_show_camera(self):
         subprocess.Popen(
             ['lxterminal', '-e', f'python3 /home/eurobot/main-bot/raspi/camera/camera_window.py'],
@@ -337,13 +333,9 @@ class TestCodesScene(QtWidgets.QWidget):
         super().__init__()
 
         # Main = main()
-        General = general()
+        self.General = general()
 
         self.initUI()
-
-    def driveDistance(self, distance: int):
-        coro = self.main_controller.motor_controller.drive_distance(1000)
-        self.async_runner.run_task(coro)
 
     def initUI(self):
         layout = QtWidgets.QVBoxLayout()
@@ -351,20 +343,17 @@ class TestCodesScene(QtWidgets.QWidget):
 
         self.add_close_and_stop_buttons(layout, self.stop_everything)
 
-
         for text, action in [
-            # ("Drive 1m →", lambda: self.main_controller.motor_controller.drive_to_target(30, 30)),
-            ("Drive 1m →", lambda: self.driveDistance(1000)),
-            # ("Drive 1m →", lambda: self.driveDistance(1000)),
-            ("Drive 1m ←", lambda: self.main_controller.motor_controller.drive_distance(-1000)),
-            ("Turn 90°", lambda: self.main_controller.motor_controller.turn_angle(90)),
-            ("Turn -90°", lambda: self.main_controller.motor_controller.turn_angle(-90)),
-            ("Turn 180°", lambda: self.main_controller.motor_controller.turn_angle(180))
+            ("Drive 1m →", lambda: self.General.send_input("d1000")),
+            ("Drive 1m ←", lambda: self.General.send_input("d-1000")),
+            ("Turn 90°", lambda: self.General.send_input("a90")),
+            ("Turn -90°", lambda: self.General.send_input("a-90")),
+            ("Turn 180°", lambda: self.General.send_input("a-90"))
         ]:
             btn = QtWidgets.QPushButton(text)
             btn.setFixedHeight(80)
             btn.setStyleSheet("font-size: 24px; border-radius: 10px;")
-            btn.clicked.connect(lambda _, a=action: self.async_runner.run_task(a()))
+            btn.clicked.connect(lambda _, a=action: a())
             layout.addWidget(btn)
 
         back_btn = QtWidgets.QPushButton("Back")
@@ -393,17 +382,15 @@ class TestCodesScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0) # stop all pico actions
-        self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
-        time.sleep(1)
-        os.system("pkill python3")
+        self.General.send_input('e0')
+        window.stacked.setCurrentIndex(1)
 
 class PicoScene(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
         # Main = main()
-        General = general()
+        self.General = general()
 
         self.mid_stepper_value = 20    # "left"/mid stepper default
         self.right_stepper_value = 100  # right stepper default
@@ -420,10 +407,15 @@ class PicoScene(QtWidgets.QWidget):
         stepper_group = QtWidgets.QGroupBox()
         stepper_layout = QtWidgets.QHBoxLayout()
 
+        # self.create_command_button("Mid stepper unteres brett", lambda: self.main_controller.pico_controller.set_mid_stepper(1), stepper_layout)
+        # self.create_command_button("Mid Stepper oberes brett", lambda: self.main_controller.pico_controller.set_mid_stepper(2), stepper_layout)
+        # self.create_command_button("Mid Stepper 2. oben brett", lambda: self.main_controller.pico_controller.set_mid_stepper(3), stepper_layout)
+        # self.create_command_button("Mid Stepper ganz oben", lambda: self.main_controller.pico_controller.set_mid_stepper(4), stepper_layout)
         self.create_command_button("Mid stepper unteres brett", lambda: self.main_controller.pico_controller.set_mid_stepper(1), stepper_layout)
         self.create_command_button("Mid Stepper oberes brett", lambda: self.main_controller.pico_controller.set_mid_stepper(2), stepper_layout)
         self.create_command_button("Mid Stepper 2. oben brett", lambda: self.main_controller.pico_controller.set_mid_stepper(3), stepper_layout)
         self.create_command_button("Mid Stepper ganz oben", lambda: self.main_controller.pico_controller.set_mid_stepper(4), stepper_layout)
+
 
         stepper_group.setLayout(stepper_layout)
         main_layout.addWidget(stepper_group)
@@ -549,10 +541,8 @@ class PicoScene(QtWidgets.QWidget):
         layout.addLayout(button_layout)
 
     def stop_everything(self):
-        self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
-        self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
-        time.sleep(1)
-        os.system("pkill python3")
+        self.General.send_input('e0')
+        window.stacked.setCurrentIndex(1)
 
 
 class DriveScene(QtWidgets.QWidget):
@@ -560,7 +550,7 @@ class DriveScene(QtWidgets.QWidget):
         super().__init__()
 
         # Main = main()
-        General = general()
+        self.General = general()
 
         self.points = 0
         self.robot_running = False
@@ -641,11 +631,8 @@ class DriveScene(QtWidgets.QWidget):
         )
 
     def stop_everything(self):
-        pass
-        # self.main_controller.pico_controller.set_command('e', 0)  # stop all pico actions
-        # self.async_runner.run_task(self.main_controller.motor_controller.set_stop())
-        # time.sleep(1)
-        # os.system("pkill python3")
+        self.General.send_input('e0')
+        window.stacked.setCurrentIndex(1)
         
     def show_points(self):
         self.value_label.setText("Points")
@@ -689,15 +676,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.homingComplete = False
 
-        self.timer.start(50)
-        
     def initUI(self):
         self.stacked = QtWidgets.QStackedWidget()
-        self.main_scene = MainScene(self.main_controller, self.async_runner)
-        self.debug_scene = DebugScene(self.main_controller, self.async_runner)
-        self.drive_scene = DriveScene(self.main_controller, self.async_runner)
-        self.testcodes_scene = TestCodesScene(self.main_controller, self.async_runner)
-        self.picocodes_scene = PicoScene(self.main_controller, self.async_runner)
+        self.main_scene = MainScene()
+        self.debug_scene = DebugScene()
+        self.drive_scene = DriveScene()
+        self.testcodes_scene = TestCodesScene()
+        self.picocodes_scene = PicoScene()
         
         self.stacked.addWidget(self.main_scene)
         self.stacked.addWidget(self.debug_scene)
