@@ -1,105 +1,90 @@
-import socket
-import threading
+import asyncio
 import sys
-import time
 
 HOST = '127.0.0.1'
 PORT = 5001
 
-client_socket = None  # Global client socket reference
+client_writer = None  # Global client writer reference
 
-def start_server():
-    global client_socket
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    try:
-        server_socket.bind((HOST, PORT))
-        server_socket.listen(5)
-        print(f"Server running on {HOST}:{PORT}")
-        
-        # Start input listener thread
-        input_thread = threading.Thread(target=terminal_input_handler, daemon=True)
-        input_thread.start()
-        
-        while True:
-            client_socket, address = server_socket.accept()
-            print(f"Connected to client at {address}")
-            client_handler = threading.Thread(
-                target=get_commands,
-                args=(client_socket, address),
-                daemon=True
-            )
-            client_handler.start()
-    except KeyboardInterrupt:
-        print("Server shutting down...")
-    except Exception as e:
-        print(f"Server error: {e}")
-    finally:
-        server_socket.close()
-        print("Server stopped")
-
-def terminal_input_handler():
-    global client_socket
-    
-    while True:
-        user_input = input("Enter message to send: ")
-        if user_input.lower() == 'exit':
-            print("Exiting input handler...")
-            break
-            
-        if client_socket is not None:
-            send_message(client_socket, user_input)
-        else:
-            print("No client connected. Wait for connection.")
-        
-        time.sleep(0.1)
-
-def get_commands(client_socket, address):
-    try:
-        while True:
-            data = client_socket.recv(1024)
-            if not data:
-                print(f"Client {address} disconnected")
-                break
-                
-            message = data.decode().strip()
-            print(f"Received from {address}: {message}")
-            cmd = message[0]
-            if cmd == "t":
-                startpos = int(message[1:message.index(",")])
-                tactic = int(message[message.index(",")+1:])
-                print(f"Tactic set: Startpos: {startpos} - tactic: {tactic}")
-            elif cmd == "p":
-                pcmd = message[1:]
-                print(f"pico command: {pcmd}")
-            elif cmd == "d":
-                dist = int(message[1:])
-                print(f"drive distance: {dist}")
-            elif cmd == "a":
-                angle = int(message[1:])
-                print(f"angle: {angle}")
-            elif cmd == "e0":
-                print("emergency stop")
-            else:
-                print(f"got shit: {message}")
-                
-    except Exception as e:
-        print(f"Error handling client {address}: {e}")
-    finally:
-        client_socket.close()
-
-# h: homing done
-# p: pullcord pulled
-# c<count>: set count points
-def send_message(client_socket, msg: str):
+async def send_message(writer: asyncio.StreamWriter, msg: str) -> bool:
     """Send a string message to the connected client"""
     try:
-        client_socket.sendall(msg.encode())
+        writer.write(msg.encode())
+        await writer.drain()
         print(f"Sent to client: {msg}")
         return True
     except Exception as e:
         print(f"Error sending message: {e}")
         return False
 
+async def terminal_input_handler():
+    global client_writer
+    while True:
+        user_input = await asyncio.to_thread(input, "Enter message to send: ")
+        if user_input.lower() == 'exit':
+            print("Exiting input handler...")
+            break
+        if client_writer is not None:
+            await send_message(client_writer, user_input)
+        else:
+            print("No client connected. Wait for connection.")
+        await asyncio.sleep(0.1)
+
+async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    global client_writer
+    addr = writer.get_extra_info('peername')
+    print(f"Connected to client at {addr}")
+    client_writer = writer
+    try:
+        while True:
+            data = await reader.read(1024)
+            if not data:
+                print(f"Client {addr} disconnected")
+                break
+            message = data.decode().strip()
+            print(f"Received from {addr}: {message}")
+            cmd = message[0]
+            if cmd == 't':
+                startpos = int(message[1:message.index(",")])
+                tactic = int(message[message.index(",")+1:])
+                print(f"Tactic set: Startpos: {startpos} - tactic: {tactic}")
+            elif cmd == 'p':
+                pcmd = message[1:]
+                print(f"pico command: {pcmd}")
+            elif cmd == 'd':
+                dist = int(message[1:])
+                print(f"drive distance: {dist}")
+            elif cmd == 'a':
+                angle = int(message[1:])
+                print(f"angle: {angle}")
+            elif message.startswith('e0'):
+                print("emergency stop")
+            else:
+                print(f"got shit: {message}")
+    except Exception as e:
+        print(f"Error handling client {addr}: {e}")
+    finally:
+        writer.close()
+        await writer.wait_closed()
+        client_writer = None
+
+async def main():
+    server = await asyncio.start_server(handle_client, HOST, PORT)
+    addr = server.sockets[0].getsockname()
+    print(f"Server running on {addr}")
+
+    # Start input listener task
+    asyncio.create_task(terminal_input_handler())
+
+    async with server:
+        try:
+            await server.serve_forever()
+        except KeyboardInterrupt:
+            print("Server shutting down...")
+
 if __name__ == "__main__":
-    start_server()
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        print(f"Server error: {e}")
+        sys.exit(1)
