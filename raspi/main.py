@@ -183,7 +183,7 @@ class RobotController:
         return self.tactic.points
         
 # main bot loop now
-async def main(self):
+async def main():
     controller = RobotController()
     if len(sys.argv) > 1:
         message = sys.argv[1]
@@ -192,32 +192,32 @@ async def main(self):
             startpos = int(message[1:message.index(",")])
             tactic = int(message[message.index(",")+1:])
             print(f"Tactic set: Startpos: {startpos} - tactic: {tactic}")
-            self.set_tactic(startpos, tactic)
-            await self.home()
+            controller.set_tactic(startpos, tactic)
+            await controller.home()
             await asyncio.sleep(1)
             controller.start()
             while True:
-                points = await self.run()
-                self.send_message(self.client_socket, f"c{points}")
+                points = await controller.run()
+                controller.send_message(controller.client_socket, f"c{points}")
                 if points == -1: break
-            await self.motor_controller.set_stop()
+            await controller.motor_controller.set_stop()
             await asyncio.sleep(0.5)
         elif cmd == "p":
             pcmd = message[1:]
             print(f"pico command: {pcmd}")
-            self.pico_controller.set_command(pcmd[0], int(pcmd[1:]))
+            controller.pico_controller.set_command(pcmd[0], int(pcmd[1:]))
         elif cmd == "d":
             dist = int(message[1:])
             print(f"drive distance: {dist}")
-            self.motor_controller.drive_distance(dist)
+            controller.motor_controller.drive_distance(dist)
         elif cmd == "a":
             angle = int(message[1:])
             print(f"angle: {angle}")
-            self.motor_controller.turn_angle(angle)
+            controller.motor_controller.turn_angle(angle)
         elif cmd == "e0":
             print("emergency stop")
-            self.pico_controller.set_command('e', 0)
-            await self.motor_controller.set_stop()
+            controller.pico_controller.set_command('e', 0)
+            await controller.motor_controller.set_stop()
         else:
             print(f"got shit: {message}")
     else:
