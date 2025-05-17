@@ -211,30 +211,77 @@ class MainWindow(QWidget):
         self.game_label.setText(f'Punkte: {self.comm.points}')
 
     def init_game_screen(self):
-        w = QWidget(); v = QVBoxLayout(w)
-        self.game_label = QLabel('Waiting for pullcord.'); self.game_label.setAlignment(Qt.AlignCenter)
+        w = QWidget()
+        v = QVBoxLayout(w)
+
+        # Header mit Zurück- und Schließen-Button
+        hdr = QHBoxLayout()
+        back_btn = QPushButton('←')
+        back_btn.setFixedSize(30, 30)
+        back_btn.setStyleSheet('background: transparent; font-size:18px;')
+        back_btn.clicked.connect(lambda: self.stack.setCurrentIndex(0))
+        hdr.addWidget(back_btn)
+
+        hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
+
+        close_btn = QPushButton('✕')
+        close_btn.setFixedSize(30, 30)
+        close_btn.setStyleSheet('background: transparent; font-size:18px;')
+        close_btn.clicked.connect(self.close)
+        hdr.addWidget(close_btn)
+        v.addLayout(hdr)
+
+        self.game_label = QLabel('Waiting for pullcord.')
+        self.game_label.setAlignment(Qt.AlignCenter)
         v.addWidget(self.game_label)
-        hdr = QHBoxLayout(); hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
-        close_btn = QPushButton('✕'); close_btn.setFixedSize(30, 30)
-        close_btn.clicked.connect(self.close); close_btn.setStyleSheet('background: transparent; font-size:18px;')
-        hdr.addWidget(close_btn); v.addLayout(hdr)
-        stop = QPushButton('EMERGENCY STOP'); stop.clicked.connect(lambda: self.comm.send_command('e0'))
-        v.addWidget(stop)
-        w.setLayout(v); self.stack.addWidget(w)
+        w.setLayout(v)
+        self.stack.addWidget(w)
 
     def init_debug_menu(self):
-        w = QWidget(); v = QVBoxLayout(w)
-        hdr = QHBoxLayout(); hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
-        close_btn = QPushButton('✕'); close_btn.setFixedSize(30, 30)
-        close_btn.clicked.connect(self.close); close_btn.setStyleSheet('background: transparent; font-size:18px;')
-        hdr.addWidget(close_btn); v.addLayout(hdr)
-        actions = [('Shutdown', 'sudo shutdown now'), ('Reboot', 'sudo reboot'), ('Testcodes', 'test_dummy'),
-                   ('Pico Codes', 'pico_dummy'), ('Clean Wheels', 'c'), ('Show Camera', 'camera'), ('Log Tail', 'logtail')]
-        for t, c in actions:
-            b = QPushButton(t); b.clicked.connect(lambda _, x=c: self.run_debug(x)); v.addWidget(b)
-        est = QPushButton('EMERGENCY STOP'); est.clicked.connect(lambda: self.comm.send_command('e0'))
+        w = QWidget()
+        v = QVBoxLayout(w)
+
+        # Header mit Close-Button
+        hdr = QHBoxLayout()
+        back_btn = QPushButton('←')
+        back_btn.setFixedSize(30, 30)
+        back_btn.setStyleSheet('background: transparent; font-size:18px;')
+        back_btn.clicked.connect(lambda: self.stack.setCurrentIndex(0))
+        hdr.addWidget(back_btn)
+
+        hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
+
+        hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        close_btn = QPushButton('✕')
+        close_btn.setFixedSize(30, 30)
+        close_btn.clicked.connect(self.close)
+        close_btn.setStyleSheet('background: transparent; font-size:18px;')
+        hdr.addWidget(close_btn)
+        v.addLayout(hdr)
+
+        # Liste von Debug-Aktionen
+        actions = [
+            ('Shutdown', 'sudo shutdown now'),
+            ('Reboot', 'sudo reboot'),
+            ('Testcodes', 'test_dummy'),
+            ('Pico Codes', 'pico_dummy'),
+            ('Clean Wheels', 'c'),
+            ('Show Camera', 'camera'),
+            ('Log Tail', 'logtail')
+        ]
+
+        for title, command in actions:
+            btn = QPushButton(title)
+            btn.clicked.connect(lambda _, x=command: self.run_debug(x))
+            v.addWidget(btn)
+
+        # EMERGENCY STOP Knopf
+        est = QPushButton('EMERGENCY STOP')
+        est.clicked.connect(lambda: self.comm.send_command('e0'))
         v.addWidget(est)
-        w.setLayout(v); self.stack.addWidget(w)
+
+        w.setLayout(v)
+        self.stack.addWidget(w)
 
     def run_debug(self, cmd):
         if cmd == 'test_dummy': self.stack.setCurrentIndex(3)
@@ -245,13 +292,33 @@ class MainWindow(QWidget):
         else: subprocess.call(cmd.split())
 
     def init_dummy_screens(self):
-        for idx in [3, 4]:
-            w = QWidget(); v = QVBoxLayout(w)
-            lbl = QLabel(f'Dummy Screen {idx-2}'); lbl.setAlignment(Qt.AlignCenter); v.addWidget(lbl)
-            for j in range(2): v.addWidget(QPushButton(f'Btn {j+1}'))
-            est = QPushButton('EMERGENCY STOP'); est.clicked.connect(lambda: self.comm.send_command('e0'))
-            v.addWidget(est)
-            w.setLayout(v); self.stack.addWidget(w)
+        for i in range(3):  # z.B. 3 Dummy-Seiten
+            w = QWidget()
+            v = QVBoxLayout(w)
+
+            hdr = QHBoxLayout()
+            back_btn = QPushButton('←')
+            back_btn.setFixedSize(30, 30)
+            back_btn.setStyleSheet('background: transparent; font-size:18px;')
+            back_btn.clicked.connect(lambda _, x=0: self.stack.setCurrentIndex(x))  # Zurück zur Startseite
+            hdr.addWidget(back_btn)
+
+            hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
+
+            close_btn = QPushButton('✕')
+            close_btn.setFixedSize(30, 30)
+            close_btn.setStyleSheet('background: transparent; font-size:18px;')
+            close_btn.clicked.connect(self.close)
+            hdr.addWidget(close_btn)
+            v.addLayout(hdr)
+
+            label = QLabel(f'Dummy-Seite {i + 1}')
+            label.setAlignment(Qt.AlignCenter)
+            v.addWidget(label)
+
+            w.setLayout(v)
+            self.stack.addWidget(w)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv); mw = MainWindow(); sys.exit(app.exec_())
