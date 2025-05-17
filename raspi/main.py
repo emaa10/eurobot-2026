@@ -72,7 +72,7 @@ class RobotController:
             4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
         }
 
-    async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    async def get_command(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         addr = writer.get_extra_info('peername')
         print(f"Connected to client at {addr}")
         self.client_writer = writer
@@ -126,7 +126,7 @@ class RobotController:
             return False
 
     async def start_server(self):
-        server = await asyncio.start_server(self.handle_client, HOST, PORT)
+        server = await asyncio.start_server(self.get_command, HOST, PORT)
         print(f"Server running on {HOST}:{PORT}")
         async with server:
             await server.serve_forever()
@@ -145,11 +145,11 @@ class RobotController:
         self.tactic = Task(self.motor_controller, self.camera, self.pico_controller, tactic, color)
         self.home_routine = Task(self.motor_controller, self.camera, self.pico_controller, home_routine, color)
 
-    async def run_tactic(self, client_socket):
+    async def run_tactic(self):
         self.start()
         while True:
             points = await self.run()
-            await self.send_message(client_socket, f"c{points}")
+            await self.send_message(f"c{points}")
             if points == -1: 
                 break
         await self.motor_controller.set_stop()
@@ -189,18 +189,11 @@ async def main():
         message = sys.argv[1]
         cmd = message[0]
         if cmd == "t":
-            startpos = int(message[1:message.index(",")])
-            tactic = int(message[message.index(",")+1:])
-            print(f"Tactic set: Startpos: {startpos} - tactic: {tactic}")
-            controller.set_tactic(startpos, tactic)
+            sp = int(message[1:message.index(',')]); tac = int(message[message.index(',')+1:])
+            controller.set_tactic(sp, tac)
             await controller.home()
             await asyncio.sleep(1)
-            controller.start()
-            while True:
-                points = await controller.run()
-                controller.send_message(controller.client_socket, f"c{points}")
-                if points == -1: break
-            await controller.motor_controller.set_stop()
+            asyncio.create_task(controller.run_tactic())
             await asyncio.sleep(0.5)
         elif cmd == "p":
             pcmd = message[1:]
