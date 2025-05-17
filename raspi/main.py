@@ -72,22 +72,27 @@ class RobotController:
             4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
         }
 
+    async def l(self, msg: str):
+        print(msg)
+        self.logger.info(msg)
+
     async def get_command(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         addr = writer.get_extra_info('peername')
-        print(f"Connected to client at {addr}")
+        self.l(f"Connected to client at {addr}")
         self.client_writer = writer
         try:
             while True:
                 data = await reader.read(1024)
                 if not data:
-                    print(f"Client {addr} disconnected")
+                    self.l(f"Client {addr} disconnected")
                     break
                 msg = data.decode().strip()
-                print(f"Received from {addr}: {msg}")
+                self.l(f"Received from {addr}: {msg}")
                 cmd = msg[0]
                 if cmd == 't':
                     sp = int(msg[1:msg.index(',')]); tac = int(msg[msg.index(',')+1:])
                     self.set_tactic(sp, tac)
+                    self.l(f"set tactic: {sp} {tac}")
                     await self.home()
                     await asyncio.sleep(1)
                     asyncio.create_task(self.run_tactic())
@@ -95,17 +100,21 @@ class RobotController:
                 elif cmd == 'p':
                     pcmd = msg[1:]
                     self.pico_controller.set_command(pcmd[0], int(pcmd[1:]))
+                    self.l(f"set pico cmd: {pcmd}")
                 elif cmd == 'd':
                     self.motor_controller.drive_distance(int(msg[1:]))
+                    self.l(f"drive distance: {int(msg[1:])}")
                 elif cmd == 'a':
                     self.motor_controller.turn_angle(int(msg[1:]))
+                    self.l(f"turn angle: {int(msg[1:])}")
                 elif msg.startswith('e0'):
                     self.pico_controller.set_command('e', 0)
+                    self.l(f"emergency stop !")
                     await self.motor_controller.set_stop()
                 else:
-                    print(f"Unknown msg: {msg}")
+                    self.l(f"Unknown msg: {msg}")
         except Exception as e:
-            print(f"Error {e} with client {addr}")
+            self.l(f"Error {e} with client {addr}")
         finally:
             writer.close()
             await writer.wait_closed()
@@ -119,15 +128,15 @@ class RobotController:
         try:
             self.client_writer.write(msg.encode())
             await self.client_writer.drain()
-            print(f"Sent: {msg}")
+            self.l(f"Sent: {msg}")
             return True
         except Exception as e:
-            print(f"Send error: {e}")
+            self.l(f"Send error: {e}")
             return False
 
     async def start_server(self):
         server = await asyncio.start_server(self.get_command, HOST, PORT)
-        print(f"Server running on {HOST}:{PORT}")
+        self.l(f"Server running on {HOST}:{PORT}")
         async with server:
             await server.serve_forever()
 
@@ -137,10 +146,10 @@ class RobotController:
         
         tactic = self.tactix_blue[tactic_num] if color == 'blue' else self.tactix_yellow[tactic_num]
         
-        print(tactic)
+        self.l(tactic)
         home_routine = self.home_routines[start_pos_num]
         
-        self.logger.info(f'color: {color}, tactic: {tactic}, home_routine: {home_routine}, startpos: {start_pos_num}')
+        self.l(f'color: {color}, tactic: {tactic}, home_routine: {home_routine}, startpos: {start_pos_num}')
                 
         self.tactic = Task(self.motor_controller, self.camera, self.pico_controller, tactic, color)
         self.home_routine = Task(self.motor_controller, self.camera, self.pico_controller, home_routine, color)
@@ -155,7 +164,7 @@ class RobotController:
         await self.motor_controller.set_stop()
         
     async def home(self):
-        self.logger.info('Homing routine started')
+        self.l('Homing routine started')
         
         self.pico_controller.home_pico()
         while True:
@@ -165,12 +174,12 @@ class RobotController:
         x, y, theta = self.start_positions[self.start_pos]
         self.tactic.motor_controller.set_pos(x, y, theta)
         
-        self.logger.info('Homing done')
+        self.l('Homing done')
 
     def start(self):
         self.tactic.motor_controller.time_started = time()
         self.tactic.motor_controller.gegi = True
-        self.logger.info(f'Tactic started')
+        self.l(f'Tactic started')
         
     async def run(self) -> int:
         if not self.tactic:
@@ -178,7 +187,7 @@ class RobotController:
             
         self.tactic = await self.tactic.run()
         if not self.tactic: 
-            self.logger.info(f'Tactic complete')
+            self.l(f'Tactic complete')
             return -1
         return self.tactic.points
         
@@ -197,22 +206,22 @@ async def main():
             await asyncio.sleep(0.5)
         elif cmd == "p":
             pcmd = message[1:]
-            print(f"pico command: {pcmd}")
+            controller.l(f"pico command: {pcmd}")
             controller.pico_controller.set_command(pcmd[0], int(pcmd[1:]))
         elif cmd == "d":
             dist = int(message[1:])
-            print(f"drive distance: {dist}")
+            controller.l(f"drive distance: {dist}")
             controller.motor_controller.drive_distance(dist)
         elif cmd == "a":
             angle = int(message[1:])
-            print(f"angle: {angle}")
+            controller.l(f"angle: {angle}")
             controller.motor_controller.turn_angle(angle)
         elif cmd == "e0":
-            print("emergency stop")
+            controller.l("emergency stop")
             controller.pico_controller.set_command('e', 0)
             await controller.motor_controller.set_stop()
         else:
-            print(f"got shit: {message}")
+            controller.l(f"got shit: {message}")
     else:
         await controller.start_server()
 
