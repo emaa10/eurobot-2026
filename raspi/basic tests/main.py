@@ -4,10 +4,9 @@ import sys
 HOST = '127.0.0.1'
 PORT = 5001
 
-client_writer = None  # Global client writer reference
+client_writer = None
 
 async def send_message(writer: asyncio.StreamWriter, msg: str) -> bool:
-    """Send a string message to the connected client"""
     try:
         writer.write(msg.encode())
         await writer.drain()
@@ -73,7 +72,6 @@ async def main():
     addr = server.sockets[0].getsockname()
     print(f"Server running on {addr}")
 
-    # Start input listener task
     asyncio.create_task(terminal_input_handler())
 
     async with server:
