@@ -177,29 +177,40 @@ class MainWindow(QWidget):
         stop = QPushButton('EMERGENCY STOP'); stop.clicked.connect(lambda:self.comm.send_command('e0')); v.addWidget(stop)
         w.setLayout(v); self.stack.addWidget(w)
 
-    def init_debug_menu(self):
-        w = QWidget(); v = QVBoxLayout(w)
-        self._add_header(v, back_index=0)
-        actions = [
-            ('Shutdown','sudo shutdown now'),('Reboot','sudo reboot'),
-            ('Testcodes','test_dummy'),('Pico Codes','pico_dummy'),
-            ('Clean Wheels','c'),('Show Camera','camera'),('Log Tail','logtail')
-        ]
-        for text,cmd in actions:
-            b = QPushButton(text)
-            b.clicked.connect(lambda _,c=cmd: self.run_debug(c))
-            v.addWidget(b)
-        stop = QPushButton('EMERGENCY STOP'); stop.clicked.connect(lambda:self.comm.send_command('e0')); v.addWidget(stop)
-        w.setLayout(v); self.stack.addWidget(w)
-
-    def init_dummy_screens(self):
-        for idx,title in zip([3,4],['Dummy Test','Dummy Pico']):
+        def init_debug_menu(self):
             w = QWidget(); v = QVBoxLayout(w)
-            self._add_header(v, back_index=2)
-            lbl = QLabel(title); lbl.setAlignment(Qt.AlignCenter); v.addWidget(lbl)
-            for i in range(2): v.addWidget(QPushButton(f'Btn{i+1}'))
-            stop = QPushButton('EMERGENCY STOP'); stop.clicked.connect(lambda:self.comm.send_command('e0')); v.addWidget(stop)
-            w.setLayout(v); self.stack.addWidget(w)
+            # Header with back to start screen
+            self._add_header(v, back_index=0)
+            actions = [
+                ('Shutdown','sudo shutdown now'),('Reboot','sudo reboot'),
+                ('Testcodes','test_dummy'),('Pico Codes','pico_dummy'),
+                ('Clean Wheels','c'),('Show Camera','camera'),('Log Tail','logtail')
+            ]
+            for text, cmd in actions:
+                b = QPushButton(text)
+                b.clicked.connect(lambda _, c=cmd: self.run_debug(c))
+                v.addWidget(b)
+            # Emergency stop
+            stop = QPushButton('EMERGENCY STOP')
+            stop.clicked.connect(lambda: self.comm.send_command('e0'))
+            v.addWidget(stop)
+            w.setLayout(v)
+            self.stack.addWidget(w)
+
+        def init_dummy_screens(self):
+            for idx, title, back in [(3, 'Dummy Test', 2), (4, 'Dummy Pico', 2)]:
+                w = QWidget(); v = QVBoxLayout(w)
+                # Header with back to debug menu
+                self._add_header(v, back_index=2)
+                lbl = QLabel(title); lbl.setAlignment(Qt.AlignCenter);
+                v.addWidget(lbl)
+                for i in range(2):
+                    v.addWidget(QPushButton(f'Btn{i+1}'))
+                stop = QPushButton('EMERGENCY STOP')
+                stop.clicked.connect(lambda: self.comm.send_command('e0'))
+                v.addWidget(stop)
+                w.setLayout(v)
+                self.stack.addWidget(w)
 
     def run_debug(self, cmd):
         if cmd == 'test_dummy': self.stack.setCurrentIndex(3)
