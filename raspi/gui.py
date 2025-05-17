@@ -3,10 +3,11 @@ from PyQt5.QtCore import QTimer
 import sys
 import os
 import time
-import asyncio
+# import asyncio
 import subprocess
 import threading
 import socket
+import logging
 
 HOST = '127.0.0.1'
 PORT = 5001
@@ -17,6 +18,14 @@ class general:
 
         self.start_server()
         threading.Thread(target=self.receive_messages, daemon=True).start()
+
+        logging.basicConfig(filename='/home/eurobot/main-bot/raspi/eurobot.log', level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
+
+        
+    async def l(self, msg: str):
+        print(msg)
+        self.logger.info(msg)
 
         
     ## ! ggf umschreiben dass es im terminal minimiert aufgeht
@@ -50,7 +59,7 @@ class general:
                             if(value1 == 1): self.pullcord_pulled = True 
                             else: self.pullcord_pulled = False
             except Exception as e:
-                print(f"Fehler beim Empfangen von Nachrichten: {e}")
+                self.l(f"Fehler beim Empfangen von Nachrichten: {e}")
 
 
 class MainScene(QtWidgets.QWidget):
