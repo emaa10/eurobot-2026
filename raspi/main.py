@@ -193,7 +193,7 @@ async def main():
             controller.set_tactic(sp, tac)
             await controller.home()
             await asyncio.sleep(1)
-            asyncio.create_task(controller.run_tactic())
+            await controller.run_tactic()
             await asyncio.sleep(0.5)
         elif cmd == "p":
             pcmd = message[1:]
