@@ -1,19 +1,17 @@
+import asyncio
+import sys
+import RPi.GPIO as GPIO
+import logging
+from time import time
+
 from modules.task import Task
 from modules.camera import Camera
 from modules.motor_controller import MotorController
 from modules.pico_com import Pico
 
-import RPi.GPIO as GPIO
-import asyncio
-from time import time
-import logging
-import socket
-import sys
-
-pullcord = 22
-
 HOST = '127.0.0.1'
 PORT = 5001
+pullcord = 22
 
 class RobotController:
     def __init__(self):
@@ -24,11 +22,11 @@ class RobotController:
 
         self.start_pos = 0
         self.points = 0
-        self.client_socket = None
-        
+        self.client_writer: asyncio.StreamWriter | None = None
+
         logging.basicConfig(filename='/home/eurobot/main-bot/raspi/eurobot.log', level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-                
+
         self.motor_controller = MotorController()
         self.camera = Camera() if self.CAM else None
         self.pico_controller = Pico()
@@ -39,10 +37,10 @@ class RobotController:
         if self.CAM:
             self.camera.start()
             self.logger.info("Camera started")
-                    
+
         self.tactic: Task | None = None
         self.home_routine: Task | None = None
-                
+
         self.start_positions = {
             # gelb
             1: [200, 850, 90],
@@ -53,7 +51,6 @@ class RobotController:
             5: [1800, 150, 0],
             6: [2800, 850, 270],
         }
-        
         self.home_routines = {
             1: [['hh', 'dd50', 'ta-90', 'hh', 'dd100']],
             2: [['hh', 'ta-90', 'hh', 'dd50']],
@@ -62,14 +59,12 @@ class RobotController:
             5: [['hh', 'ta90', 'hh', 'dd50']],
             6: [['hh', 'dd50', 'ta90', 'hh', 'dd100']],
         }
-        
         self.tactix_yellow = {
             1: [['hh', 'fd', 'dd400', 'ip20', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'dp790;500;180', 'dp790;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
             2: [['hh', 'fd', 'dd400', 'ip20', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
             3: [['hh', 'fd', 'dd400', 'ip20'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
             4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
         }
-        
         self.tactix_blue = {
             1: [['hh', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'dp2250;500;180', 'dp2250;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
             2: [['hh', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
@@ -77,85 +72,64 @@ class RobotController:
             4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
         }
 
-    async def get_commands(self, client_socket, address):
+    async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        addr = writer.get_extra_info('peername')
+        print(f"Connected to client at {addr}")
+        self.client_writer = writer
         try:
             while True:
-                data = await asyncio.get_event_loop().sock_recv(client_socket, 1024)
+                data = await reader.read(1024)
                 if not data:
-                    print(f"Client {address} disconnected")
+                    print(f"Client {addr} disconnected")
                     break
-                    
-                message = data.decode().strip()
-                print(f"Received from {address}: {message}")
-                cmd = message[0]
-                if cmd == "t":
-                    startpos = int(message[1:message.index(",")])
-                    tactic = int(message[message.index(",")+1:])
-                    print(f"Tactic set: Startpos: {startpos} - tactic: {tactic}")
-                    self.set_tactic(startpos, tactic)
+                msg = data.decode().strip()
+                print(f"Received from {addr}: {msg}")
+                cmd = msg[0]
+                if cmd == 't':
+                    sp = int(msg[1:msg.index(',')]); tac = int(msg[msg.index(',')+1:])
+                    self.set_tactic(sp, tac)
                     await self.home()
                     await asyncio.sleep(1)
-                    self.tactic_task = asyncio.create_task(self.run_tactic(client_socket))
+                    asyncio.create_task(self.run_tactic())
                     await asyncio.sleep(0.5)
-                elif cmd == "p":
-                    pcmd = message[1:]
-                    print(f"pico command: {pcmd}")
+                elif cmd == 'p':
+                    pcmd = msg[1:]
                     self.pico_controller.set_command(pcmd[0], int(pcmd[1:]))
-                elif cmd == "d":
-                    dist = int(message[1:])
-                    print(f"drive distance: {dist}")
-                    self.motor_controller.drive_distance(dist)
-                elif cmd == "a":
-                    angle = int(message[1:])
-                    print(f"angle: {angle}")
-                    self.motor_controller.turn_angle(angle)
-                elif cmd == "e0":
-                    print("emergency stop")
+                elif cmd == 'd':
+                    self.motor_controller.drive_distance(int(msg[1:]))
+                elif cmd == 'a':
+                    self.motor_controller.turn_angle(int(msg[1:]))
+                elif msg.startswith('e0'):
                     self.pico_controller.set_command('e', 0)
                     await self.motor_controller.set_stop()
                 else:
-                    print(f"got shit: {message}")
+                    print(f"Unknown msg: {msg}")
         except Exception as e:
-            print(f"Error handling client {address}: {e}")
+            print(f"Error {e} with client {addr}")
         finally:
-            client_socket.close()
+            writer.close()
+            await writer.wait_closed()
+            self.client_writer = None
 
     # h: homing done
     # p: pullcord pulled
     # c<count>: set count points
-    async def send_message(self, client_socket, msg: str):
-        """Send a string message to the connected client"""
+    async def send_message(self, msg: str) -> bool:
+        if not self.client_writer: return False
         try:
-            await asyncio.get_event_loop().sock_sendall(client_socket, msg.encode())
-            print(f"Sent to client: {msg}")
+            self.client_writer.write(msg.encode())
+            await self.client_writer.drain()
+            print(f"Sent: {msg}")
             return True
         except Exception as e:
-            print(f"Error sending message: {e}")
+            print(f"Send error: {e}")
             return False
 
     async def start_server(self):
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.setblocking(False)
-        
-        try:
-            server_socket.bind((HOST, PORT))
-            server_socket.listen(5)
-            print(f"Server running on {HOST}:{PORT}")
-            
-            while True:
-                client_socket, address = await asyncio.get_event_loop().sock_accept(server_socket)
-                print(f"Connected to client at {address}")
-                self.client_socket = client_socket
-                asyncio.create_task(self.get_commands(client_socket, address))
-                
-        except KeyboardInterrupt:
-            print("Server shutting down...")
-        except Exception as e:
-            print(f"Server error: {e}")
-        finally:
-            server_socket.close()
-            print("Server stopped")
+        server = await asyncio.start_server(self.handle_client, HOST, PORT)
+        print(f"Server running on {HOST}:{PORT}")
+        async with server:
+            await server.serve_forever()
 
     def set_tactic(self, start_pos_num: int, tactic_num: int):
         color = 'yellow' if start_pos_num <= 3 else 'blue'
@@ -184,7 +158,6 @@ class RobotController:
         self.logger.info('Homing routine started')
         
         self.pico_controller.home_pico()
-        
         while True:
             self.home_routine = await self.home_routine.run()
             if not self.home_routine: break
@@ -193,7 +166,7 @@ class RobotController:
         self.tactic.motor_controller.set_pos(x, y, theta)
         
         self.logger.info('Homing done')
-        
+
     def start(self):
         self.tactic.motor_controller.time_started = time()
         self.tactic.motor_controller.gegi = True
@@ -207,7 +180,6 @@ class RobotController:
         if not self.tactic: 
             self.logger.info(f'Tactic complete')
             return -1
-        
         return self.tactic.points
         
 # main bot loop now
@@ -223,7 +195,7 @@ async def main(self):
             self.set_tactic(startpos, tactic)
             await self.home()
             await asyncio.sleep(1)
-            self.start()
+            controller.start()
             while True:
                 points = await self.run()
                 self.send_message(self.client_socket, f"c{points}")
@@ -252,4 +224,7 @@ async def main(self):
         await controller.start_server()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print('Shutting down')
