@@ -80,12 +80,21 @@ class Communication(threading.Thread):
                     self.connected = False; continue
                 print(f"Debug: Received raw: {data}")
                 cmd = data[0]
-                if cmd == 'p': self.pullcord_pulled = True; print("Debug: pullcord pulled.")
+                if cmd == 'p':
+                    self.pullcord_pulled = True
+                    print("Debug: pullcord pulled.")
                 elif cmd == 'h':
-                    if not self.homing_1_done: self.homing_1_done = True; print("Debug: homing1 done.")
-                    else: self.homing_2_done = True; print("Debug: homing2 done.")
-                elif cmd == 'c' and data[1:].isdigit(): self.points = int(data[1:]); print(f"Debug: points={self.points}")
-                else: print(f"Debug: Unknown cmd {data}")
+                    if not self.homing_1_done:
+                        self.homing_1_done = True
+                        print("Debug: homing1 done.")
+                    else:
+                        self.homing_2_done = True
+                        print("Debug: homing2 done.")
+                elif cmd == 'c' and data[1:].isdigit():
+                    self.points = int(data[1:])
+                    print(f"Debug: points={self.points}")
+                else:
+                    print(f"Debug: Unknown cmd {data}")
             except Exception as e:
                 print(f"Debug: Receive error: {e}"); self.connected = False; time.sleep(1)
 
@@ -112,14 +121,17 @@ class MainWindow(QWidget):
         self.setLayout(layout)
 
     def _add_header(self, parent, back_index=None):
-        hdr = QHBoxLayout();
+        hdr = QHBoxLayout()
         if back_index is not None:
-            btn_back = QPushButton('←'); btn_back.setFixedSize(30,30)
+            btn_back = QPushButton('←')
+            btn_back.setFixedSize(30,30)
             btn_back.clicked.connect(lambda: self.stack.setCurrentIndex(back_index))
             hdr.addWidget(btn_back)
         hdr.addSpacerItem(QSpacerItem(40,20,QSizePolicy.Expanding,QSizePolicy.Minimum))
-        btn_close = QPushButton('✕'); btn_close.setFixedSize(30,30)
-        btn_close.clicked.connect(self.close); btn_close.setStyleSheet('background:transparent; font-size:18px;')
+        btn_close = QPushButton('✕')
+        btn_close.setFixedSize(30,30)
+        btn_close.clicked.connect(self.close)
+        btn_close.setStyleSheet('background:transparent; font-size:18px;')
         hdr.addWidget(btn_close)
         parent.addLayout(hdr)
 
@@ -128,79 +140,125 @@ class MainWindow(QWidget):
         self._add_header(v)
         hb = QHBoxLayout()
         for name,col in [('Gelb','#FFD600'),('Blau','#2979FF')]:
-            b=QPushButton(name); b.setStyleSheet(f'background:{col};color:#fff;padding:10px;border-radius:8px')
-            b.clicked.connect(lambda _,c=col:self.select_color(c)); hb.addWidget(b)
+            b = QPushButton(name)
+            b.setStyleSheet(f'background:{col};color:#fff;padding:10px;border-radius:8px')
+            b.clicked.connect(lambda _,c=col: self.select_color(c))
+            hb.addWidget(b)
         v.addLayout(hb)
-        self.view=QGraphicsView(); self.scene=QGraphicsScene()
-        pix=QPixmap('map.png').scaled(800,300,Qt.KeepAspectRatioByExpanding)
-        self.scene.addPixmap(pix); self.view.setScene(self.scene); v.addWidget(self.view)
-        self.rect_items={col:[] for col in ['#FFD600','#2979FF']}
-        coords={'#FFD600':[(50,50),(150,80),(250,100)],'#2979FF':[(60,150),(160,180),(260,200)]}
+        self.view = QGraphicsView()
+        self.scene = QGraphicsScene()
+        pix = QPixmap('map.png').scaled(800,300,Qt.KeepAspectRatioByExpanding)
+        self.scene.addPixmap(pix)
+        self.view.setScene(self.scene)
+        v.addWidget(self.view)
+        self.rect_items = {col:[] for col in ['#FFD600','#2979FF']}
+        coords = {'#FFD600':[(50,50),(150,80),(250,100)],
+                  '#2979FF':[(60,150),(160,180),(260,200)]}
         for col, pts in coords.items():
             for i,(x,y) in enumerate(pts):
-                r=QGraphicsRectItem(QRectF(x,y,40,40)); r.setBrush(QBrush(QColor(col).lighter(150)))
+                r = QGraphicsRectItem(QRectF(x,y,40,40))
+                r.setBrush(QBrush(QColor(col).lighter(150)))
                 r.setFlags(QGraphicsRectItem.ItemIsSelectable|QGraphicsRectItem.ItemIsMovable)
-                r.rect_id=i; r.color=col; self.rect_items[col].append(r); self.scene.addItem(r)
-        hb2=QHBoxLayout();
-        for i in range(1,5): b=QPushButton(f'T{i}'); b.clicked.connect(lambda _,x=i:self.select_tactic(x)); hb2.addWidget(b)
+                r.rect_id = i; r.color = col
+                self.rect_items[col].append(r)
+                self.scene.addItem(r)
+        hb2 = QHBoxLayout()
+        for i in range(1,5):
+            b = QPushButton(f'T{i}')
+            b.clicked.connect(lambda _,x=i: self.select_tactic(x))
+            hb2.addWidget(b)
         v.addLayout(hb2)
-        hb3=QHBoxLayout()
+        hb3 = QHBoxLayout()
         for txt,fn in [('START',self.start_game),('DEBUG',lambda:self.stack.setCurrentIndex(2)),('STOP',lambda:self.comm.send_command('e0'))]:
-            b=QPushButton(txt); b.clicked.connect(fn); hb3.addWidget(b)
+            b = QPushButton(txt)
+            b.clicked.connect(fn)
+            hb3.addWidget(b)
         v.addLayout(hb3)
-        w.setLayout(v); self.stack.addWidget(w)
+        w.setLayout(v)
+        self.stack.addWidget(w)
 
     def init_game_screen(self):
-        w=QWidget(); v=QVBoxLayout(w)
+        w = QWidget(); v = QVBoxLayout(w)
         self._add_header(v, back_index=0)
-        self.game_label=QLabel('Waiting for pullcord.'); self.game_label.setAlignment(Qt.AlignCenter)
+        self.game_label = QLabel('Waiting for pullcord.')
+        self.game_label.setAlignment(Qt.AlignCenter)
         v.addWidget(self.game_label)
-        stop=QPushButton('EMERGENCY STOP'); stop.clicked.connect(lambda:self.comm.send_command('e0'))
+        stop = QPushButton('EMERGENCY STOP')
+        stop.clicked.connect(lambda:self.comm.send_command('e0'))
         v.addWidget(stop)
-        w.setLayout(v); self.stack.addWidget(w)
+        w.setLayout(v)
+        self.stack.addWidget(w)
 
     def init_debug_menu(self):
-        w=QWidget(); v=QVBoxLayout(w)
+        w = QWidget(); v = QVBoxLayout(w)
         self._add_header(v, back_index=0)
         for text,cmd in [('Shutdown','sudo shutdown now'),('Reboot','sudo reboot'),
                          ('Testcodes','test_dummy'),('Pico Codes','pico_dummy'),
                          ('Clean Wheels','c'),('Show Camera','camera'),('Log Tail','logtail')]:
-            b=QPushButton(text); b.clicked.connect(lambda _,c=cmd:self.run_debug(c)); v.addWidget(b)
-        stop=QPushButton('EMERGENCY STOP'); stop.clicked.connect(lambda:self.comm.send_command('e0'))
+            b = QPushButton(text)
+            b.clicked.connect(lambda _,c=cmd: self.run_debug(c))
+            v.addWidget(b)
+        stop = QPushButton('EMERGENCY STOP')
+        stop.clicked.connect(lambda:self.comm.send_command('e0'))
         v.addWidget(stop)
-        w.setLayout(v); self.stack.addWidget(w)
+        w.setLayout(v)
+        self.stack.addWidget(w)
 
     def init_dummy_screens(self):
-        for idx, title in zip([3,4],['Dummy Test','Dummy Pico']):
-            w=QWidget(); v=QVBoxLayout(w)
+        for idx,title in zip([3,4],['Dummy Test','Dummy Pico']):
+            w = QWidget(); v = QVBoxLayout(w)
             self._add_header(v, back_index=2)
-            lbl=QLabel(title); lbl.setAlignment(Qt.AlignCenter); v.addWidget(lbl)
-            for i in range(2): v.addWidget(QPushButton(f'Btn{i+1}'))
-            stop=QPushButton('EMERGENCY STOP'); stop.clicked.connect(lambda:self.comm.send_command('e0'))
+            lbl = QLabel(title)
+            lbl.setAlignment(Qt.AlignCenter)
+            v.addWidget(lbl)
+            for i in range(2):
+                v.addWidget(QPushButton(f'Btn{i+1}'))
+            stop = QPushButton('EMERGENCY STOP')
+            stop.clicked.connect(lambda:self.comm.send_command('e0'))
             v.addWidget(stop)
-            w.setLayout(v); self.stack.addWidget(w)
+            w.setLayout(v)
+            self.stack.addWidget(w)
 
-    def select_color(self,col):
-        self.color=col
+    def run_debug(self, cmd):
+        if cmd == 'test_dummy':
+            self.stack.setCurrentIndex(3)
+        elif cmd == 'pico_dummy':
+            self.stack.setCurrentIndex(4)
+        elif cmd == 'c':
+            self.comm.send_command('c')
+        elif cmd == 'camera':
+            subprocess.Popen(['lxterminal','-e','python3 /home/.../camera_window.py'])
+        elif cmd == 'logtail':
+            subprocess.Popen(['lxterminal','-e','tail -f /home/.../eurobot.log'])
+        else:
+            subprocess.call(cmd.split())
+
+    def select_color(self, col):
+        self.color = col
         for items in self.rect_items.values():
-            for itm in items: itm.setVisible(itm.color==col)
+            for itm in items:
+                itm.setVisible(itm.color == col)
         print(f"Debug: color {col}")
 
-    def select_tactic(self,t): print(f"Debug: tactic {t}"); self.selected_tactic=t
+    def select_tactic(self, t):
+        print(f"Debug: tactic {t}")
+        self.selected_tactic = t
 
     def start_game(self):
-        items=[i for i in self.rect_items.get(self.color,[]) if i.isSelected()]
+        items = [i for i in self.rect_items.get(self.color, []) if i.isSelected()]
         if not items or not self.selected_tactic:
-            QMessageBox.warning(self,'Warn','Select start pos and tactic'); return
-        cmd=f't{items[0].rect_id},{self.selected_tactic}'
-        self.comm.send_command(cmd); print(f"Debug: start {cmd}")
-        self.stack.setCurrentIndex(1); self.game_state=1
-        timer=QTimer(self); timer.timeout.connect(self.update_game); timer.start(100)
+            QMessageBox.warning(self, 'Warn', 'Select start pos and tactic')
+            return
+        cmd = f't{items[0].rect_id},{self.selected_tactic}'
+        self.comm.send_command(cmd)
+        print(f"Debug: start {cmd}")
+        self.stack.setCurrentIndex(1)
+        self.game_state = 1
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_game)
+        self.timer.start(100)
 
-    # update_game and other methods unchanged...
 
-if __name__=='__main__':
-    app=QApplication(sys.argv); mw=MainWindow(); sys.exit(app.exec_())
     def update_game(self):
         if self.game_state == 1 and self.comm.pullcord_pulled:
             self.game_state = 2; self.game_label.setText('Homing...')
