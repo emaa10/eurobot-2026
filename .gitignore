@@ -1,9 +1,8 @@
 /.DS_Store
 .vscode
-arduino/.DS_Store
-arduino/.pio
-arduino/.vscode
+pro_micro/.DS_Store
 raspi/__pycache__
+raspi/.DS_Store
 raspi/modules/__pycache__
 raspi/logs
 raspi/.venv
