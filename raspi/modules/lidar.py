@@ -6,7 +6,7 @@ from time import time_ns, sleep
 from pyrplidar import PyRPlidar
 
 class Lidar:
-    def __init__(self, port: str = '/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0'):
+    def __init__(self, port: str = '/dev/serial/by-id/usb-Silicon_Labs_CP2102N_USB_to_UART_Bridge_Controller_ee5a3b581464ef1196f5daa9c169b110-if00-port0'):
         self.port = port
         self.lidar = None
         

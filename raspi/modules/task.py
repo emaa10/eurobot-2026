@@ -6,13 +6,11 @@ import asyncio
 from modules.motor_controller import MotorController
 from modules.camera import Camera
 from modules.pathfinding import Pathfinder
-from modules.pico_com import Pico
 
 
 class Task():
-    def __init__(self, motor_controller: MotorController, camera: Camera, pico_controller: Pico, action_set: list[list[str]], color: str):
+    def __init__(self, motor_controller: MotorController, camera: Camera, action_set: list[list[str]], color: str):
         self.motor_controller = motor_controller
-        self.pico_controller = pico_controller
         self.camera = camera
         
         self.action_set = action_set
@@ -34,7 +32,6 @@ class Task():
     async def run(self) -> Self:        
         if self.motor_controller.time_started + 96 < time():
             await self.motor_controller.set_stop()
-            self.pico_controller.emergency_stop()
             return None
         
         if len(self.actions) <= 0:
@@ -69,21 +66,6 @@ class Task():
                 await self.motor_controller.turn_angle(float(value))                              
             case 'tt':  # turn to angle
                 await self.motor_controller.turn_to(float(value))
-            case 'fd':  # flag down
-                self.pico_controller.set_drive_flag(2)
-                await asyncio.sleep(1)
-            case 'fu':  # flag up
-                self.pico_controller.set_drive_flag(1)
-            case 'pg': # prepare gripping
-                self.pico_controller.prepare_gripping()
-            case 'gs':  # grip stapel
-                self.pico_controller.grip_stapel()
-            case 'ds':  # deposit stapel
-                self.pico_controller.deposit_stapel()
-            case 'rs':
-                self.pico_controller.emergency_stop()
-            case 'ga': # gripper ausklappen
-                self.pico_controller.ausklappen()
             case 'hh':  # home
                 await self.motor_controller.home()
             case 'cw':  # clean wheels

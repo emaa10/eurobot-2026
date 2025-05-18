@@ -3,7 +3,7 @@ import time
 import logging
 
 class Encoder():
-    def __init__(self, port="/dev/serial/by-id/usb-Arduino__www.arduino.cc__0042_5583931353835111C0B1-if00", baud_rate=115200) -> None:
+    def __init__(self, port="/dev/serial/by-id/usb-SparkFun_SparkFun_Pro_Micro-if00", baud_rate=115200) -> None:
         self.ser = serial.Serial(port, baud_rate, timeout=3)
         
         self.ser.setDTR(False)

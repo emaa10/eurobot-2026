@@ -31,8 +31,6 @@ class RobotController:
         self.camera = Camera() if self.CAM else None
         self.servos = Servos()
 
-        self.pico_controller.set_command('i', 0)
-        ## ! muss das hier?
 
         if self.CAM:
             self.camera.start()
@@ -100,7 +98,7 @@ class RobotController:
                 elif cmd == 's':
                     pcmd = msg[1:]
                     values = pcmd.split(';')
-                    self.servos.write_servo(values[0], values[1])
+                    self.servos.write_servo(int(values[0]), int(values[1]))
                     self.l(f"set servo cmd: {pcmd}")
                 elif cmd == 'd':
                     self.motor_controller.drive_distance(int(msg[1:]))
@@ -108,9 +106,6 @@ class RobotController:
                 elif cmd == 'a':
                     self.motor_controller.turn_angle(int(msg[1:]))
                     self.l(f"turn angle: {int(msg[1:])}")
-                elif msg.startswith('e0'):
-                    self.pico_controller.set_command('e', 0)
-                    self.l(f"emergency stop !")
                     await self.motor_controller.set_stop()
                 elif msg.startswith('c'):
                     self.motor_controller.clean_wheels()
@@ -155,8 +150,8 @@ class RobotController:
         
         self.l(f'color: {color}, tactic: {tactic}, home_routine: {home_routine}, startpos: {start_pos_num}')
                 
-        self.tactic = Task(self.motor_controller, self.camera, self.pico_controller, tactic, color)
-        self.home_routine = Task(self.motor_controller, self.camera, self.pico_controller, home_routine, color)
+        self.tactic = Task(self.motor_controller, self.camera, tactic, color)
+        self.home_routine = Task(self.motor_controller, self.camera, home_routine, color)
 
     async def run_tactic(self):
         self.start()
@@ -170,7 +165,6 @@ class RobotController:
     async def home(self):
         self.l('Homing routine started')
         
-        self.pico_controller.home_pico()
         while True:
             self.home_routine = await self.home_routine.run()
             if not self.home_routine: break
@@ -208,10 +202,6 @@ async def main():
             await asyncio.sleep(1)
             await controller.run_tactic()
             await asyncio.sleep(0.5)
-        elif cmd == "p":
-            pcmd = message[1:]
-            controller.l(f"pico command: {pcmd}")
-            controller.pico_controller.set_command(pcmd[0], int(pcmd[1:]))
         elif cmd == "d":
             dist = int(message[1:])
             controller.l(f"drive distance: {dist}")
@@ -220,10 +210,6 @@ async def main():
             angle = int(message[1:])
             controller.l(f"angle: {angle}")
             controller.motor_controller.turn_angle(angle)
-        elif cmd == "e0":
-            controller.l("emergency stop")
-            controller.pico_controller.set_command('e', 0)
-            await controller.motor_controller.set_stop()
         else:
             controller.l(f"got shit: {message}")
     else:
