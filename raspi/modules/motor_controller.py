@@ -6,7 +6,7 @@ from time import time, sleep
 import logging
 
 from modules.drive_state import DriveState
-from raspi.modules.encoder import Encoder
+from modules.encoder import Encoder
 from modules.lidar import Lidar
 from modules.pathfinding import Pathfinder
 from modules.position import Position

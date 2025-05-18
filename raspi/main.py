@@ -7,7 +7,7 @@ from time import time
 from modules.task import Task
 from modules.camera import Camera
 from modules.motor_controller import MotorController
-from modules.pico_com import Pico
+from modules.servos import Servos
 
 HOST = '127.0.0.1'
 PORT = 5001
@@ -29,7 +29,7 @@ class RobotController:
 
         self.motor_controller = MotorController()
         self.camera = Camera() if self.CAM else None
-        self.pico_controller = Pico()
+        self.servos = Servos()
 
         self.pico_controller.set_command('i', 0)
         ## ! muss das hier?
@@ -72,7 +72,7 @@ class RobotController:
             4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
         }
 
-    async def l(self, msg: str):
+    def l(self, msg: str):
         print(msg)
         self.logger.info(msg)
 
@@ -97,10 +97,11 @@ class RobotController:
                     await asyncio.sleep(1)
                     asyncio.create_task(self.run_tactic())
                     await asyncio.sleep(0.5)
-                elif cmd == 'p':
+                elif cmd == 's':
                     pcmd = msg[1:]
-                    self.pico_controller.set_command(pcmd[0], int(pcmd[1:]))
-                    self.l(f"set pico cmd: {pcmd}")
+                    values = pcmd.split(';')
+                    self.servos.write_servo(values[0], values[1])
+                    self.l(f"set servo cmd: {pcmd}")
                 elif cmd == 'd':
                     self.motor_controller.drive_distance(int(msg[1:]))
                     self.l(f"drive distance: {int(msg[1:])}")
