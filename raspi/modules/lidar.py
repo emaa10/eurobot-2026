@@ -1,9 +1,9 @@
 import threading
 import logging
-from time import time_ns, sleep
 import queue
-from rplidar import RPLidar
 import math
+from time import time_ns, sleep
+from pyrplidar import PyRPlidar
 
 class Lidar:
     def __init__(self, port: str = '/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0'):
@@ -22,7 +22,8 @@ class Lidar:
     def connect(self):
         """Connect to the Lidar device"""
         try:
-            self.lidar = RPLidar(self.port, baudrate=460800)
+            self.lidar = PyRPlidar()
+            self.lidar.connect(port=self.port, baudrate=460800, timeout=5)
             self.logger.info("Lidar connected successfully")
             return True
         except Exception as e:
@@ -53,17 +54,12 @@ class Lidar:
         # Reset scan data
         current_scan_data = []
         
+        
         while True:
             try:
-                for measurement in self.lidar.iter_measures():
-                    if not self.running:
-                        break
-                    
-                    # Unpack only the values we need
-                    _, quality, angle, distance = measurement[:4]
-                    
-                    # Process only if this is part of a new scan
-                    if measurement[0]:  # new_reading is the first element                        
+                scan_generator = self.lidar.start_scan()
+                for count, measurement in enumerate(scan_generator()):                    
+                    if measurement.start_flag:                       
                         try:
                             self.scan_results.put_nowait(current_scan_data)
                         except queue.Full:
@@ -74,8 +70,8 @@ class Lidar:
                         current_scan_data = []
                         
                     # Store valid measurements
-                    if quality > 10 and distance > 0:  
-                        current_scan_data.append((angle, distance))
+                    if measurement.quality > 10 and measurement.distance > 0:  
+                        current_scan_data.append((measurement.angle, measurement.distance))
             
             except Exception as e:
                 self.logger.info(f"Error in scan loop: {e}")
@@ -122,7 +118,7 @@ class Lidar:
 
 # Example usage
 def main():
-    lidar = Lidar()  # Update with your port
+    lidar = Lidar('/dev/tty.usbserial-140')  # Update with your port
         
     try:
         print("Starting Lidar scanning")
@@ -137,13 +133,13 @@ def main():
                     # point in relation to bot
                     d_x = distance * math.sin((angle+180) * math.pi / 180)
                     d_y = distance * math.cos((angle+180) * math.pi / 180)  
-                    
+                                        
                     # point in arena 
                     arena_angle_rad = (angle + 90) * math.pi / 180 
                     arena_x = distance * math.sin(arena_angle_rad) + 500 
                     arena_y = distance * math.cos(arena_angle_rad) + 500 
                     
-                    point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 5cm threshold
+                    point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 10cm threshold
                     point_in_arena = True                  
                     
                     if 0 <= d_y <= 500 and abs(d_x) <= 250:
