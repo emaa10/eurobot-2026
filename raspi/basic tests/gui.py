@@ -1,0 +1,174 @@
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel
+import socket
+import threading
+import subprocess
+import time
+
+HOST = '127.0.0.1'
+PORT = 5001
+
+class Communication:
+    def __init__(self):
+        self.pullcord_pulled = False
+        self.homing_1_done = False
+        self.homing_2_done = False
+        self.connected = False
+        self.socket = None
+        self.lock = threading.Lock()
+        
+        self.start_server()
+        self.connect()
+        threading.Thread(target=self.receive_messages, daemon=True).start()
+    
+    def start_server(self):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as test_socket:
+                test_socket.connect((HOST, PORT))
+                return  # Server is running
+        except:
+            # subprocess.Popen(["python3", "main.py"])
+            print("Server not found - please start main.py")
+    
+    def connect(self):
+        if self.connected:
+            return
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.connect((HOST, PORT))
+            self.connected = True
+            print("Connected to server")
+        except Exception as e:
+            print(f"Connection error: {e}")
+            self.connected = False
+    
+    # t<startpos>,<tactic>: taktik
+    # p<picocommand>: pico command
+    # d<distance in mm>: drive distance in mm
+    # a<angle>: turn angle
+    # e0: emergency stop
+    def send_command(self, msg):
+        if not msg:
+            print("Empty message")
+            return False
+            
+        with self.lock:
+            if not self.connected:
+                self.connect()
+                if not self.connected:
+                    print("Cannot send - not connected")
+                    return False
+                
+            try:
+                self.socket.sendall(msg.encode())
+                print(f"Sent: {msg}")
+                return True
+            except Exception as e:
+                print(f"Send error: {e}")
+                self.connected = False
+                self.socket.close()
+                return False
+    
+    def receive_messages(self):
+        while True:
+            if not self.connected:
+                self.connect()
+                time.sleep(0.5)
+                continue
+                
+            try:
+                data = self.socket.recv(1024).decode()
+                if not data:
+                    print("Server closed connection")
+                    self.connected = False
+                    self.socket.close()
+                    continue
+                print(f"Received: {data}")
+
+                if len(data) >= 1:
+                    command = data[0]
+                    
+                    if command == "p":
+                        self.pullcord_pulled = True
+                        print("pullcord pulled")
+                    elif command == "h":
+                        if(self.homing_1_done == False):
+                            self.homing_1_done = True
+                            print("homing 1 done")
+                        else:
+                            self.homing_2_done = True
+                            print("homing 2 done")
+                    elif command == "c":
+                        points = int(data[1:])
+                        print(f"points: {points}")
+                    else:
+                        print(f"got shit: {data}")
+
+                        
+            except Exception as e:
+                print(f"Receive error: {e}")
+                self.connected = False
+                self.socket.close()
+                time.sleep(1)
+
+class SimpleGUI(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Daten Sender")
+
+        self.comm = Communication()
+        
+        self.init_ui()
+        
+    def init_ui(self):
+        layout = QVBoxLayout()
+        
+        # Status label
+        self.status_label = QLabel("Not connected")
+        layout.addWidget(self.status_label)
+        
+        # Button 1
+        self.button_d1 = QPushButton("Send t1,2")
+        self.button_d1.clicked.connect(self.send_t)
+        layout.addWidget(self.button_d1)
+        
+        # Button 2
+        self.button_t1 = QPushButton("Send ptest")
+        self.button_t1.clicked.connect(self.send_ptest)
+        layout.addWidget(self.button_t1)
+        
+        # Button 3
+        self.button_p4 = QPushButton("Send d100")
+        self.button_p4.clicked.connect(self.send_d)
+        layout.addWidget(self.button_p4)
+        
+        # Update status periodically
+        self.update_timer = threading.Thread(target=self.update_status, daemon=True)
+        self.update_timer.start()
+        
+        self.setLayout(layout)
+    
+    def update_status(self):
+        while True:
+            status = "Connected" if self.comm.connected else "Not connected"
+            cord = "Pulled" if self.comm.pullcord_pulled else "Not pulled"
+            self.status_label.setText(f"Status: {status} | Pullcord: {cord}")
+            time.sleep(0.5)
+    
+    def send_t(self):
+        self.comm.send_command("t1,2")
+        print("t1,2 sent")
+    
+    def send_ptest(self):
+        self.comm.send_command("ptest")
+        print("ptest sent")
+    
+    def send_d(self):
+        self.comm.send_command("d100")
+        print("d100 sent")
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    gui = SimpleGUI()
+    gui.show()
+    sys.exit(app.exec())
