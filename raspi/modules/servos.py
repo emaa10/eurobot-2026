@@ -1,16 +1,7 @@
-import sys
-import os
-import time
-
-from serial.tools import list_ports
-
 from STservo_sdk import * 
 
 # Default setting
 BAUDRATE                    = 1000000           # STServo default baudrate : 1000000
-VID = "1a86"
-PID = "55d3"
-
 STS_MOVING_SPEED            = 2400          # SCServo moving speed
 STS_MOVING_ACC              = 50            # SCServo moving acc
 
