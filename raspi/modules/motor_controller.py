@@ -6,7 +6,7 @@ from time import time, sleep
 import logging
 
 from modules.drive_state import DriveState
-from modules.arduino_com import Arduino
+from raspi.modules.encoder import Encoder
 from modules.lidar import Lidar
 from modules.pathfinding import Pathfinder
 from modules.position import Position
@@ -147,7 +147,7 @@ class MotorController():
 
         self.poller = Poller(self.controllers, args)
         
-        self.serial_manager = Arduino()
+        self.encoder = Encoder()
         self.lidar = Lidar()
         
         if not self.lidar.start_scanning():
@@ -182,7 +182,7 @@ class MotorController():
         self.y = y
         self.theta = theta
         
-        self.serial_manager.set_pos(self.x, self.y, self.theta)
+        self.encoder.set_pos(self.x, self.y, self.theta)
         
     async def get_pos(self):
         servo_data = {x.id: await x.query() for x in self.controllers.values()}
@@ -362,7 +362,7 @@ class MotorController():
             return
             
         try:
-            self.x, self.y, self.theta = self.serial_manager.get_pos()
+            self.x, self.y, self.theta = self.encoder.get_pos()
         except:
             self.logger.info("Could not read new pos data")
             
