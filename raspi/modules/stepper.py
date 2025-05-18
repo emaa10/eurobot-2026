@@ -1,4 +1,4 @@
-# UNGETESTET, OOP u. LOGGING wahrscheinlich optional, ansonsten wie arduino_com.py
+# UNGETESTET
 
 import serial
 
@@ -18,7 +18,7 @@ def home(l: bool, m: bool, r:bool):
         send("$HZ\n")
 
 def set_pos_mm(l: int = 0, m: int = 0, r: int = 0):
-    send(f"G54 X{abs(l)} Y{abs(m)} R{abs(r)}")
+    send(f"G54 X{abs(l)} Y{abs(m)} R{abs(r)}\n")
     
 def reset():
     send("\x18")
