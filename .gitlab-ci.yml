@@ -3,8 +3,7 @@ image: python:3.11-slim
 
 stages:
   - check-python
-  - build-arduino
-  - build-pico
+  - build-promicro
 
 before_script:
   - apt-get update && apt-get install -y git
@@ -21,29 +20,17 @@ check-python:
     - ls -alh
     - find raspi/ -name "*.py" -exec python3 -m py_compile {} +
 
-build-arduino:
-  stage: build-arduino
+build-promicro:
+  stage: build-promicro
   tags:
   - Compile
   script:
-    - echo "Building Arduino code with PlatformIO..."
-    - cd arduino
+    - echo "Building Promicro code with PlatformIO..."
+    - cd pro_micro
     - pio run
   artifacts:
     paths:
-      - arduino/.pio/build
-
-build-pico:
-  stage: build-pico
-  tags:
-  - Compile
-  script:
-    - echo "Building Pico code with PlatformIO..."
-    - cd pico
-    - pio run
-  artifacts:
-    paths:
-      - pico/.pio/build
+      - pro_micro/.pio/build
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
 
