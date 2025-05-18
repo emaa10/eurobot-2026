@@ -8,6 +8,7 @@ from modules.task import Task
 from modules.camera import Camera
 from modules.motor_controller import MotorController
 from modules.servos import Servos
+from modules.stepper import Stepper
 
 HOST = '127.0.0.1'
 PORT = 5001
@@ -30,6 +31,7 @@ class RobotController:
         self.motor_controller = MotorController()
         self.camera = Camera() if self.CAM else None
         self.servos = Servos()
+        self.stepper = Stepper()
 
 
         if self.CAM:
