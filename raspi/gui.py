@@ -147,15 +147,18 @@ class MainWindow(QWidget):
         pix = QPixmap('/home/eurobot/main-bot/raspi/eurobot.png').scaled(480, 180, Qt.KeepAspectRatioByExpanding)
         self.scene.addPixmap(pix); self.view.setScene(self.scene); v.addWidget(self.view)
         self.rect_items = {col: [] for col in ['#FFD600', '#2979FF']}
-        coords = {'#FFD600': [(405, 145), (160, 245), (250, 100)],
-                  '#2979FF': [(60, 150), (160, 180), (260, 200)]}
+        # indexes: https://bergerhq.de/eurobot-index
+        coords = {'#FFD600': [(405, 145), (160, 245), (27, 7)],
+                  '#2979FF': [(380, 7), (250, 245), (10, 150)]}
+        rect_c = 1
         for col, pts in coords.items():
-            for i, (x, y) in enumerate(pts):
+            for (x, y) in pts:
                 r = QGraphicsRectItem(QRectF(x, y, 72,72))
                 r.setBrush(QBrush(QColor(col).lighter(150)))
                 r.setFlags(QGraphicsRectItem.ItemIsSelectable | QGraphicsRectItem.ItemIsMovable)
-                r.rect_id = i; r.color = col
+                r.rect_id = rect_c; r.color = col
                 self.rect_items[col].append(r); self.scene.addItem(r)
+                rect_c += 1
         hb2 = QHBoxLayout()
         for i in range(1, 5):
             b = QPushButton(f'Tactic {i}'); b.clicked.connect(lambda _, x=i: self.select_tactic(x)); hb2.addWidget(b)
@@ -181,9 +184,10 @@ class MainWindow(QWidget):
         if not items or not self.selected_tactic:
             QMessageBox.warning(self, 'Warn', 'Select start pos and tactic'); return
         cmd = f't{items[0].rect_id},{self.selected_tactic}'
-        self.comm.send_command(cmd); print(f"Debug: Game started with command {cmd}.")
-        self.stack.setCurrentIndex(1); self.game_state = 1
-        self.timer = QTimer(self); self.timer.timeout.connect(self.update_game); self.timer.start(100)
+        print(cmd)
+        # self.comm.send_command(cmd); print(f"Debug: Game started with command {cmd}.")
+        # self.stack.setCurrentIndex(1); self.game_state = 1
+        # self.timer = QTimer(self); self.timer.timeout.connect(self.update_game); self.timer.start(100)
 
     def update_game(self):
         if self.game_state == 1 and self.comm.pullcord_pulled:
