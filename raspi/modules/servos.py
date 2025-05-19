@@ -25,3 +25,61 @@ class Servos:
 
     def write_servo(self, id, goal_position):
         self.packet_handler.WritePosEx(id, goal_position, STS_MOVING_SPEED, STS_MOVING_ACC)
+
+    # 1: oben, 2: unten
+    def servo_mitte_lift(self, pos: int):
+        value = 0 
+        if pos == 1: value = 4000
+        else: value = 3900
+        self.write_servo(3, value)
+
+    # 1: auf, 2: zu
+    def servo_mitte_grip(self, pos: int):
+        value = 0 
+        if pos == 1: value = 3700
+        else: value = 3300
+        self.write_servo(7, value)
+
+    # 1: außen, 2: mitte, 3: innen
+    def servo_right_rotate(self, pos: int):
+        value = 0 
+        if pos == 1: value = 3825
+        elif pos == 2: value = 3100
+        else: value = 2500
+        self.write_servo(11, value)
+
+    # 1: oben, 2: unten
+    def servo_plate_rotate(self, pos: int):
+        value = 0 
+        if pos == 1: value = 1800
+        else: value = 2800
+        self.write_servo(9, value)
+
+    # 1: auf, 2: zu
+    def servo_right_grip(self, pos: int):
+        value = 0 
+        if pos == 1: value = 800
+        else: value = 410
+        self.write_servo(1, value)
+
+    # 1: auf, 2: zu
+    def servo_left_grip(self, pos: int):
+        value = 0 
+        if pos == 1: value = 100
+        else: value = 630
+        self.write_servo(2, value)
+
+    # 1: außen, 2: mitte, 3: innen
+    def servo_left_rotate(self, pos: int):
+        value = 0 
+        if pos == 1: value = 1350
+        elif pos == 2: value = 1975
+        else: value = 2625
+        self.write_servo(10, value)
+
+    # 1: auf, 2: zu
+    def servo_plate_grip(self, pos: int):
+        value = 0 
+        if pos == 1: value = 1000
+        else: value = 1550
+        self.write_servo(8, value)
