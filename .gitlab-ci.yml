@@ -4,6 +4,7 @@ image: python:3.11-slim
 stages:
   - check-python
   - build-promicro
+  - build-pico
 
 before_script:
   - apt-get update && apt-get install -y git
@@ -34,4 +35,16 @@ build-promicro:
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
 
-
+build-pico:
+  stage: build-pico
+  tags:
+  - Compile
+  script:
+    - echo "Building Pico code with PlatformIO..."
+    - cd pico
+    - pio run
+  artifacts:
+    paths:
+      - pico/.pio/build
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
