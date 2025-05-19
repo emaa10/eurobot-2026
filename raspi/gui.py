@@ -144,21 +144,21 @@ class MainWindow(QWidget):
             hb.addWidget(btn)
         v.addLayout(hb)
         self.view = QGraphicsView(); self.scene = QGraphicsScene()
-        pix = QPixmap('map.png').scaled(800, 300, Qt.KeepAspectRatioByExpanding)
+        pix = QPixmap('/home/eurobot/main-bot/raspi/eurobot.png').scaled(480, 180, Qt.KeepAspectRatioByExpanding)
         self.scene.addPixmap(pix); self.view.setScene(self.scene); v.addWidget(self.view)
         self.rect_items = {col: [] for col in ['#FFD600', '#2979FF']}
-        coords = {'#FFD600': [(50, 50), (150, 80), (250, 100)],
+        coords = {'#FFD600': [(405, 145), (160, 245), (250, 100)],
                   '#2979FF': [(60, 150), (160, 180), (260, 200)]}
         for col, pts in coords.items():
             for i, (x, y) in enumerate(pts):
-                r = QGraphicsRectItem(QRectF(x, y, 40, 40))
+                r = QGraphicsRectItem(QRectF(x, y, 72,72))
                 r.setBrush(QBrush(QColor(col).lighter(150)))
                 r.setFlags(QGraphicsRectItem.ItemIsSelectable | QGraphicsRectItem.ItemIsMovable)
                 r.rect_id = i; r.color = col
                 self.rect_items[col].append(r); self.scene.addItem(r)
         hb2 = QHBoxLayout()
         for i in range(1, 5):
-            b = QPushButton(f'T{i}'); b.clicked.connect(lambda _, x=i: self.select_tactic(x)); hb2.addWidget(b)
+            b = QPushButton(f'Tactic {i}'); b.clicked.connect(lambda _, x=i: self.select_tactic(x)); hb2.addWidget(b)
         v.addLayout(hb2)
         hb3 = QHBoxLayout()
         for txt, fn in [('START', self.start_game),
