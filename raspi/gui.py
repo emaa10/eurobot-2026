@@ -36,7 +36,7 @@ class Communication(threading.Thread):
             print("Debug: Server already running.")
         except:
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            main_path = os.path.join(script_dir, 'basic\ tests/main.py')
+            main_path = os.path.join(script_dir, 'main.py')
             subprocess.Popen(['lxterminal', '-e', f'python3 {main_path}'], cwd=script_dir)
             print("Debug: Started main.py in new terminal.")
             time.sleep(1)
