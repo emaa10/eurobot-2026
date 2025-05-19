@@ -6,12 +6,12 @@ class Stepper:
     def __init__(self, port="/dev/serial/by-id/usb-Raspberry_Pi_Pico_45503571288B014-if00", baudrate=115200) -> None:
         ser = serial.Serial(port=port, baudrate=baudrate, timeout=3)
 
-    def home(l: bool, m: bool, r:bool):
-        if l:
+    def home(r: bool, m: bool, l:bool):
+        if r:
             send("$HX\n")
         if m:
             send("$HY\n")
-        if r:
+        if l:
             send("$HZ\n")
 
     def set_pos_mm(l: int = 0, m: int = 0, r: int = 0):
