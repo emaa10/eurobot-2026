@@ -103,10 +103,10 @@ class RobotController:
                     self.servos.write_servo(int(values[0]), int(values[1]))
                     self.l(f"set servo cmd: {pcmd}")
                 elif cmd == 'l':                            # stepper lift
-                    data = msg[1:]                          # ka wie das funktioniert, bitte fixen
-                    values = data.split(';')
+                    pcmd = msg[1:]                          # ka wie das funktioniert, bitte fixen
+                    values = pcmd.split(';')
                     self.stepper.set_pos_mm(int(values[0]), int(values[1]), int(values[2]))
-                    self.l(f"set stepper heigth XYZ/rml: {data}")
+                    self.l(f"set stepper heigth XYZ/rml: {pcmd}")
                 elif cmd == 'h':                            # stepper home
                     self.stepper.home()
                     self.l("homed all steppers")
