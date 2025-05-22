@@ -284,7 +284,7 @@ class MainWindow(QWidget):
         back_btn.clicked.connect(lambda: self.stack.setCurrentIndex(0))
         hdr.addWidget(back_btn)
 
-        hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        hdr.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
         close_btn = QPushButton('✕')
         close_btn.setFixedSize(30, 30)
@@ -377,7 +377,7 @@ class MainWindow(QWidget):
         for btn_text, command in test_commands:
             btn = QPushButton(btn_text)
             btn.setFixedHeight(35)
-            btn.setStyleSheet('padding: 5px; margin: 1px; font-size: 11px; border: 1px solid #ccc;')
+            btn.setStyleSheet('padding: 5px; margin: 1px; font-size: 12px; border: 1px solid #ccc;')
             btn.clicked.connect(lambda _, cmd=command: self.send_test_command(cmd))
             v.addWidget(btn)
 
@@ -402,7 +402,7 @@ class MainWindow(QWidget):
 
     def init_servo_screen(self):
         w = QWidget()
-        w.setMaximumSize(800, 600)  # Feste maximale Größe
+        w.setMaximumSize(800, 480)  # Feste maximale Größe
         main_layout = QVBoxLayout(w)
         main_layout.setContentsMargins(5, 5, 5, 5)
 
@@ -414,7 +414,7 @@ class MainWindow(QWidget):
         back_btn.clicked.connect(lambda: self.stack.setCurrentIndex(2))
         hdr.addWidget(back_btn)
 
-        hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        hdr.addSpacerItem(QSpacerItem(20, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
         close_btn = QPushButton('✕')
         close_btn.setFixedSize(25, 25)
@@ -503,9 +503,9 @@ class MainWindow(QWidget):
         for group in servo_groups:
             # Group Label
             group_label = QLabel(group['name'])
-            group_label.setStyleSheet('font-size: 12px; font-weight: bold; margin-top: 8px; margin-bottom: 2px; color: #333;')
+            group_label.setStyleSheet('font-size: 13px; font-weight: bold; margin-top: 8px; margin-bottom: 2px; color: #333;')
             group_label.setMaximumHeight(20)
-            v.addWidget(group_label)
+            # v.addWidget(group_label)
 
             # Group Buttons in einer Reihe wenn möglich
             if len(group['commands']) <= 2:
