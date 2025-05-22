@@ -3,6 +3,7 @@ import os
 import socket
 import threading
 import time
+import logging
 import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
@@ -25,8 +26,14 @@ class Communication(threading.Thread):
         self.connected = False
         self.socket = None
         self.lock = threading.Lock()
+        logging.basicConfig(filename='/home/eurobot/main-bot/raspi/eurobot.log', level=logging.INFO)
+        self.logger = logging.getLogger(__name__)
         self.start_server()
         self.start()
+
+    def l(self, msg: str):
+        print(msg)
+        self.logger.info(msg)
 
     def start_server(self):
         try:
