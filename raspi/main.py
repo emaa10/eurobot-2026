@@ -156,7 +156,7 @@ class RobotController:
                         self.stepper.down()
                         sleep(1)
                         self.servos.grip_cans()
-                        sleep(0.5)
+                        sleep(1)
                         self.stepper.lift()
                         sleep(1)
                         self.servos.cans_in()
@@ -169,14 +169,17 @@ class RobotController:
                         self.stepper.down()
                         sleep(1)
                         
-                        await self.motor_controller.drive_distance(150)
+                        await self.motor_controller.drive_distance(200)
                         
                         self.servos.grip_unten()
-                        sleep(0.5)
+                        sleep(1)
                         self.stepper.place3er()
                         sleep(1)
                         await self.motor_controller.drive_distance(140)
-                        
+                    case 'gu':
+                        self.servos.cans_in()
+                        self.servos.place_2er()
+                        self.stepper.down()
                     case _: # default
                         self.l(f"Unknown msg: {msg}")
         except Exception as e:

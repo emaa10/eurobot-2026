@@ -45,7 +45,7 @@ class Servos:
         value = 0 
         if pos == 1: value = 3825
         elif pos == 2: value = 2900
-        else: value = 2600
+        else: value = 2500
         self.write_servo(11, value)
 
     # 1: oben, 2: unten
@@ -58,23 +58,23 @@ class Servos:
     # 1: auf, 2: zu
     def servo_right_grip(self, pos: int):
         value = 0 
-        if pos == 1: value = 800
-        else: value = 380
+        if pos == 1: value = 700
+        else: value = 350
         self.write_servo(1, value)
 
     # 1: auf, 2: zu
     def servo_left_grip(self, pos: int):
         value = 0 
         if pos == 1: value = 100
-        else: value = 640
+        else: value = 690
         self.write_servo(2, value)
 
     # 1: außen, 2: mitte, 3: innen
     def servo_left_rotate(self, pos: int):
         value = 0 
-        if pos == 1: value = 600
-        elif pos == 2: value = 1450
-        else: value = 1850
+        if pos == 1: value = 150
+        elif pos == 2: value = 1000
+        else: value = 1450
         self.write_servo(10, value)
 
     # 1: auf, 2: zu
@@ -99,7 +99,7 @@ class Servos:
         self.servo_left_grip(2)
         self.servo_right_grip(2)
         self.servo_plate_grip(2)
-        time.sleep(0.5)
+        time.sleep(0.4)
         self.servo_left_rotate(1)
         self.servo_right_rotate(1)
     

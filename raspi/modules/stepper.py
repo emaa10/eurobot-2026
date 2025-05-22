@@ -41,16 +41,16 @@ class Stepper:
                 return
             
     def anfahren(self):
-        self.set_pos_mm(0, 50, 0)
+        self.set_pos_mm(10, 50, 10)
         
     def down(self):
-        self.set_pos_mm(0, 0, 0)
+        self.set_pos_mm(10, 0, 10)
     
     def lift(self):
-        self.set_pos_mm(140, 130, 140)
+        self.set_pos_mm(150, 130, 150)
         
     def place3er(self):
-        self.set_pos_mm(130, 0, 130)
+        self.set_pos_mm(140, 0, 140)
 
 def main():
     stepper = Stepper()
