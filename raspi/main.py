@@ -156,6 +156,20 @@ class RobotController:
                         sleep(1)
                         self.motor_controller.drive_distance(150)
                         
+                        # grip cans
+                        self.l("grip cans")
+                        self.stepper.down()
+                        sleep(1)
+                        self.servos.grip_cans()
+                        sleep(0.5)
+                        self.stepper.lift()
+                        sleep(1)
+                        self.servos.cans_in()
+                        
+                        self.servos.place_2er()
+                        
+                        self.motor_controller.drive_distance(-100)
+                        
                     case _: # default
                         self.l(f"Unknown msg: {msg}")
         except Exception as e:
