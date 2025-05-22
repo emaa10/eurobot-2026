@@ -124,7 +124,6 @@ class MainWindow(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        self.showFullScreen()
         self.stack = QStackedWidget(self)
         self.init_start_screen()      # Index 0
         self.init_game_screen()       # Index 1
@@ -135,6 +134,8 @@ class MainWindow(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.stack)
         self.setLayout(layout)
+        self.showFullScreen()
+        self.setWindowState(Qt.WindowFullScreen)
 
     def init_start_screen(self):
         w = QWidget(); v = QVBoxLayout(w)
@@ -403,6 +404,8 @@ class MainWindow(QWidget):
 
         # Scroll Area für alle Servo-Buttons
         scroll = QScrollArea()
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll_widget = QWidget()
         v = QVBoxLayout(scroll_widget)
 
@@ -507,4 +510,9 @@ class MainWindow(QWidget):
 
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv); mw = MainWindow(); sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    app.setAttribute(Qt.AA_DisableWindowContextHelpButton, True)
+    mw = MainWindow()
+    mw.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
+    mw.showFullScreen()
+    sys.exit(app.exec_())
