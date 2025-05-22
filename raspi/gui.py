@@ -191,33 +191,56 @@ class MainWindow(QWidget):
         items = [i for i in self.rect_items.get(self.color, []) if i.isSelected()]
         if not items or not self.selected_tactic:
             QMessageBox.warning(self, 'Warn', 'Select start pos and tactic'); return
-        cmd = f't{items[0].rect_id},{self.selected_tactic}'
+        cmd = f'st{items[0].rect_id},{self.selected_tactic}'
         self.comm.l(cmd)
-        # self.comm.send_command(cmd); self.comm.l(f"Debug: Game started with command {cmd}.")
-        # self.stack.setCurrentIndex(1); self.game_state = 1
-        # self.timer = QTimer(self); self.timer.timeout.connect(self.update_game); self.timer.start(100)
+        self.comm.send_command(cmd); self.comm.l(f"Debug: Game started with command {cmd}.")
+        self.stack.setCurrentIndex(1); self.game_state = 1
+        self.timer = QTimer(self); self.timer.timeout.connect(self.update_game); self.timer.start(100)
 
     def update_game(self):
-        if self.game_state == 1 and self.comm.pullcord_pulled:
-            self.game_state = 2; self.game_label.setText('Homing...')
+        if self.game_state == 1:
+            # Start Homing 1
+            self.game_state = 2
+            self.game_label.setText('Homing 1...')
+            self.comm.l("Debug: Homing 1 started.")
+            self.comm.send_command("hg") # home gripper
+        
         elif self.game_state == 2 and self.comm.homing_1_done:
-            self.game_state = 3; self.timer.stop()
-            resp = QMessageBox.question(self, 'Continue?', 'CONTINUE?', QMessageBox.Yes | QMessageBox.No)
+            # Ask if user wants to continue
+            self.game_state = 3
+            self.timer.stop()
+            resp = QMessageBox.question(self, 'Continue?', 'Do you want to continue?', QMessageBox.Yes | QMessageBox.No)
             self.comm.l(f"Debug: Continue response {resp}.")
             if resp == QMessageBox.Yes:
-                self.comm.send_command('h'); print("Debug: Sent homing continue.")
-                self.game_state = 4; self.timer.start(100)
+                self.game_label.setText('Homing 2...')
+                self.comm.send_command('hb') #! home bot
+                print("Debug: Sent homing 2 continue.")
+                self.game_state = 4
+                self.timer.start(100)
             else:
-                self.close(); return
+                self.close()
+                return
+        
         elif self.game_state == 4 and self.comm.homing_2_done:
+            # Homing 2 done
             self.game_state = 5
-            font = QFont(); font.setPointSize(32)
+            self.game_label.setText("Waiting for pullcord...")
+            self.comm.l("Debug: Homing #2 done, waiting for pullcord.")
+        
+        elif self.game_state == 5 and self.comm.pullcord_pulled:
+            # Game starts after pullcrod pulled
+            self.game_state = 6
+            font = QFont()
+            font.setPointSize(32)
             self.game_label.setFont(font)
             self.game_label.setText(f'Punkte: {self.comm.points}')
             self.comm.l(f"Debug: Final points displayed {self.comm.points}.")
-            # live update after points
-            self.points_timer = QTimer(self); self.points_timer.timeout.connect(self.update_points_label)
+
+            # Live points update
+            self.points_timer = QTimer(self)
+            self.points_timer.timeout.connect(self.update_points_label)
             self.points_timer.start(200)
+
 
     def update_points_label(self):
         self.game_label.setText(f'Punkte: {self.comm.points}')

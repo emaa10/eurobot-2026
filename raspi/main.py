@@ -138,6 +138,11 @@ class RobotController:
                         self.servos.cans_in()
                     case 'es': # emergency stop
                         self.motor_controller.set_stop()
+                    case 'hg': # home gripper (servos and steppers)
+                        self.servos.home() #! existiert noch nd
+                        self.stepper.home()
+                    case 'hb': # home bot
+                        self.motor_controller.home()
                     case _: # default
                         self.l(f"Unknown msg: {msg}")
         except Exception as e:
