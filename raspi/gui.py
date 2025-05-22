@@ -174,7 +174,7 @@ class MainWindow(QWidget):
         hb3 = QHBoxLayout()
         for txt, fn in [('START', self.start_game),
                         ('DEBUG', lambda: self.stack.setCurrentIndex(2)),
-                        ('STOP', lambda: self.comm.send_command('e0'))]:
+                        ('STOP', lambda: self.comm.send_command('es'))]:
             b = QPushButton(txt); b.clicked.connect(fn); hb3.addWidget(b)
         v.addLayout(hb3); w.setLayout(v); self.stack.addWidget(w)
 

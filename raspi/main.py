@@ -136,6 +136,8 @@ class RobotController:
                         self.stepper.lift()
                         sleep(1)
                         self.servos.cans_in()
+                    case 'es': # emergency stop
+                        self.motor_controller.set_stop()
                     case _: # default
                         self.l(f"Unknown msg: {msg}")
         except Exception as e:
