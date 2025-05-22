@@ -116,7 +116,7 @@ class RobotController:
                         self.l(f"drive distance: {int(msg[2:])}")
                         await self.motor_controller.drive_distance(int(msg[2:]))
                     case 'ta': # turn angle
-                        self.l(f"turne angle: {int(msg[2:])}")
+                        self.l(f"turn angle: {int(msg[2:])}")
                         await self.motor_controller.turn_angle(int(msg[2:]))
                         await self.motor_controller.set_stop()
                     case 'cw': # clean wheels
