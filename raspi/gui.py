@@ -508,7 +508,7 @@ class MainWindow(QWidget):
             # v.addWidget(group_label)
 
             # Group Buttons in einer Reihe wenn möglich
-            if len(group['commands']) <= 2:
+            if len(group['commands']) <= 3:
                 hbox = QHBoxLayout()
                 hbox.setSpacing(2)
                 for button_text, command in group['commands']:
