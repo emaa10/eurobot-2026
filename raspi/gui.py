@@ -185,7 +185,7 @@ class MainWindow(QWidget):
                 item.setVisible(item.color == col)
         self.comm.l(f"Debug: Selected color {col}.")
 
-    def select_tactic(self, t): print(f"Debug: Selected tactic {t}."); self.selected_tactic = t
+    def select_tactic(self, t): self.comm.l(f"Debug: Selected tactic {t}."); self.selected_tactic = t
 
     def start_game(self):
         items = [i for i in self.rect_items.get(self.color, []) if i.isSelected()]
@@ -214,7 +214,7 @@ class MainWindow(QWidget):
             if resp == QMessageBox.Yes:
                 self.game_label.setText('Homing 2...')
                 self.comm.send_command('hb') #! home bot
-                print("Debug: Sent homing 2 continue.")
+                self.comm.l("Debug: Sent homing 2 continue.")
                 self.game_state = 4
                 self.timer.start(100)
             else:
@@ -321,7 +321,7 @@ class MainWindow(QWidget):
     def run_debug(self, cmd):
         if cmd == 'test_dummy': self.stack.setCurrentIndex(3)
         elif cmd == 'pico_dummy': self.stack.setCurrentIndex(4)
-        elif cmd == 'c': self.comm.send_command('cw'); print("Debug: Sent clean wheels command.")
+        elif cmd == 'c': self.comm.send_command('cw'); self.comm.l("Debug: Sent clean wheels command.")
         elif cmd == 'camera': subprocess.Popen(['lxterminal', '-e', 'python3 /home/eurobot/main-bot/raspi/camera/camera_window.py'])
         elif cmd == 'logtail': subprocess.Popen(['lxterminal', '-e', 'tail -f /home/eurobot/main-bot/raspi/eurobot.log'])
         else: subprocess.call(cmd.split())
@@ -335,7 +335,7 @@ class MainWindow(QWidget):
             back_btn = QPushButton('←')
             back_btn.setFixedSize(30, 30)
             back_btn.setStyleSheet('background: transparent; font-size:18px;')
-            back_btn.clicked.connect(lambda _, x=0: self.stack.setCurrentIndex(x))  # Zurück zur Startseite
+            back_btn.clicked.connect(lambda _, x=2: self.stack.setCurrentIndex(x))  # Zurück zur Startseite
             hdr.addWidget(back_btn)
 
             hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
