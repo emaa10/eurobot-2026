@@ -77,7 +77,7 @@ class RobotController:
 
     def l(self, msg: str):
         print(msg)
-        self.logger.info(msg)
+        self.logger.info("MAIN - " + msg)
 
     async def get_command(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         addr = writer.get_extra_info('peername')

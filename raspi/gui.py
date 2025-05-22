@@ -33,7 +33,7 @@ class Communication(threading.Thread):
 
     def l(self, msg: str):
         print(msg)
-        self.logger.info(msg)
+        self.logger.info("GUI - " + msg)
 
     def start_server(self):
         try:
