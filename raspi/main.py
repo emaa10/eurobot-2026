@@ -132,20 +132,24 @@ class RobotController:
                         self.stepper.down()
                         sleep(1)
                         self.servos.grip_cans()
-                        sleep(1)
+                        sleep(0.5)
                         self.stepper.lift()
                         sleep(1)
                         self.servos.cans_in()
+                        self.servos.pos_wegfahren()
                     case 'es': # emergency stop
                         self.motor_controller.set_stop()
                         self.l("emergency stop!")
                     case 'hg': # home gripper (servos and steppers)
-                        self.servos.home() #! existiert noch nd
+                        self.servos.pos_anfahren()
+                        sleep(1)
                         self.stepper.home()
                         self.l("home gripper")
                     case 'hb': # home bot
                         self.motor_controller.home()
                         self.l("home bot")
+                    case 'p2':
+                        self.servos.place_2er()
                     case _: # default
                         self.l(f"Unknown msg: {msg}")
         except Exception as e:
