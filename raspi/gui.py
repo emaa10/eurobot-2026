@@ -8,7 +8,7 @@ import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
     QLabel, QStackedWidget, QGraphicsView, QGraphicsScene,
-    QGraphicsRectItem, QMessageBox, QSpacerItem, QSizePolicy
+    QGraphicsRectItem, QMessageBox, QSpacerItem, QSizePolicy, QScrollArea
 )
 from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont
 from PyQt5.QtCore import Qt, QRectF, QTimer
@@ -126,12 +126,11 @@ class MainWindow(QWidget):
     def init_ui(self):
         self.showFullScreen()
         self.stack = QStackedWidget(self)
-        self.init_start_screen()
-        self.init_game_screen()
-        # Debug screen next
-        self.init_debug_menu()
-        # Dummy screens
-        self.init_dummy_screens()
+        self.init_start_screen()      # Index 0
+        self.init_game_screen()       # Index 1
+        self.init_debug_menu()        # Index 2
+        self.init_test_screen()       # Index 3
+        self.init_servo_screen()      # Index 4
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.stack)
@@ -241,7 +240,6 @@ class MainWindow(QWidget):
             self.points_timer.timeout.connect(self.update_points_label)
             self.points_timer.start(200)
 
-
     def update_points_label(self):
         self.game_label.setText(f'Punkte: {self.comm.points}')
 
@@ -286,7 +284,6 @@ class MainWindow(QWidget):
 
         hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
-        hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
         close_btn = QPushButton('✕')
         close_btn.setFixedSize(30, 30)
         close_btn.clicked.connect(self.close)
@@ -326,33 +323,187 @@ class MainWindow(QWidget):
         elif cmd == 'logtail': subprocess.Popen(['lxterminal', '-e', 'tail -f /home/eurobot/main-bot/raspi/eurobot.log'])
         else: subprocess.call(cmd.split())
 
-    def init_dummy_screens(self):
-        for i in range(3):  # z.B. 3 Dummy-Seiten
-            w = QWidget()
-            v = QVBoxLayout(w)
+    def init_test_screen(self):
+        w = QWidget()
+        v = QVBoxLayout(w)
 
-            hdr = QHBoxLayout()
-            back_btn = QPushButton('←')
-            back_btn.setFixedSize(30, 30)
-            back_btn.setStyleSheet('background: transparent; font-size:18px;')
-            back_btn.clicked.connect(lambda _, x=2: self.stack.setCurrentIndex(x))  # Zurück zur Startseite
-            hdr.addWidget(back_btn)
+        # Header mit Zurück- und Schließen-Button
+        hdr = QHBoxLayout()
+        back_btn = QPushButton('←')
+        back_btn.setFixedSize(30, 30)
+        back_btn.setStyleSheet('background: transparent; font-size:18px;')
+        back_btn.clicked.connect(lambda: self.stack.setCurrentIndex(2))  # Zurück zu Debug
+        hdr.addWidget(back_btn)
 
-            hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
+        hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
-            close_btn = QPushButton('✕')
-            close_btn.setFixedSize(30, 30)
-            close_btn.setStyleSheet('background: transparent; font-size:18px;')
-            close_btn.clicked.connect(self.close)
-            hdr.addWidget(close_btn)
-            v.addLayout(hdr)
+        close_btn = QPushButton('✕')
+        close_btn.setFixedSize(30, 30)
+        close_btn.setStyleSheet('background: transparent; font-size:18px;')
+        close_btn.clicked.connect(self.close)
+        hdr.addWidget(close_btn)
+        v.addLayout(hdr)
 
-            label = QLabel(f'Dummy-Seite {i + 1}')
-            label.setAlignment(Qt.AlignCenter)
-            v.addWidget(label)
+        # Test Code Buttons
+        title = QLabel('Test Codes')
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet('font-size: 18px; font-weight: bold; margin: 10px;')
+        v.addWidget(title)
 
-            w.setLayout(v)
-            self.stack.addWidget(w)
+        test_commands = [
+            ('Drive 100cm →', 'dd100'),
+            ('Turn 90 right →', 'ta90'),
+            ('Turn 180 right →', 'ta180'),
+            ('Stepper home →', 'sh'),
+            ('Cans anfahren →', 'ac'),
+            ('Cans greifen →', 'gc'),
+            ('Home gripper →', 'hg'),
+            ('Home bot →', 'hb')
+        ]
+
+        for title, command in test_commands:
+            btn = QPushButton(title)
+            btn.setStyleSheet('padding: 10px; margin: 2px; font-size: 14px;')
+            btn.clicked.connect(lambda _, cmd=command: self.send_test_command(cmd))
+            v.addWidget(btn)
+
+        # Emergency Stop
+        est_btn = QPushButton('EMERGENCY STOP')
+        est_btn.setStyleSheet('background: red; color: white; padding: 15px; margin: 10px; font-size: 16px; font-weight: bold;')
+        est_btn.clicked.connect(lambda: self.comm.send_command('es'))
+        v.addWidget(est_btn)
+
+        w.setLayout(v)
+        self.stack.addWidget(w)
+
+    def send_test_command(self, cmd):
+        self.comm.send_command(cmd)
+        self.comm.l(f"Debug: Sent test command: {cmd}")
+
+    def init_servo_screen(self):
+        w = QWidget()
+        main_layout = QVBoxLayout(w)
+
+        # Header mit Zurück- und Schließen-Button
+        hdr = QHBoxLayout()
+        back_btn = QPushButton('←')
+        back_btn.setFixedSize(30, 30)
+        back_btn.setStyleSheet('background: transparent; font-size:18px;')
+        back_btn.clicked.connect(lambda: self.stack.setCurrentIndex(2))  # Zurück zu Debug
+        hdr.addWidget(back_btn)
+
+        hdr.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
+
+        close_btn = QPushButton('✕')
+        close_btn.setFixedSize(30, 30)
+        close_btn.setStyleSheet('background: transparent; font-size:18px;')
+        close_btn.clicked.connect(self.close)
+        hdr.addWidget(close_btn)
+        main_layout.addLayout(hdr)
+
+        # Scroll Area für alle Servo-Buttons
+        scroll = QScrollArea()
+        scroll_widget = QWidget()
+        v = QVBoxLayout(scroll_widget)
+
+        # Title
+        title = QLabel('Servo Controls')
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet('font-size: 18px; font-weight: bold; margin: 10px;')
+        v.addWidget(title)
+
+        # Servo Commands - basierend auf den gegebenen Funktionen
+        servo_groups = [
+            {
+                'name': 'Servo Mitte Lift',
+                'commands': [
+                    ('Servo mitte lift oben', 'ws3;4000'),
+                    ('Servo mitte lift unten', 'ws3;3900')
+                ]
+            },
+            {
+                'name': 'Servo Mitte Grip',
+                'commands': [
+                    ('Servo mitte grip auf', 'ws7;3550'),
+                    ('Servo mitte grip zu', 'ws7;3250')
+                ]
+            },
+            {
+                'name': 'Servo Right Rotate',
+                'commands': [
+                    ('Servo right rotate außen', 'ws11;3825'),
+                    ('Servo right rotate mitte', 'ws11;2900'),
+                    ('Servo right rotate innen', 'ws11;2500')
+                ]
+            },
+            {
+                'name': 'Servo Plate Rotate',
+                'commands': [
+                    ('Servo plate rotate oben', 'ws9;1800'),
+                    ('Servo plate rotate unten', 'ws9;2800')
+                ]
+            },
+            {
+                'name': 'Servo Right Grip',
+                'commands': [
+                    ('Servo right grip auf', 'ws1;800'),
+                    ('Servo right grip zu', 'ws1;380')
+                ]
+            },
+            {
+                'name': 'Servo Left Grip',
+                'commands': [
+                    ('Servo left grip auf', 'ws2;100'),
+                    ('Servo left grip zu', 'ws2;640')
+                ]
+            },
+            {
+                'name': 'Servo Left Rotate',
+                'commands': [
+                    ('Servo left rotate außen', 'ws10;600'),
+                    ('Servo left rotate mitte', 'ws10;1450'),
+                    ('Servo left rotate innen', 'ws10;1950')
+                ]
+            },
+            {
+                'name': 'Servo Plate Grip',
+                'commands': [
+                    ('Servo plate grip auf', 'ws8;1000'),
+                    ('Servo plate grip zu', 'ws8;1550')
+                ]
+            }
+        ]
+
+        for group in servo_groups:
+            # Group Label
+            group_label = QLabel(group['name'])
+            group_label.setStyleSheet('font-size: 16px; font-weight: bold; margin-top: 15px; margin-bottom: 5px; color: #333;')
+            v.addWidget(group_label)
+
+            # Group Buttons
+            for button_text, command in group['commands']:
+                btn = QPushButton(button_text)
+                btn.setStyleSheet('padding: 8px; margin: 2px; font-size: 12px; background: #f0f0f0; border: 1px solid #ccc;')
+                btn.clicked.connect(lambda _, cmd=command: self.send_servo_command(cmd))
+                v.addWidget(btn)
+
+        # Emergency Stop
+        est_btn = QPushButton('EMERGENCY STOP')
+        est_btn.setStyleSheet('background: red; color: white; padding: 15px; margin: 10px; font-size: 16px; font-weight: bold;')
+        est_btn.clicked.connect(lambda: self.comm.send_command('es'))
+        v.addWidget(est_btn)
+
+        scroll_widget.setLayout(v)
+        scroll.setWidget(scroll_widget)
+        scroll.setWidgetResizable(True)
+        main_layout.addWidget(scroll)
+
+        w.setLayout(main_layout)
+        self.stack.addWidget(w)
+
+    def send_servo_command(self, cmd):
+        self.comm.send_command(cmd)
+        self.comm.l(f"Debug: Sent servo command: {cmd}")
 
 
 if __name__ == '__main__':
