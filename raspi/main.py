@@ -165,10 +165,21 @@ class RobotController:
                         self.stepper.lift()
                         sleep(1)
                         self.servos.cans_in()
+                        sleep(0.5)
                         
                         self.servos.place_2er()
                         
                         self.motor_controller.drive_distance(-100)
+                        
+                        self.stepper.down()
+                        sleep(1)
+                        
+                        self.motor_controller.drive_distance(-100)
+                        
+                        self.servos.grip_unten()
+                        self.stepper.place3er()
+                        sleep(1)
+                        self.motor_controller.drive_distance(140)
                         
                     case _: # default
                         self.l(f"Unknown msg: {msg}")

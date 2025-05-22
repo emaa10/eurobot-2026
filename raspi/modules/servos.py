@@ -114,9 +114,15 @@ class Servos:
         self.servo_left_grip(1)
         self.servo_right_grip(1)
         self.servo_plate_grip(1)
+        time.sleep(0.3)
+        self.servo_plate_rotate(1)
         
     def pos_wegfahren(self):
         self.servo_mitte_lift(1)
+        
+    def grip_unten(self):
+        self.servo_left_grip(2)
+        self.servo_right_grip(2)
         
 def main():
     servos = Servos()
