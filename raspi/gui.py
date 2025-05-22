@@ -312,7 +312,7 @@ class MainWindow(QWidget):
 
         # EMERGENCY STOP Knopf
         est = QPushButton('EMERGENCY STOP')
-        est.clicked.connect(lambda: self.comm.send_command('e0'))
+        est.clicked.connect(lambda: self.comm.send_command('es'))
         v.addWidget(est)
 
         w.setLayout(v)
@@ -321,9 +321,9 @@ class MainWindow(QWidget):
     def run_debug(self, cmd):
         if cmd == 'test_dummy': self.stack.setCurrentIndex(3)
         elif cmd == 'pico_dummy': self.stack.setCurrentIndex(4)
-        elif cmd == 'c': self.comm.send_command('c'); print("Debug: Sent clean wheels command.")
-        elif cmd == 'camera': subprocess.Popen(['lxterminal', '-e', 'python3 /home/.../camera_window.py'])
-        elif cmd == 'logtail': subprocess.Popen(['lxterminal', '-e', 'tail -f /home/.../eurobot.log'])
+        elif cmd == 'c': self.comm.send_command('cw'); print("Debug: Sent clean wheels command.")
+        elif cmd == 'camera': subprocess.Popen(['lxterminal', '-e', 'python3 /home/eurobot/main-bot/raspi/camera/camera_window.py'])
+        elif cmd == 'logtail': subprocess.Popen(['lxterminal', '-e', 'tail -f /home/eurobot/main-bot/raspi/eurobot.log'])
         else: subprocess.call(cmd.split())
 
     def init_dummy_screens(self):
