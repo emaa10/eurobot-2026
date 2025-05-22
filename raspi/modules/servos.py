@@ -1,4 +1,4 @@
-from STservo_sdk import * 
+from modules.STservo_sdk import * 
 
 BAUDRATE                    = 1000000           # STServo default baudrate : 1000000
 STS_MOVING_SPEED            = 2400          # SCServo moving speed
@@ -45,7 +45,7 @@ class Servos:
         value = 0 
         if pos == 1: value = 3825
         elif pos == 2: value = 2900
-        else: value = 2500
+        else: value = 2600
         self.write_servo(11, value)
 
     # 1: oben, 2: unten
@@ -74,7 +74,7 @@ class Servos:
         value = 0 
         if pos == 1: value = 600
         elif pos == 2: value = 1450
-        else: value = 1950
+        else: value = 1850
         self.write_servo(10, value)
 
     # 1: auf, 2: zu
