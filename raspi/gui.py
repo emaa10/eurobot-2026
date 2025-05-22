@@ -529,7 +529,7 @@ class MainWindow(QWidget):
 
         # Emergency Stop
         est_btn = QPushButton('EMERGENCY STOP')
-        est_btn.setFixedHeight(35)
+        est_btn.setFixedHeight(45)
         est_btn.setStyleSheet('background: red; color: white; padding: 5px; margin: 8px; font-size: 11px; font-weight: bold;')
         est_btn.clicked.connect(lambda: self.comm.send_command('es'))
         v.addWidget(est_btn)
