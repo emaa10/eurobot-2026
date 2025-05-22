@@ -458,7 +458,7 @@ class MainWindow(QWidget):
                 'commands': [
                     ('R außen', 'ws11;3825'),
                     ('R mitte', 'ws11;2900'),
-                    ('R innen', 'ws11;2500')
+                    ('R innen', 'ws11;2600')
                 ]
             },
             {
@@ -487,7 +487,7 @@ class MainWindow(QWidget):
                 'commands': [
                     ('L außen', 'ws10;600'),
                     ('L mitte', 'ws10;1450'),
-                    ('L innen', 'ws10;1950')
+                    ('L innen', 'ws10;1850')
                 ]
             },
             {
