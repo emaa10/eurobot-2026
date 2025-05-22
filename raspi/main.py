@@ -150,6 +150,12 @@ class RobotController:
                         self.l("home bot")
                     case 'p2':
                         self.servos.place_2er()
+                    case 'b3': # build 3er
+                        self.servos.pos_anfahren()
+                        self.stepper.anfahren()
+                        sleep(1)
+                        self.motor_controller.drive_distance(150)
+                        
                     case _: # default
                         self.l(f"Unknown msg: {msg}")
         except Exception as e:
