@@ -154,7 +154,7 @@ class RobotController:
                         self.servos.pos_anfahren()
                         self.stepper.anfahren()
                         sleep(1)
-                        self.motor_controller.drive_distance(150)
+                        await self.motor_controller.drive_distance(150)
                         
                         # grip cans
                         self.l("grip cans")
@@ -169,17 +169,17 @@ class RobotController:
                         
                         self.servos.place_2er()
                         
-                        self.motor_controller.drive_distance(-100)
+                        await self.motor_controller.drive_distance(-150)
                         
                         self.stepper.down()
                         sleep(1)
                         
-                        self.motor_controller.drive_distance(-100)
+                        await self.motor_controller.drive_distance(150)
                         
                         self.servos.grip_unten()
                         self.stepper.place3er()
                         sleep(1)
-                        self.motor_controller.drive_distance(140)
+                        await self.motor_controller.drive_distance(140)
                         
                     case _: # default
                         self.l(f"Unknown msg: {msg}")
