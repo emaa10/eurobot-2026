@@ -8,7 +8,7 @@ import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
     QLabel, QStackedWidget, QGraphicsView, QGraphicsScene,
-    QGraphicsRectItem, QMessageBox, QSpacerItem, QSizePolicy
+    QGraphicsRectItem, QMessageBox, QSpacerItem, QSizePolicy, QScrollArea
 )
 from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont
 from PyQt5.QtCore import Qt, QRectF, QTimer
@@ -129,8 +129,8 @@ class MainWindow(QWidget):
         self.init_start_screen()      # Index 0
         self.init_game_screen()       # Index 1
         self.init_debug_menu()        # Index 2
-        self.init_test_screen()       # Index 3
-        self.init_servo_screen()      # Index 4
+        # self.init_test_screen()       # Index 3
+        # self.init_servo_screen()      # Index 4
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.stack)
