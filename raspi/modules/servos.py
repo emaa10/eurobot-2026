@@ -1,4 +1,4 @@
-from modules.STservo_sdk import * 
+from STservo_sdk import * 
 
 BAUDRATE                    = 1000000           # STServo default baudrate : 1000000
 STS_MOVING_SPEED            = 2400          # SCServo moving speed
