@@ -364,14 +364,14 @@ class MainWindow(QWidget):
         v.addWidget(title)
 
         test_commands = [
-            ('Drive 100cm →', 'dd100'),
-            ('Turn 90 right →', 'ta90'),
-            ('Turn 180 right →', 'ta180'),
-            ('Stepper home →', 'sh'),
-            ('Cans anfahren →', 'ac'),
-            ('Cans greifen →', 'gc'),
-            ('Home gripper →', 'hg'),
-            ('Home bot →', 'hb')
+            ('Drive 100cm', 'dd100'),
+            ('Turn 90 right', 'ta90'),
+            ('Turn 180 right', 'ta180'),
+            ('Stepper home', 'sh'),
+            ('Cans anfahren', 'ac'),
+            ('Cans greifen', 'gc'),
+            ('Home gripper', 'hg'),
+            ('Home bot', 'hb')
         ]
 
         for btn_text, command in test_commands:
