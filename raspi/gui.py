@@ -15,6 +15,7 @@ from PyQt5.QtCore import Qt, QRectF, QTimer
 
 HOST = '127.0.0.1'
 PORT = 5002
+#! sdfjlk
 
 class Communication(threading.Thread):
     def __init__(self):
@@ -44,7 +45,7 @@ class Communication(threading.Thread):
         except:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             main_path = os.path.join(script_dir, 'main.py')
-            subprocess.Popen(['lxterminal', '-e', f'python3 {main_path}'], cwd=script_dir)
+            #! subprocess.Popen(['lxterminal', '-e', f'python3 {main_path}'], cwd=script_dir)
             self.l("Debug: Started main.py in new terminal.")
             time.sleep(1)
         self.connect()
