@@ -30,8 +30,6 @@ class Pathfinder():
         self.add_stack(Position(195, 165), Position(235, 175)) #4
         self.add_stack(Position(287, 112), Position(299, 152)) #5
         self.add_stack(Position(287, 20), Position(299, 60)) #6
-        # self.add_stack(Position(205, 20), Position(245, 30)) #7
-        # self.add_stack(Position(55, 20), Position(95, 30)) #8
         self.add_stack(Position(90, 90), Position(130, 100)) #9
         self.add_stack(Position(170, 90), Position(210, 100)) #10
         
@@ -200,7 +198,6 @@ class Pathfinder():
         return None
     
     def proccess(self, start: Position, target: Position, debug = False) -> list[Position]:
-        
         self.start = start
         self.target = target
         

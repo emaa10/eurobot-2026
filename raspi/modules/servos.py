@@ -36,15 +36,15 @@ class Servos:
     # 1: auf, 2: zu
     def servo_mitte_grip(self, pos: int):
         value = 0 
-        if pos == 1: value = 3700
-        else: value = 3300
+        if pos == 1: value = 3550
+        else: value = 3250
         self.write_servo(7, value)
 
     # 1: außen, 2: mitte, 3: innen
     def servo_right_rotate(self, pos: int):
         value = 0 
         if pos == 1: value = 3825
-        elif pos == 2: value = 3100
+        elif pos == 2: value = 2900
         else: value = 2500
         self.write_servo(11, value)
 
@@ -59,22 +59,22 @@ class Servos:
     def servo_right_grip(self, pos: int):
         value = 0 
         if pos == 1: value = 800
-        else: value = 410
+        else: value = 380
         self.write_servo(1, value)
 
     # 1: auf, 2: zu
     def servo_left_grip(self, pos: int):
         value = 0 
         if pos == 1: value = 100
-        else: value = 630
+        else: value = 640
         self.write_servo(2, value)
 
     # 1: außen, 2: mitte, 3: innen
     def servo_left_rotate(self, pos: int):
         value = 0 
-        if pos == 1: value = 1350
-        elif pos == 2: value = 1975
-        else: value = 2625
+        if pos == 1: value = 600
+        elif pos == 2: value = 1450
+        else: value = 1950
         self.write_servo(10, value)
 
     # 1: auf, 2: zu
@@ -83,3 +83,36 @@ class Servos:
         if pos == 1: value = 1000
         else: value = 1550
         self.write_servo(8, value)
+        
+    def pos_anfahren(self):
+        self.servo_left_rotate(2)
+        self.servo_right_rotate(2)
+        self.servo_mitte_lift(2)
+        self.servo_mitte_grip(1)
+        self.servo_left_grip(1)
+        self.servo_right_grip(1)
+        self.servo_plate_rotate(2)
+        self.servo_plate_grip(1)
+        
+    def grip_cans(self):
+        self.servo_mitte_grip(2)
+        self.servo_left_grip(2)
+        self.servo_right_grip(2)
+        self.servo_plate_grip(2)
+        time.sleep(0.2)
+        self.servo_left_rotate(1)
+        self.servo_right_rotate(1)
+    
+    def cans_in(self):
+        self.servo_left_rotate(3)
+        self.servo_right_rotate(3)
+        
+    def pos_wegfahren(self):
+        self.servo_mitte_lift(1)
+        
+def main():
+    servos = Servos()
+    servos.servo_mitte_lift(1)
+    
+if __name__ == '__main__':
+    main()

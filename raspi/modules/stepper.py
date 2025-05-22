@@ -19,7 +19,7 @@ class Stepper:
             self.send("$HZ\n")
 
     def set_pos_mm(self, r: int, m: int, l: int):           #funktioniert im Moment nicht, output vom board müsste in den log für richtiges bugfixing
-        self.send(f"G54 X{abs(r)} Y{abs(m)} R{abs(l)}\n")
+        self.send(f"G54 X{abs(r)} Y{abs(m)} Z{abs(l)}\n")
         
     def reset(self):
         self.send("\x18")
@@ -27,7 +27,7 @@ class Stepper:
         # self.ser = 
 
     def send(self, command: str):
-        self.ser.flushInput()
+        print(f'command: {command}')
         byte_string = str.encode(command)
         self.ser.write(byte_string)
     
@@ -36,10 +36,28 @@ class Stepper:
             lines = self.ser.readlines()
             if lines: 
                 for line in lines:
+                    self.logger.info(line.decode("utf-8"))
                     print(line.decode("utf-8"))
                 return
+            
+    def anfahren(self):
+        self.set_pos_mm(0, 0, 0)
+        
+    def down(self):
+        self.set_pos_mm(0, 0, 0)
+    
+    def lift(self):
+        self.set_pos_mm(127, 130, 127)
 
 def main():
     stepper = Stepper()
-    stepper.set_pos_mm(100, 100, 100)
+    
+    time.sleep(1)
+    
+    # stepper.send('$Z')
+    stepper.lift()
+    # stepper.pos_wegfahren()
     stepper.get_output()
+    
+if __name__ == '__main__':
+    main()

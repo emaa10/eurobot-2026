@@ -35,7 +35,7 @@ class Task():
             return None
         
         if len(self.actions) <= 0:
-            if len(self.action_set <= 0):
+            if len(self.action_set) <= 0:
                 return None
             
             self.next_task()

@@ -2,7 +2,7 @@ import asyncio
 import sys
 import RPi.GPIO as GPIO
 import logging
-from time import time
+from time import time, sleep
 
 from modules.task import Task
 from modules.camera import Camera
@@ -50,6 +50,7 @@ class RobotController:
             4: [1550, 1800, 180],
             5: [1800, 150, 0],
             6: [2800, 850, 270],
+            7: [100, 100, 0],
         }
         self.home_routines = {
             1: [['hh', 'dd50', 'ta-90', 'hh', 'dd100']],
@@ -58,6 +59,7 @@ class RobotController:
             4: [['hh', 'dd100']],
             5: [['hh', 'ta90', 'hh', 'dd50']],
             6: [['hh', 'dd50', 'ta90', 'hh', 'dd100']],
+            7: [['hh']],
         }
         self.tactix_yellow = {
             1: [['hh', 'fd', 'dd400', 'ip20', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'dp790;500;180', 'dp790;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
@@ -70,6 +72,7 @@ class RobotController:
             2: [['hh', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
             3: [['hh', 'fd', 'dd400', 'ip20'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
             4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
+            5: [['dd100'], ['ta90', 'dp400;400;0']]
         }
 
     def l(self, msg: str):
@@ -88,40 +91,53 @@ class RobotController:
                     break
                 msg = data.decode().strip()
                 self.l(f"Received from {addr}: {msg}")
-                cmd = msg[0]
-                if cmd == 't':
-                    sp = int(msg[1:msg.index(',')]); tac = int(msg[msg.index(',')+1:])
-                    self.set_tactic(sp, tac)
-                    self.l(f"set tactic: {sp} {tac}")
-                    await self.home()
-                    await asyncio.sleep(1)
-                    asyncio.create_task(self.run_tactic())
-                    await asyncio.sleep(0.5)
-                elif cmd == 's':
-                    pcmd = msg[1:]
-                    values = pcmd.split(';')
-                    self.servos.write_servo(int(values[0]), int(values[1]))
-                    self.l(f"set servo cmd: {pcmd}")
-                elif cmd == 'l':                            # stepper lift
-                    pcmd = msg[1:]                          # ka wie das funktioniert, bitte fixen
-                    values = pcmd.split(';')
-                    self.stepper.set_pos_mm(int(values[0]), int(values[1]), int(values[2]))
-                    self.l(f"set stepper heigth XYZ/rml: {pcmd}")
-                elif cmd == 'h':                            # stepper home
-                    self.stepper.home()
-                    self.l("homed all steppers")
-                elif cmd == 'd':
-                    self.motor_controller.drive_distance(int(msg[1:]))
-                    self.l(f"drive distance: {int(msg[1:])}")
-                elif cmd == 'a':
-                    self.motor_controller.turn_angle(int(msg[1:]))
-                    self.l(f"turn angle: {int(msg[1:])}")
-                    await self.motor_controller.set_stop()
-                elif msg.startswith('c'):
-                    self.motor_controller.clean_wheels()
-                    self.l(f"clean wheels")
-                else:
-                    self.l(f"Unknown msg: {msg}")
+                cmd = msg[:2]
+                match cmd:
+                    case 'st':  # set tactic
+                        start_pos, tactic = msg[2:].split(';')
+                        self.set_tactic(int(start_pos), int(tactic))
+                        self.l(f"set tactic: pos:{start_pos} tactic:{tactic}")
+                        await self.home()
+                        await asyncio.sleep(1)
+                        asyncio.create_task(self.run_tactic())
+                        await asyncio.sleep(0.5)
+                    case 'ws': # write servo
+                        values = msg[2:].split(';')
+                        self.l(f"set servo cmd: {values}")
+                        self.servos.write_servo(int(values[0]), int(values[1]))
+                    case 'sl': # stepper lift
+                        values = msg[2:].split(';')
+                        self.l(f"set stepper heigth XYZ: {values}")
+                        self.stepper.set_pos_mm(int(values[0]), int(values[1]), int(values[2]))
+                    case 'sh': # stepper home
+                        self.l("homed all steppers")
+                        self.stepper.home()
+                    case 'dd': # drive distance
+                        self.l(f"drive distance: {int(msg[2:])}")
+                        await self.motor_controller.drive_distance(int(msg[2:]))
+                    case 'ta': # turn angle
+                        self.l(f"turne angle: {int(msg[2:])}")
+                        await self.motor_controller.turn_angle(int(msg[2:]))
+                        await self.motor_controller.set_stop()
+                    case 'cw': # clean wheels
+                        self.l(f"clean wheels")
+                        await self.motor_controller.clean_wheels()
+                    case 'ac': # anfahren cans
+                        self.l("anfahren cans")
+                        self.servos.pos_anfahren()
+                        sleep(0.5)
+                        self.stepper.anfahren()
+                    case 'gc': # grip cans
+                        self.l("grip cans")
+                        self.stepper.down()
+                        sleep(1)
+                        self.servos.grip_cans()
+                        sleep(1)
+                        self.stepper.lift()
+                        sleep(1)
+                        self.servos.cans_in()
+                    case _: # default
+                        self.l(f"Unknown msg: {msg}")
         except Exception as e:
             self.l(f"Error {e} with client {addr}")
         finally:
@@ -183,6 +199,7 @@ class RobotController:
         self.tactic.motor_controller.set_pos(x, y, theta)
         
         self.l('Homing done')
+        await self.send_message('h')
 
     def start(self):
         self.tactic.motor_controller.time_started = time()
@@ -202,28 +219,7 @@ class RobotController:
 # main bot loop now
 async def main():
     controller = RobotController()
-    if len(sys.argv) > 1:
-        message = sys.argv[1]
-        cmd = message[0]
-        if cmd == "t":
-            sp = int(message[1:message.index(',')]); tac = int(message[message.index(',')+1:])
-            controller.set_tactic(sp, tac)
-            await controller.home()
-            await asyncio.sleep(1)
-            await controller.run_tactic()
-            await asyncio.sleep(0.5)
-        elif cmd == "d":
-            dist = int(message[1:])
-            controller.l(f"drive distance: {dist}")
-            controller.motor_controller.drive_distance(dist)
-        elif cmd == "a":
-            angle = int(message[1:])
-            controller.l(f"angle: {angle}")
-            controller.motor_controller.turn_angle(angle)
-        else:
-            controller.l(f"got shit: {message}")
-    else:
-        await controller.start_server()
+    await controller.start_server()
 
 if __name__ == '__main__':
     try:
