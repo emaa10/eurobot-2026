@@ -8,7 +8,7 @@ import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
     QLabel, QStackedWidget, QGraphicsView, QGraphicsScene,
-    QGraphicsRectItem, QMessageBox, QSpacerItem, QSizePolicy, QScrollArea
+    QGraphicsRectItem, QMessageBox, QSpacerItem, QSizePolicy
 )
 from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont
 from PyQt5.QtCore import Qt, QRectF, QTimer
@@ -154,14 +154,7 @@ class MainWindow(QWidget):
         v.addLayout(hb)
         self.view = QGraphicsView(); self.scene = QGraphicsScene()
         pix = QPixmap('/home/eurobot/main-bot/raspi/eurobot.png').scaled(480, 180, Qt.KeepAspectRatioByExpanding)
-        self.scene.addPixmap(pix); self.view.setScene(self.scene)
-        # Entferne Rahmen und passe View an Inhalt an
-        self.view.setFrameStyle(0)
-        self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scene.setSceneRect(pix.rect())
-        self.view.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
-        v.addWidget(self.view)
+        self.scene.addPixmap(pix); self.view.setScene(self.scene); v.addWidget(self.view)
         self.rect_items = {col: [] for col in ['#FFD600', '#2979FF']}
         # indexes: https://bergerhq.de/eurobot-index
         coords = {'#FFD600': [(405, 145), (160, 245), (27, 7)],
