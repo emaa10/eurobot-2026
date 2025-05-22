@@ -150,12 +150,7 @@ class RobotController:
                         self.l("home bot")
                     case 'p2':
                         self.servos.place_2er()
-                    case 'b3': # build 3er
-                        self.servos.pos_anfahren()
-                        self.stepper.anfahren()
-                        sleep(1)
-                        await self.motor_controller.drive_distance(150)
-                        
+                    case 'b3': # build 3er            
                         # grip cans
                         self.l("grip cans")
                         self.stepper.down()
@@ -177,6 +172,7 @@ class RobotController:
                         await self.motor_controller.drive_distance(150)
                         
                         self.servos.grip_unten()
+                        sleep(0.5)
                         self.stepper.place3er()
                         sleep(1)
                         await self.motor_controller.drive_distance(140)
