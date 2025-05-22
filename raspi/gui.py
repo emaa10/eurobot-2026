@@ -14,7 +14,7 @@ from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont
 from PyQt5.QtCore import Qt, QRectF, QTimer
 
 HOST = '127.0.0.1'
-PORT = 5001
+PORT = 5002
 
 class Communication(threading.Thread):
     def __init__(self):
