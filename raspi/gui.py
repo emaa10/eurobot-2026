@@ -153,7 +153,7 @@ class MainWindow(QWidget):
             hb.addWidget(btn)
         v.addLayout(hb)
         self.view = QGraphicsView(); self.scene = QGraphicsScene()
-        pix = QPixmap('/home/eurobot/main-bot/raspi/eurobot.png').scaled(480, 180, Qt.KeepAspectRatioByExpanding)
+        pix = QPixmap('/home/eurobot/main-bot/raspi/eurobot.png').scaled(480, 180)
         self.scene.addPixmap(pix); self.view.setScene(self.scene); v.addWidget(self.view)
         self.rect_items = {col: [] for col in ['#FFD600', '#2979FF']}
         # indexes: https://bergerhq.de/eurobot-index
