@@ -26,11 +26,12 @@ class Servos:
     def write_servo(self, id, goal_position):
         self.packet_handler.WritePosEx(id, goal_position, STS_MOVING_SPEED, STS_MOVING_ACC)
 
-    # 1: oben, 2: unten
+    # 1: unten, 2: oben
     def servo_mitte_lift(self, pos: int):
-        value = 0 
-        if pos == 1: value = 4000
-        else: value = 3900
+        value = 0
+        match pos:
+            case 1: value = 2900
+            case 2: value = 3000
         self.write_servo(3, value)
 
     # 1: auf, 2: zu
@@ -47,7 +48,7 @@ class Servos:
     def servo_right_rotate(self, pos: int):
         value = 0 
         if pos == 1: value = 3825
-        elif pos == 2: value = 2975
+        elif pos == 2: value = 3125
         else: value = 2500
         self.write_servo(11, value)
 
@@ -75,22 +76,22 @@ class Servos:
     # 1: außen, 2: mitte, 3: innen
     def servo_left_rotate(self, pos: int):
         value = 0 
-        if pos == 1: value = 750
-        elif pos == 2: value = 1650
-        else: value = 2100
+        if pos == 1: value = 300
+        elif pos == 2: value = 950
+        else: value = 1500
         self.write_servo(10, value)
 
     # 1: auf, 2: zu
     def servo_plate_grip(self, pos: int):
         value = 0 
         if pos == 1: value = 1000
-        else: value = 1550
+        else: value = 1650
         self.write_servo(8, value)
         
     def pos_anfahren(self):
         self.servo_left_rotate(2)
         self.servo_right_rotate(2)
-        self.servo_mitte_lift(2)
+        self.servo_mitte_lift(1)
         self.servo_mitte_grip(3)
         self.servo_left_grip(1)
         self.servo_right_grip(1)
@@ -105,6 +106,14 @@ class Servos:
         time.sleep(0.4)
         self.servo_left_rotate(1)
         self.servo_right_rotate(1)
+        
+    def grip_one_layer(self):
+        self.servo_plate_grip(2)
+        self.servo_left_grip(2)
+        self.servo_right_grip(2)
+        time.sleep(0.5)
+        self.servo_left_rotate(1)
+        self.servo_right_rotate(1)
     
     def cans_in(self):
         self.servo_left_rotate(3)
@@ -112,7 +121,7 @@ class Servos:
         
     def place_1er(self, num: int):
         if num == 1:
-            self.servo_mitte_lift(2)
+            self.servo_mitte_lift(1)
             time.sleep(0.3)
             self.servo_mitte_grip(1)
         else:
@@ -122,7 +131,7 @@ class Servos:
         
         
     def place_2er(self):
-        self.servo_mitte_lift(2)
+        self.servo_mitte_lift(1)
         time.sleep(0.3)
         self.servo_mitte_grip(1)
         self.servo_left_grip(1)
@@ -132,7 +141,7 @@ class Servos:
         self.servo_plate_rotate(1)
         
     def pos_wegfahren(self):
-        self.servo_mitte_lift(1)
+        self.servo_mitte_lift(2)
         
     def grip_unten(self):
         self.servo_left_grip(2)
@@ -143,6 +152,7 @@ class Servos:
         self.servo_right_grip(1)
         
     def release_all(self):
+        self.servo_mitte_lift(1)
         self.servo_left_grip(1)
         self.servo_right_grip(1)
         self.servo_mitte_grip(1)

@@ -141,7 +141,7 @@ class RobotController:
                         self.servos.cans_in()
                         self.servos.pos_wegfahren()
                     case 'es': # emergency stop
-                        self.motor_controller.set_stop()
+                        await self.motor_controller.set_stop()
                         self.l("emergency stop!")
                     case 'hg': # home gripper (servos and steppers)
                         self.servos.pos_anfahren()
@@ -152,11 +152,15 @@ class RobotController:
                         self.motor_controller.home()
                         self.l("home bot")
                     case 'xx':
-                        await self.motor_controller.drive_distance(375)
-                        await self.motor_controller.turn_angle(90)
-                        await self.motor_controller.drive_distance(500)
+                        self.servos.pos_anfahren()
+                        sleep(0.7)
+                        self.stepper.anfahren()
                         
-                        sleep(15)
+                        await self.motor_controller.drive_distance(350)
+                        await self.motor_controller.turn_angle(90)
+                        await self.motor_controller.drive_distance(200)
+                        await self.motor_controller.turn_angle(-90)
+                        await self.motor_controller.drive_distance(350)
                         
                         # get 1st stapel
                         self.stepper.down()
@@ -166,7 +170,81 @@ class RobotController:
                         self.stepper.lift()
                         sleep(1)
                         self.servos.cans_in()
+                        sleep(0.3)
                         self.servos.pos_wegfahren()
+                        
+                        sleep(1)
+                        
+                        await self.motor_controller.turn_angle(-165)
+                        await self.motor_controller.drive_distance(550)
+                        await self.motor_controller.turn_angle(-18)
+                        self.servos.release_all()
+                        sleep(0.5)
+                        await self.motor_controller.drive_distance(-200)
+                        await self.motor_controller.turn_angle(-90)
+                        await self.motor_controller.drive_distance(500)
+                        self.servos.pos_anfahren()
+                        sleep(0.3)
+                        self.stepper.anfahren()
+                        await self.motor_controller.turn_angle(90)
+                        await self.motor_controller.drive_distance(300)
+
+                        # grip 2nd level
+                        self.stepper.down()
+                        sleep(1)
+                        self.servos.grip_one_layer()
+                        sleep(2)
+                        self.stepper.lift_1er()
+                        sleep(1)
+                        
+                        await self.motor_controller.drive_distance(-300)
+                        
+                        self.servos.cans_in()
+                        sleep(0.5)
+                        self.servos.servo_plate_grip(1)
+                        sleep(0.5)
+                        self.servos.servo_plate_rotate(1)
+                        sleep(1)
+                        self.stepper.lift_3er()
+                        
+                        await self.motor_controller.turn_angle(90)
+                        await self.motor_controller.drive_distance(500)
+                        await self.motor_controller.turn_angle(-90)
+                        await self.motor_controller.drive_distance(200)
+                        self.servos.release_all()
+                        sleep(1)
+                        await self.motor_controller.drive_distance(-200)
+                        
+                    case 'yy':
+                        self.servos.pos_anfahren()
+                        sleep(0.7)
+                        self.stepper.anfahren()
+                        
+                        await self.motor_controller.drive_distance(375)
+                        await self.motor_controller.turn_angle(90)
+                        await self.motor_controller.drive_distance(400)
+                        
+                        # get 1st stapel
+                        # self.stepper.down()
+                        # sleep(1)
+                        # self.servos.grip_cans()
+                        # sleep(0.5)
+                        # self.stepper.lift()
+                        # sleep(1)
+                        # self.servos.cans_in()
+                        # self.servos.pos_wegfahren()
+                        
+                        # sleep(15)
+                        
+                        # get 1st stapel
+                        # self.stepper.down()
+                        # sleep(1)
+                        # self.servos.grip_cans()
+                        # sleep(0.5)
+                        # self.stepper.lift()
+                        # sleep(1)
+                        # self.servos.cans_in()
+                        # self.servos.pos_wegfahren()
                         
                     case 'ra':
                         self.servos.release_all()

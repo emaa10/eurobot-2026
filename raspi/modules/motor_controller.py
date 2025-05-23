@@ -242,7 +242,7 @@ class MotorController():
             
         await asyncio.sleep(0.2)
             
-    async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.20) -> None:
+    async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.50) -> None:
         self.target_positions = {1: pos1, 2: -pos2}
         await self.set_target(velocity_limit, accel_limit, maximum_torque)
         
@@ -319,7 +319,7 @@ class MotorController():
     async def clean_wheels(self) -> None:
         for motor_id, controller in self.controllers.items():
             await controller.set_position(
-                position=math.nan, 
+                position=99999999, 
                 velocity_limit=10, 
                 accel_limit=50, 
                 watchdog_timeout=math.nan
