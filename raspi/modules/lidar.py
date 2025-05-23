@@ -74,7 +74,7 @@ class Lidar:
                         current_scan_data.append((measurement.angle, measurement.distance))
             
             except Exception as e:
-                self.logger.info(f"Error in scan loop: {e}")
+                #self.logger.info(f"Error in scan loop: {e}")
                 if not self.running:
                     break
                 

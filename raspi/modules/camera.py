@@ -192,7 +192,7 @@ class Camera:
         rots = self._calculate_rotations(rvecs)
 
         # Gruppierung nach räumlicher Nähe (15cm = 0.15m)
-        groups = self._group_markers_by_distance(tvecs, 0.15)
+        groups = self._group_markers_by_distance(tvecs, 0.12)
         
         if len(groups) < size:
             self.logger.info(f"Not enough groups found: {len(groups)}, need {size}")
