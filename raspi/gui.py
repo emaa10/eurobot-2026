@@ -377,7 +377,7 @@ class MainWindow(QWidget):
         v.addWidget(title)
 
         test_commands = [
-            ('Drive 100cm', 'dd100'),
+            ('Drive 100cm', 'dd1000'),
             ('Turn 90 right', 'ta90'),
             ('Turn 180 right', 'ta180'),
             ('Stepper home', 'sh'),
