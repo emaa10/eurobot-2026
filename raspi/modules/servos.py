@@ -5,23 +5,9 @@ STS_MOVING_SPEED            = 2400          # SCServo moving speed
 STS_MOVING_ACC              = 50            # SCServo moving acc
 
 class Servos:
-    def parse_servo_pos(self):
-        result = []
-        with open('/home/eurobot/main-bot/raspi/modules/servo.txt', 'r') as file:
-            for line in file:
-                line = line.split('#')[0].strip()
-                if not line:
-                    continue
-                parts = line.split(',')
-                id_ = int(parts[0])
-                values = list(map(int, parts[1:]))
-                result.append([id_, values])
-        return result
-
     def __init__(self, port = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083062-if00") -> None:
         self.port_handler = PortHandler(port)
         self.packet_handler = sts(self.port_handler)
-        self.servoPos = self.parse_servo_pos()
 
         # Open port
         if self.port_handler.openPort():
@@ -43,63 +29,63 @@ class Servos:
     # 1: oben, 2: unten
     def servo_mitte_lift(self, pos: int):
         value = 0 
-        if pos == 1: value = self.servoPos[0][1][0]
-        else: value = self.servoPos[0][1][1]
-        self.write_servo(self.servoPos[0][0], value)
+        if pos == 1: value = 4000
+        else: value = 3900
+        self.write_servo(3, value)
 
     # 1: auf, 2: zu
     def servo_mitte_grip(self, pos: int):
         value = 0 
         match pos:
-            case 1: value = self.servoPos[1][1][0]
-            case 2: value = self.servoPos[1][1][1]
-            case _: value = self.servoPos[1][1][2]
+            case 1: value = 3700
+            case 2: value = 3250
+            case _: value = 3500
 
-        self.write_servo(self.servoPos[1][0], value)
+        self.write_servo(7, value)
 
     # 1: außen, 2: mitte, 3: innen
     def servo_right_rotate(self, pos: int):
         value = 0 
-        if pos == 1: value = self.servoPos[2][1][0]
-        elif pos == 2: value = [2][1][1]
-        else: value = [2][1][2]
-        self.write_servo(self.servoPos[2][0], value)
+        if pos == 1: value = 3825
+        elif pos == 2: value = 2950
+        else: value = 2500
+        self.write_servo(11, value)
 
     # 1: oben, 2: unten
     def servo_plate_rotate(self, pos: int):
         value = 0 
-        if pos == 1: value = self.servoPos[3][1][0]
-        else: value = self.servoPos[3][1][1]
-        self.write_servo(self.servoPos[3][0], value)
+        if pos == 1: value = 1800
+        else: value = 2800
+        self.write_servo(9, value)
 
     # 1: auf, 2: zu
     def servo_right_grip(self, pos: int):
         value = 0 
-        if pos == 1: value = self.servoPos[4][1][0]
-        else: value = self.servoPos[4][1][1]
-        self.write_servo(self.servoPos[4][0], value)
+        if pos == 1: value = 4000
+        else: value = 3300
+        self.write_servo(1, value)
 
     # 1: auf, 2: zu
     def servo_left_grip(self, pos: int):
         value = 0 
-        if pos == 1: value = self.servoPos[5][1][0]
-        else: value = self.servoPos[5][1][1]
-        self.write_servo(self.servoPos[5][0], value)
+        if pos == 1: value = 100
+        else: value = 690
+        self.write_servo(2, value)
 
     # 1: außen, 2: mitte, 3: innen
     def servo_left_rotate(self, pos: int):
         value = 0 
-        if pos == 1: value = self.servoPos[6][1][0]
-        elif pos == 2: value = [6][1][1]
-        else: value = self.servoPos[6][1][2]
-        self.write_servo(self.servoPos[6][0], value)
+        if pos == 1: value = 150
+        elif pos == 2: value = 1000
+        else: value = 1450
+        self.write_servo(10, value)
 
     # 1: auf, 2: zu
     def servo_plate_grip(self, pos: int):
         value = 0 
-        if pos == 1: value = self.servoPos[7][1][0]
-        else: value = self.servoPos[7][1][1]
-        self.write_servo(self.servoPos[7][0], value)
+        if pos == 1: value = 1000
+        else: value = 1550
+        self.write_servo(8, value)
         
     def pos_anfahren(self):
         self.servo_left_rotate(2)
