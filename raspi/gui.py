@@ -114,6 +114,19 @@ class Communication(threading.Thread):
                 time.sleep(1)
 
 class MainWindow(QWidget):
+    def parse_servo_pos(self):
+        result = []
+        with open('/home/eurobot/main-bot/raspi/modules/servo.txt', 'r') as file:
+            for line in file:
+                line = line.split('#')[0].strip()
+                if not line:
+                    continue
+                parts = line.split(',')
+                id_ = int(parts[0])
+                values = list(map(int, parts[1:]))
+                result.append([id_, values])
+        return result
+
     def __init__(self):
         super().__init__()
         self.comm = Communication()
@@ -121,6 +134,7 @@ class MainWindow(QWidget):
         self.selected_tactic = None
         self.color = None
         self.game_state = 0
+        self.servoPos = self.parse_servo_pos()
         self.init_ui()
 
     def init_ui(self):
@@ -442,7 +456,7 @@ class MainWindow(QWidget):
             {
                 'name': 'Mitte Lift',
                 'commands': [
-                    ('Lift oben', 'ws3;4000'),
+                    ('Lift oben', f'ws{self.servoPos[0][0]};{self.servoPos[0][1][0]}'),
                     ('Lift unten', 'ws3;3900')
                 ]
             },

@@ -5,9 +5,23 @@ STS_MOVING_SPEED            = 2400          # SCServo moving speed
 STS_MOVING_ACC              = 50            # SCServo moving acc
 
 class Servos:
+    def parse_servo_pos(self):
+        result = []
+        with open('/home/eurobot/main-bot/raspi/modules/servo.txt', 'r') as file:
+            for line in file:
+                line = line.split('#')[0].strip()
+                if not line:
+                    continue
+                parts = line.split(',')
+                id_ = int(parts[0])
+                values = list(map(int, parts[1:]))
+                result.append([id_, values])
+        return result
+
     def __init__(self, port = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083062-if00") -> None:
         self.port_handler = PortHandler(port)
         self.packet_handler = sts(self.port_handler)
+        self.servoPos = self.parse_servo_pos()
 
         # Open port
         if self.port_handler.openPort():
