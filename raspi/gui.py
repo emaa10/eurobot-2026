@@ -449,7 +449,7 @@ class MainWindow(QWidget):
             {
                 'name': 'Mitte Grip',
                 'commands': [
-                    ('Grip auf', 'ws7;3550'),
+                    ('Grip auf', 'ws7;3600'),
                     ('Grip zu', 'ws7;3250')
                 ]
             },
@@ -457,8 +457,8 @@ class MainWindow(QWidget):
                 'name': 'Right Rotate',
                 'commands': [
                     ('R außen', 'ws11;3825'),
-                    ('R mitte', 'ws11;2900'),
-                    ('R innen', 'ws11;2600')
+                    ('R mitte', 'ws11;2950'),
+                    ('R innen', 'ws11;2500')
                 ]
             },
             {
@@ -471,23 +471,23 @@ class MainWindow(QWidget):
             {
                 'name': 'Right Grip',
                 'commands': [
-                    ('R Grip auf', 'ws1;800'),
-                    ('R Grip zu', 'ws1;380')
+                    ('R Grip auf', 'ws1;700'),
+                    ('R Grip zu', 'ws1;350')
                 ]
             },
             {
                 'name': 'Left Grip',
                 'commands': [
                     ('L Grip auf', 'ws2;100'),
-                    ('L Grip zu', 'ws2;640')
+                    ('L Grip zu', 'ws2;690')
                 ]
             },
             {
                 'name': 'Left Rotate',
                 'commands': [
-                    ('L außen', 'ws10;600'),
-                    ('L mitte', 'ws10;1450'),
-                    ('L innen', 'ws10;1850')
+                    ('L außen', 'ws10;150'),
+                    ('L mitte', 'ws10;1000'),
+                    ('L innen', 'ws10;1450')
                 ]
             },
             {
