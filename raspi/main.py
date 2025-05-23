@@ -151,7 +151,13 @@ class RobotController:
                     case 'hb': # home bot
                         self.motor_controller.home()
                         self.l("home bot")
-                    case 'b3': # 3er stapel
+                    case 'xx':
+                        await self.motor_controller.drive_distance(375)
+                        await self.motor_controller.turn_angle(90)
+                        await self.motor_controller.drive_distance(500)
+                        
+                        sleep(15)
+                        
                         # get 1st stapel
                         self.stepper.down()
                         sleep(1)
@@ -162,10 +168,22 @@ class RobotController:
                         self.servos.cans_in()
                         self.servos.pos_wegfahren()
                         
-                        # place 1st lvl1
-                        self.servos.place_1er(1)
+                    case 'ra':
+                        self.servos.release_all()
+                    case 'b3': # 3er stapel
+                        await self.motor_controller.drive_distance(300)
+                        await self.motor_controller.turn_angle(90)
+                        await self.motor_controller.drive_distance(500)
+                        
+                        # get 1st stapel
+                        self.stepper.down()
                         sleep(1)
-                        await self.motor_controller.drive_distance(-200)
+                        self.servos.grip_cans()
+                        sleep(0.5)
+                        self.stepper.lift()
+                        sleep(1)
+                        self.servos.cans_in()
+                        self.servos.pos_wegfahren()
                         
                         # place 2nd lvl1
                         self.stepper.down()
@@ -215,6 +233,8 @@ class RobotController:
                         self.servos.release_außen()
                         sleep(0.5)
                         await self.motor_controller.drive_distance(-300)
+                    case 'rp':
+                        self.motor_controller.set_pos(0,0,0)
                     case _: # default
                         self.l(f"Unknown msg: {msg}")
         except Exception as e:

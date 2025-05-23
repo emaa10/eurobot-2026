@@ -41,7 +41,7 @@ class Stepper:
                 return
             
     def anfahren(self):
-        self.set_pos_mm(10, 50, 10)
+        self.set_pos_mm(10, 18, 10)
         
     def down(self):
         self.set_pos_mm(10, 0, 10)

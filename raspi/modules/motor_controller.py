@@ -242,7 +242,7 @@ class MotorController():
             
         await asyncio.sleep(0.2)
             
-    async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.05) -> None:
+    async def drive_to_target(self, pos1: int, pos2: int, velocity_limit=60.0, accel_limit=20.0, maximum_torque=0.20) -> None:
         self.target_positions = {1: pos1, 2: -pos2}
         await self.set_target(velocity_limit, accel_limit, maximum_torque)
         
@@ -263,7 +263,7 @@ class MotorController():
         self.direction = 0
         self.finished = False
         
-        turn = 11.3
+        turn = 10.93
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
@@ -275,10 +275,6 @@ class MotorController():
         if target_theta > 360: target_theta -= 360
         while not self.finished:
             await self.control_loop()
-                            
-            # if abs(target_theta - self.theta) < 0.2:
-            if abs(target_theta - self.theta) < target_theta//140:
-                break
         
         await self.set_stop()  
     
