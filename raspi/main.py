@@ -16,7 +16,7 @@ pullcord = 22
 
 class RobotController:
     def __init__(self):
-        self.CAM = False
+        self.CAM = True
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -93,6 +93,9 @@ class RobotController:
                 self.l(f"Received from {addr}: {msg}")
                 cmd = msg[:2]
                 match cmd:
+                    case 'cs':
+                        # check stack
+                        print(self.camera.check_stack(3))
                     case 'st':  # set tactic
                         start_pos, tactic = msg[2:].split(';')
                         self.set_tactic(int(start_pos), int(tactic))
