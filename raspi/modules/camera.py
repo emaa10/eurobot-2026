@@ -158,94 +158,129 @@ class Camera:
 
         return ok
 
-    def check_stack(self, size: int) -> bool:
+    def check_stacks(self, size: int, debug_cam: bool = False) -> bool:
         """
         Prüft ob ein Stack der gewünschten Größe korrekt aufgebaut ist.
-        Teilt das Bild in horizontale Bereiche und prüft jeden Bereich.
         
         Args:
             size (int): Gewünschte Stack-Größe (1, 2, oder 3)
+            debug_cam (bool): Debug-Ausgaben aktivieren
             
         Returns:
             bool: True wenn Stack korrekt, False sonst
         """
-        if size not in [1, 2, 3]:
-            self.logger.error(f"Invalid stack size: {size}. Must be 1, 2, or 3.")
-            return False
-            
         frame = self._get_frame()
-        self.logger.info(f"Camera: checking {size}-stack")
+        if debug_cam:
+            print(f"🎯 Prüfe Stack-Größe {size}")
         
-        # Y-Höhen für die 3 möglichen Ebenen definieren (in Pixel)
-        y1_start, y1_end = 0, 316
-        y2_start, y2_end = 316, 633
-        y3_start, y3_end = 633, 960
+        height = frame.shape[0]  # 1280
+        width = frame.shape[1]   # 960
         
-        # Je nach Stack-Größe die zu prüfenden Bereiche definieren
-        if size == 1:
-            regions = [("bottom", y3_start, y3_end)]
-        elif size == 2:
-            regions = [("middle", y2_start, y2_end), ("bottom", y3_start, y3_end)]
-        else:  # size == 3
-            regions = [("top", y1_start, y1_end), ("middle", y2_start, y2_end), ("bottom", y3_start, y3_end)]
+        # Ebenen-Definition (exakte Y-Bereiche)
+        regions = {
+            'top': (0, 335),           # oben: 0-335
+            'middle': (335, 783),      # mitte: 335-783
+            'bottom': (783, 1280)      # unten: 783-1280
+        }
         
+        if debug_cam:
+            print(f"Bildgröße: {width}x{height}")
+            print(f"Ebenen-Aufteilung:")
+            for name, (start, end) in regions.items():
+                print(f"  {name.capitalize()}: Y {start}-{end}")
+        
+        # Graustufen-Verarbeitung
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         processed = clahe.apply(gray)
 
+        # Marker erkennen mit optimierten Parametern
         corners, ids, _ = aruco.detectMarkers(processed, self.aruco_dict, parameters=self.parameters)
         
         if ids is None:
-            self.logger.info("No markers detected")
+            if debug_cam:
+                print("❌ Keine Marker erkannt!")
             return False
+        
+        if debug_cam:
+            print(f"✅ {len(ids)} Marker erkannt")
 
-        # Pose estimation für Orientierungsprüfung
+        # Pose estimation für Orientierungs- und Distanzprüfung
         rvecs, tvecs, _ = aruco.estimatePoseSingleMarkers(
             corners, self.TAG_SIZE, self.camera_matrix, self.dist_coeffs)
-        rots = self._calculate_rotations(rvecs)
         
-        # Für jeden zu prüfenden Bereich
-        for region_name, y_start, y_end in regions:
-            markers_in_region = []
+        # Rotationen berechnen
+        rotations = self._calculate_rotations(rvecs)
+        
+        # Optimierte Grenzen
+        MIN_DISTANCE = 0.10  # Reduziert von 0.20m
+        MAX_DISTANCE = 1.00  # Erhöht von 0.60m
+        MAX_ROTATION_Z = 15  # Erhöht von 10 Grad
+        
+        # Prüfe relevante Ebenen basierend auf Stack-Größe
+        regions_to_check = []
+        if size >= 1:
+            regions_to_check.append(('bottom', regions['bottom']))
+        if size >= 2:
+            regions_to_check.append(('middle', regions['middle']))
+        if size >= 3:
+            regions_to_check.append(('top', regions['top']))
+        
+        # Prüfe jede Ebene
+        for region_name, (y_start, y_end) in regions_to_check:
+            if debug_cam:
+                print(f"--- Prüfe Ebene: {region_name.upper()} (Y: {y_start}-{y_end}) ---")
             
-            # Finde alle Marker in diesem Y-Bereich
-            for i, corner in enumerate(corners):
-                # Berechne Mittelpunkt des Markers
+            valid_markers = 0
+            
+            # Finde Marker in dieser Ebene
+            for i, (corner, marker_id) in enumerate(zip(corners, ids)):
                 M = cv2.moments(corner[0])
                 if M["m00"] != 0:
-                    cy = int(M["m01"] / M["m00"])
                     cx = int(M["m10"] / M["m00"])
+                    cy = int(M["m01"] / M["m00"])
                     
-                    # Prüfe ob Marker in diesem Y-Bereich liegt
+                    # Prüfe Y-Position
                     if y_start <= cy <= y_end:
-                        # Prüfe Distanz (20-60cm)
                         distance = tvecs[i][0][2] * self.CALIB_FACTOR
-                        if 0.20 <= distance <= 0.60:
-                            # Prüfe Orientierung
-                            if -10 < rots[i][2] < 10:
-                                markers_in_region.append((i, cx, cy))
+                        rot_z = rotations[i][2]
+                        
+                        if debug_cam:
+                            print(f"  Marker {marker_id[0]} in Ebene: "
+                                f"Pos({cx},{cy}), Dist {distance:.2f}m, Rot {rot_z:.1f}°")
+                        
+                        # Prüfe Distanz (lockere Grenzen)
+                        distance_ok = MIN_DISTANCE <= distance <= MAX_DISTANCE
+                        
+                        # Prüfe Orientierung (lockere Grenzen)
+                        rotation_ok = -MAX_ROTATION_Z <= rot_z <= MAX_ROTATION_Z
+                        
+                        if debug_cam:
+                            print(f"    Distanz OK: {distance_ok} ({MIN_DISTANCE}m ≤ {distance:.2f}m ≤ {MAX_DISTANCE}m)")
+                            print(f"    Rotation OK: {rotation_ok} (-{MAX_ROTATION_Z}° ≤ {rot_z:.1f}° ≤ {MAX_ROTATION_Z}°)")
+                        
+                        if distance_ok and rotation_ok:
+                            valid_markers += 1
+                            if debug_cam:
+                                print(f"    ✅ Marker {marker_id[0]} GÜLTIG")
+                        else:
+                            if debug_cam:
+                                print(f"    ❌ Marker {marker_id[0]} ungültig")
             
-            self.logger.info(f"Region {region_name}: found {len(markers_in_region)} valid markers")
+            region_success = valid_markers >= 2
             
-            if len(markers_in_region) < 2:
-                self.logger.info(f"Region {region_name}: not enough markers ({len(markers_in_region)} < 2)")
-                return False
+            if debug_cam:
+                print(f"  Ergebnis {region_name}: {valid_markers}/2 gültige Marker - "
+                    f"{'✅ ERFOLGREICH' if region_success else '❌ FEHLGESCHLAGEN'}")
             
-            #! pixel distance testen
-            max_pixel_distance = 450
-            
-            groups = self._group_markers_by_x_distance(markers_in_region, max_pixel_distance)
-            
-            valid_group_found = False
-            for group in groups:
-                if len(group) >= 2:
-                    valid_group_found = True
-                    break
-            
-            if not valid_group_found:
-                self.logger.info(f"Region {region_name}: no group with >= 2 markers within 15cm found")
+            if not region_success:
+                if debug_cam:
+                    print(f"❌ Stack-Größe {size} fehlgeschlagen: Ebene {region_name} hat nur {valid_markers}/2 gültige Marker")
+                self.logger.info(f"Stack size {size} failed: region {region_name} has only {valid_markers}/2 valid markers")
                 return False
         
+        if debug_cam:
+            print(f"✅ Stack-Größe {size} erfolgreich validiert")
         self.logger.info(f"Stack size {size} validation successful")
         return True
 

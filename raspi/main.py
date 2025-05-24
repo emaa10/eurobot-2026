@@ -95,7 +95,7 @@ class RobotController:
                 match cmd:
                     case 'cs':
                         # check stack
-                        print(self.camera.check_stack(3))
+                        print(self.camera.check_stack(3, True))
                     case 'st':  # set tactic
                         start_pos, tactic = msg[2:].split(';')
                         self.set_tactic(int(start_pos), int(tactic))
@@ -182,10 +182,13 @@ class RobotController:
                         sleep(0.5)
                         await self.motor_controller.drive_distance(-200)
                         await self.motor_controller.turn_angle(-90)
-                        await self.motor_controller.drive_distance(500)
+
                         self.servos.pos_anfahren()
                         sleep(0.3)
                         self.stepper.anfahren()
+
+                        await self.motor_controller.drive_distance(500)
+
                         await self.motor_controller.turn_angle(90)
                         await self.motor_controller.drive_distance(300)
 
