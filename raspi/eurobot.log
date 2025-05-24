@@ -1,0 +1,96 @@
+INFO:picamera2.picamera2:Camera stopped
+INFO:picamera2.picamera2:Camera closed successfully.
+INFO:modules.lidar:Lidar connected successfully
+INFO:modules.lidar:Scan loop started
+INFO:modules.lidar:Scan thread started
+INFO:picamera2.picamera2:Initialization successful.
+INFO:picamera2.picamera2:Camera now open.
+INFO:picamera2.picamera2:Camera configuration has been adjusted!
+INFO:picamera2.picamera2:Configuration successful!
+INFO:picamera2.picamera2:Camera started
+INFO:__main__:Camera started
+INFO:__main__:MAIN - Server running on 127.0.0.1:5001
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 46422)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 46422): hg
+INFO:__main__:MAIN - home gripper
+INFO:__main__:MAIN - Received from ('127.0.0.1', 46422): xx
+INFO:__main__:MAIN - Received from ('127.0.0.1', 46422): cs
+INFO:__main__:MAIN - Error 'Camera' object has no attribute 'check_stack' with client ('127.0.0.1', 46422)
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 46684)
+INFO:picamera2.picamera2:Camera stopped
+INFO:modules.lidar:Lidar connected successfully
+INFO:modules.lidar:Scan loop started
+INFO:modules.lidar:Scan thread started
+INFO:picamera2.picamera2:Initialization successful.
+INFO:picamera2.picamera2:Camera now open.
+INFO:picamera2.picamera2:Camera configuration has been adjusted!
+INFO:picamera2.picamera2:Configuration successful!
+INFO:picamera2.picamera2:Camera started
+INFO:__main__:Camera started
+INFO:__main__:MAIN - Server running on 127.0.0.1:5001
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 49510)
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 49522)
+INFO:__main__:MAIN - Client ('127.0.0.1', 49510) disconnected
+INFO:__main__:MAIN - Received from ('127.0.0.1', 49522): cs
+INFO:__main__:MAIN - Error 'Camera' object has no attribute 'check_stack' with client ('127.0.0.1', 49522)
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 49528)
+INFO:picamera2.picamera2:Camera stopped
+INFO:modules.lidar:Lidar connected successfully
+INFO:modules.lidar:Scan loop started
+INFO:modules.lidar:Scan thread started
+INFO:picamera2.picamera2:Initialization successful.
+INFO:picamera2.picamera2:Camera now open.
+INFO:picamera2.picamera2:Camera configuration has been adjusted!
+INFO:picamera2.picamera2:Configuration successful!
+INFO:picamera2.picamera2:Camera started
+INFO:__main__:Camera started
+INFO:__main__:MAIN - Server running on 127.0.0.1:5001
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 34750)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 34750): cs
+INFO:modules.camera:Stack size 3 failed: region bottom has only 1/2 valid markers
+INFO:__main__:MAIN - Received from ('127.0.0.1', 34750): cs
+INFO:modules.camera:Stack size 3 validation successful
+INFO:__main__:MAIN - Received from ('127.0.0.1', 34750): cs
+INFO:modules.camera:Stack size 3 validation successful
+INFO:__main__:MAIN - Received from ('127.0.0.1', 34750): cs
+INFO:modules.camera:Stack size 3 validation successful
+INFO:__main__:MAIN - Received from ('127.0.0.1', 34750): cs
+INFO:modules.camera:Stack size 3 failed: region top has only 0/2 valid markers
+INFO:__main__:MAIN - Received from ('127.0.0.1', 34750): cs
+INFO:modules.camera:Stack size 3 failed: region top has only 0/2 valid markers
+INFO:__main__:MAIN - Received from ('127.0.0.1', 34750): cs
+INFO:modules.camera:Stack size 3 failed: region top has only 0/2 valid markers
+INFO:__main__:MAIN - Received from ('127.0.0.1', 34750): cs
+INFO:modules.camera:Stack size 3 failed: region top has only 0/2 valid markers
+INFO:picamera2.picamera2:Camera stopped
+INFO:modules.lidar:Lidar connected successfully
+INFO:modules.lidar:Scan loop started
+INFO:modules.lidar:Scan thread started
+INFO:picamera2.picamera2:Initialization successful.
+INFO:picamera2.picamera2:Camera now open.
+INFO:picamera2.picamera2:Camera configuration has been adjusted!
+INFO:picamera2.picamera2:Configuration successful!
+INFO:picamera2.picamera2:Camera started
+INFO:__main__:Camera started
+INFO:__main__:MAIN - Server running on 127.0.0.1:5001
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 57548)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 57548): cs2
+INFO:__main__:MAIN - Error '>=' not supported between instances of 'str' and 'int' with client ('127.0.0.1', 57548)
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 57468)
+INFO:picamera2.picamera2:Camera stopped
+INFO:modules.lidar:Lidar connected successfully
+INFO:modules.lidar:Scan loop started
+INFO:modules.lidar:Scan thread started
+INFO:picamera2.picamera2:Initialization successful.
+INFO:picamera2.picamera2:Camera now open.
+INFO:picamera2.picamera2:Camera configuration has been adjusted!
+INFO:picamera2.picamera2:Configuration successful!
+INFO:picamera2.picamera2:Camera started
+INFO:__main__:Camera started
+INFO:__main__:MAIN - Server running on 127.0.0.1:5001
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 34418)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 34418): cs2
+INFO:modules.camera:Stack size 2 validation successful
+INFO:__main__:MAIN - Received from ('127.0.0.1', 34418): cs3
+INFO:modules.camera:Stack size 3 failed: region top has only 0/2 valid markers
+INFO:picamera2.picamera2:Camera stopped
