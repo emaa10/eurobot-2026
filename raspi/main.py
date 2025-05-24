@@ -200,12 +200,14 @@ class RobotController:
                         await self.motor_controller.drive_distance(-300)
                         
                         self.servos.cans_in()
-                        sleep(0.5)
+                        sleep(1)
                         self.servos.servo_plate_grip(1)
                         sleep(0.5)
                         self.servos.servo_plate_rotate(1)
                         sleep(1)
                         self.stepper.lift_3er()
+
+                        self.servos.servo_mitte_grip()
                         
                         await self.motor_controller.turn_angle(90)
                         await self.motor_controller.drive_distance(500)
@@ -248,6 +250,12 @@ class RobotController:
                         
                     case 'ra':
                         self.servos.release_all()
+                    case 'tt':
+                        self.servos.pos_anfahren()
+                        sleep(1)
+                        self.stepper.home()
+                        sleep(1)
+                        self.servos.start_position()
                     case 'b3': # 3er stapel
                         await self.motor_controller.drive_distance(300)
                         await self.motor_controller.turn_angle(90)
