@@ -4,6 +4,7 @@ import time
 
 # Kamera-Objekt initialisieren
 picam2 = Picamera2()
+picam2.rotate = 270
 
 # Preview-Fenster starten (QtGL nutzt GPU-Acceleration)
 # x,y: Position, width/height: Fenstergröße in Pixel

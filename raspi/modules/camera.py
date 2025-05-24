@@ -22,7 +22,7 @@ class Camera:
     def __init__(self,
                  matrix_path: str = "camera/camera_matrix.npy",
                  dist_path: str = "camera/dist_coeffs.npy",
-                 rotate: int = 180):
+                 rotate: int = 270):
         # Load camera calibration data
         cv2.setUseOptimized(False)
         cv2.ocl.setUseOpenCL(False)
