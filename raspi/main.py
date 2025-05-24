@@ -207,7 +207,7 @@ class RobotController:
                         sleep(1)
                         self.stepper.lift_3er()
 
-                        self.servos.servo_mitte_grip()
+                        self.servos.servo_mitte_grip(1)
                         
                         await self.motor_controller.turn_angle(90)
                         await self.motor_controller.drive_distance(500)
