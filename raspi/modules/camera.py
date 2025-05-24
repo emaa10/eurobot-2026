@@ -160,6 +160,7 @@ class Camera:
     def check_stack(self, size: int) -> bool:
         """
         Prüft ob ein Stack der gewünschten Größe korrekt aufgebaut ist.
+        Teilt das Bild in horizontale Bereiche und prüft jeden Bereich.
         
         Args:
             size (int): Gewünschte Stack-Größe (1, 2, oder 3)
@@ -174,113 +175,108 @@ class Camera:
         frame = self._get_frame()
         self.logger.info(f"Camera: checking {size}-stack")
         
-        # Graustufen + CLAHE Verarbeitung
+        # Y-Höhen für die 3 möglichen Ebenen definieren (in Pixel)
+        y1_start, y1_end = 0, 316
+        y2_start, y2_end = 316, 633
+        y3_start, y3_end = 633, 960
+        
+        # Je nach Stack-Größe die zu prüfenden Bereiche definieren
+        if size == 1:
+            regions = [("bottom", y3_start, y3_end)]
+        elif size == 2:
+            regions = [("middle", y2_start, y2_end), ("bottom", y3_start, y3_end)]
+        else:  # size == 3
+            regions = [("top", y1_start, y1_end), ("middle", y2_start, y2_end), ("bottom", y3_start, y3_end)]
+        
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         processed = clahe.apply(gray)
 
-        # ArUco Marker erkennen
         corners, ids, _ = aruco.detectMarkers(processed, self.aruco_dict, parameters=self.parameters)
         
-        if ids is None or len(ids) < 2 * size:
-            self.logger.info(f"Not enough markers detected: {len(ids) if ids is not None else 0}, need at least {2 * size}")
+        if ids is None:
+            self.logger.info("No markers detected")
             return False
 
-        # Pose estimation
+        # Pose estimation für Orientierungsprüfung
         rvecs, tvecs, _ = aruco.estimatePoseSingleMarkers(
             corners, self.TAG_SIZE, self.camera_matrix, self.dist_coeffs)
         rots = self._calculate_rotations(rvecs)
-
-        # Gruppierung nach räumlicher Nähe (15cm = 0.15m)
-        groups = self._group_markers_by_distance(tvecs, 0.12)
         
-        if len(groups) < size:
-            self.logger.info(f"Not enough groups found: {len(groups)}, need {size}")
-            return False
-
-        # Prüfe jede Gruppe auf Mindestanzahl Marker (2 pro Ebene)
-        valid_groups = []
-        for group in groups:
-            if len(group) >= 2:  # Mindestens 2 Dosen pro Ebene
-                valid_groups.append(group)
-        
-        if len(valid_groups) < size:
-            self.logger.info(f"Not enough valid groups: {len(valid_groups)}, need {size}")
-            return False
-
-        # Sortiere Gruppen nach Höhe (Y-Koordinate in Kamera-Koordinatensystem)
-        # Höhere Y-Werte = weiter unten im Bild = näher am Boden
-        group_heights = []
-        for group in valid_groups:
-            avg_y = np.mean([tvecs[i][0][1] for i in group])
-            group_heights.append((group, avg_y))
-        
-        # Sortiere nach Y-Koordinate (absteigend = von unten nach oben)
-        group_heights.sort(key=lambda x: x[1], reverse=True)
-        sorted_groups = [g[0] for g in group_heights]
-
-        # Prüfe Distanz (20-60cm für alle Gruppen)
-        for group in sorted_groups:
-            avg_distance = np.mean([tvecs[i][0][2] * self.CALIB_FACTOR for i in group])
-            if not (0.20 <= avg_distance <= 0.60):
-                self.logger.info(f"Group distance out of range: {avg_distance:.2f}m")
-                return False
-
-        # Prüfe Orientierung (mindestens ein Marker pro Gruppe richtig orientiert)
-        for group in sorted_groups:
-            group_rot_ok = any(-10 < rots[i][2] < 10 for i in group)
-            if not group_rot_ok:
-                self.logger.info(f"Group orientation check failed")
-                return False
-
-        # Prüfe Höhenverteilung zwischen den Ebenen
-        if size > 1:
-            expected_height_diff = 0.12  # Erwarteter Höhenunterschied zwischen Ebenen (~12cm: Dose + Brett)
-            tolerance = 0.06  # Toleranz für Höhenunterschiede
+        # Für jeden zu prüfenden Bereich
+        for region_name, y_start, y_end in regions:
+            markers_in_region = []
             
-            for i in range(len(sorted_groups) - 1):
-                current_height = group_heights[i][1] 
-                next_height = group_heights[i + 1][1]
-                height_diff = abs(current_height - next_height)
-                
-                if height_diff < (expected_height_diff - tolerance):
-                    self.logger.info(f"Height difference too small between levels: {height_diff:.2f}m")
-                    return False
-
+            # Finde alle Marker in diesem Y-Bereich
+            for i, corner in enumerate(corners):
+                # Berechne Mittelpunkt des Markers
+                M = cv2.moments(corner[0])
+                if M["m00"] != 0:
+                    cy = int(M["m01"] / M["m00"])
+                    cx = int(M["m10"] / M["m00"])
+                    
+                    # Prüfe ob Marker in diesem Y-Bereich liegt
+                    if y_start <= cy <= y_end:
+                        # Prüfe Distanz (20-60cm)
+                        distance = tvecs[i][0][2] * self.CALIB_FACTOR
+                        if 0.20 <= distance <= 0.60:
+                            # Prüfe Orientierung
+                            if -10 < rots[i][2] < 10:
+                                markers_in_region.append((i, cx, cy))
+            
+            self.logger.info(f"Region {region_name}: found {len(markers_in_region)} valid markers")
+            
+            if len(markers_in_region) < 2:
+                self.logger.info(f"Region {region_name}: not enough markers ({len(markers_in_region)} < 2)")
+                return False
+            
+            #! pixel distance testen
+            max_pixel_distance = 450
+            
+            groups = self._group_markers_by_x_distance(markers_in_region, max_pixel_distance)
+            
+            valid_group_found = False
+            for group in groups:
+                if len(group) >= 2:
+                    valid_group_found = True
+                    break
+            
+            if not valid_group_found:
+                self.logger.info(f"Region {region_name}: no group with >= 2 markers within 15cm found")
+                return False
+        
         self.logger.info(f"Stack size {size} validation successful")
         return True
 
-    def _group_markers_by_distance(self, tvecs: np.ndarray, max_distance: float) -> list:
+    def _group_markers_by_x_distance(self, markers: list, max_pixel_distance: int) -> list:
         """
-        Gruppiert Marker basierend auf räumlicher Distanz.
+        Gruppiert Marker basierend auf horizontaler Pixel-Distanz.
         
         Args:
-            tvecs: Translation vectors der Marker
-            max_distance: Maximale Distanz für Gruppierung
+            markers: Liste von (index, cx, cy) Tupeln
+            max_pixel_distance: Maximale horizontale Pixel-Distanz für Gruppierung
             
         Returns:
-            list: Liste von Gruppen (jede Gruppe ist Liste von Marker-Indizes)
+            list: Liste von Gruppen (jede Gruppe ist Liste von Marker-Tupeln)
         """
-        groups = []
-        visited = [False] * len(tvecs)
+        if not markers:
+            return []
         
-        for i in range(len(tvecs)):
+        groups = []
+        visited = [False] * len(markers)
+        
+        for i, (idx, cx, cy) in enumerate(markers):
             if not visited[i]:
-                group = [i]
+                group = [markers[i]]
                 visited[i] = True
                 
-                # Iterativ alle nahen Marker zur Gruppe hinzufügen
-                j = 0
-                while j < len(group):
-                    current_idx = group[j]
-                    for k in range(len(tvecs)):
-                        if not visited[k]:
-                            # Berechne 3D Distanz zwischen Markern
-                            distance = np.linalg.norm(tvecs[current_idx][0] - tvecs[k][0])
-                            if distance <= max_distance:
-                                group.append(k)
-                                visited[k] = True
-                    j += 1
+                # Finde alle Marker in horizontaler Nähe
+                for j, (other_idx, other_cx, other_cy) in enumerate(markers):
+                    if not visited[j]:
+                        x_distance = abs(cx - other_cx)
+                        if x_distance <= max_pixel_distance:
+                            group.append(markers[j])
+                            visited[j] = True
                 
                 groups.append(group)
         
