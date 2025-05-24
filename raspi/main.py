@@ -155,6 +155,8 @@ class RobotController:
                         self.servos.pos_anfahren()
                         sleep(0.7)
                         self.stepper.anfahren()
+
+                        self.motor_controller.set_pos()
                         
                         await self.motor_controller.drive_distance(350)
                         await self.motor_controller.turn_angle(90)
@@ -181,7 +183,7 @@ class RobotController:
                         self.servos.release_all()
                         sleep(0.5)
                         await self.motor_controller.drive_distance(-200)
-                        await self.motor_controller.turn_angle(-88)
+                        await self.motor_controller.turn_angle(-90)
 
                         self.servos.pos_anfahren()
                         sleep(0.3)

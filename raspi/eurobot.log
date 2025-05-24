@@ -94,3 +94,81 @@ INFO:modules.camera:Stack size 2 validation successful
 INFO:__main__:MAIN - Received from ('127.0.0.1', 34418): cs3
 INFO:modules.camera:Stack size 3 failed: region top has only 0/2 valid markers
 INFO:picamera2.picamera2:Camera stopped
+INFO:modules.lidar:Lidar connected successfully
+INFO:modules.lidar:Scan loop started
+INFO:modules.lidar:Scan thread started
+INFO:picamera2.picamera2:Initialization successful.
+INFO:picamera2.picamera2:Camera now open.
+INFO:picamera2.picamera2:Camera configuration has been adjusted!
+INFO:picamera2.picamera2:Configuration successful!
+INFO:picamera2.picamera2:Camera started
+INFO:__main__:Camera started
+INFO:__main__:MAIN - Server running on 127.0.0.1:5001
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 36094)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 36094): cs3
+INFO:__main__:MAIN - Unknown msg: cs3
+INFO:picamera2.picamera2:Camera stopped
+INFO:modules.lidar:Lidar connected successfully
+INFO:modules.lidar:Scan loop started
+INFO:modules.lidar:Scan thread started
+INFO:picamera2.picamera2:Initialization successful.
+INFO:picamera2.picamera2:Camera now open.
+INFO:picamera2.picamera2:Camera configuration has been adjusted!
+INFO:picamera2.picamera2:Configuration successful!
+INFO:picamera2.picamera2:Camera started
+INFO:__main__:Camera started
+INFO:__main__:MAIN - Server running on 127.0.0.1:5001
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 59910)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 59910): cs3
+INFO:__main__:MAIN - Error int() base must be >= 2 and <= 36, or 0 with client ('127.0.0.1', 59910)
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 37516)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 37516): cs3
+INFO:__main__:MAIN - Error int() base must be >= 2 and <= 36, or 0 with client ('127.0.0.1', 37516)
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 36650)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 36650): cs3
+INFO:__main__:MAIN - Error int() base must be >= 2 and <= 36, or 0 with client ('127.0.0.1', 36650)
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 36652)
+INFO:picamera2.picamera2:Camera stopped
+INFO:modules.lidar:Lidar connected successfully
+INFO:modules.lidar:Scan loop started
+INFO:modules.lidar:Scan thread started
+INFO:picamera2.picamera2:Initialization successful.
+INFO:picamera2.picamera2:Camera now open.
+INFO:picamera2.picamera2:Camera configuration has been adjusted!
+INFO:picamera2.picamera2:Configuration successful!
+INFO:picamera2.picamera2:Camera started
+INFO:__main__:Camera started
+INFO:__main__:MAIN - Server running on 127.0.0.1:5001
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 54034)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 54034): cs
+INFO:__main__:MAIN - Error string index out of range with client ('127.0.0.1', 54034)
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 54646)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 54646): cs3
+INFO:modules.camera:Stack size 3 failed: region bottom has no 4cm distance between markers
+INFO:picamera2.picamera2:Camera stopped
+INFO:modules.lidar:Lidar connected successfully
+INFO:modules.lidar:Scan loop started
+INFO:modules.lidar:Scan thread started
+INFO:picamera2.picamera2:Initialization successful.
+INFO:picamera2.picamera2:Camera now open.
+INFO:picamera2.picamera2:Camera configuration has been adjusted!
+INFO:picamera2.picamera2:Configuration successful!
+INFO:picamera2.picamera2:Camera started
+INFO:__main__:Camera started
+INFO:__main__:MAIN - Server running on 127.0.0.1:5001
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 50016)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 50016): cs2
+INFO:modules.camera:Stack size 2 validation successful
+INFO:__main__:MAIN - Received from ('127.0.0.1', 50016): cs
+INFO:__main__:MAIN - Error string index out of range with client ('127.0.0.1', 50016)
+INFO:__main__:MAIN - Connected to client at ('127.0.0.1', 50022)
+INFO:__main__:MAIN - Received from ('127.0.0.1', 50022): cs3
+INFO:modules.camera:Stack size 3 failed: region top has only 0/2 valid markers
+INFO:__main__:MAIN - Received from ('127.0.0.1', 50022): cs2
+INFO:modules.camera:Stack size 2 validation successful
+INFO:__main__:MAIN - Received from ('127.0.0.1', 50022): cs3
+INFO:modules.camera:Stack size 3 failed: region top has only 0/2 valid markers
+INFO:__main__:MAIN - Received from ('127.0.0.1', 50022): cs1
+INFO:modules.camera:Stack size 1 validation successful
+INFO:__main__:MAIN - Client ('127.0.0.1', 50022) disconnected
+INFO:picamera2.picamera2:Camera stopped

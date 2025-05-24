@@ -231,7 +231,7 @@ class Camera:
             if debug_cam:
                 print(f"--- Prüfe Ebene: {region_name.upper()} (Y: {y_start}-{y_end}) ---")
             
-            valid_markers = 0
+            valid_markers = []
             
             # Finde Marker in dieser Ebene
             for i, (corner, marker_id) in enumerate(zip(corners, ids)):
@@ -260,24 +260,66 @@ class Camera:
                             print(f"    Rotation OK: {rotation_ok} (-{MAX_ROTATION_Z}° ≤ {rot_z:.1f}° ≤ {MAX_ROTATION_Z}°)")
                         
                         if distance_ok and rotation_ok:
-                            valid_markers += 1
+                            # Speichere gültige Marker mit ihrer 3D-Position
+                            valid_markers.append({
+                                'id': marker_id[0],
+                                'pixel_pos': (cx, cy),
+                                '3d_pos': tvecs[i][0],  # 3D Position für Distanzberechnung
+                                'distance': distance,
+                                'rotation_z': rot_z
+                            })
                             if debug_cam:
                                 print(f"    ✅ Marker {marker_id[0]} GÜLTIG")
                         else:
                             if debug_cam:
                                 print(f"    ❌ Marker {marker_id[0]} ungültig")
             
-            region_success = valid_markers >= 2
+            # Prüfe ob mindestens 2 gültige Marker vorhanden sind
+            if len(valid_markers) < 2:
+                if debug_cam:
+                    print(f"  ❌ Nur {len(valid_markers)} gültige Marker, mindestens 2 benötigt")
+                    print(f"❌ Stack-Größe {size} fehlgeschlagen: Ebene {region_name} hat nur {len(valid_markers)}/2 gültige Marker")
+                self.logger.info(f"Stack size {size} failed: region {region_name} has only {len(valid_markers)}/2 valid markers")
+                return False
+            
+            # Prüfe 4cm-Abstand zwischen Markern
+            has_4cm_distance = False
+            MIN_DISTANCE_3D = 0.03  # 4cm in Metern
             
             if debug_cam:
-                print(f"  Ergebnis {region_name}: {valid_markers}/2 gültige Marker - "
-                    f"{'✅ ERFOLGREICH' if region_success else '❌ FEHLGESCHLAGEN'}")
+                print(f"  Prüfe 4cm-Abstände zwischen {len(valid_markers)} Markern:")
             
-            if not region_success:
+            for i in range(len(valid_markers)):
+                for j in range(i + 1, len(valid_markers)):
+                    marker1 = valid_markers[i]
+                    marker2 = valid_markers[j]
+                    
+                    # Berechne 3D-Distanz zwischen den beiden Markern
+                    pos1 = marker1['3d_pos']
+                    pos2 = marker2['3d_pos']
+                    distance_3d = np.linalg.norm(pos1 - pos2) * self.CALIB_FACTOR
+                    
+                    if debug_cam:
+                        print(f"    Marker {marker1['id']} <-> Marker {marker2['id']}: {distance_3d:.3f}m")
+                    
+                    if distance_3d >= MIN_DISTANCE_3D:
+                        has_4cm_distance = True
+                        if debug_cam:
+                            print(f"    ✅ 4cm-Abstand gefunden: {distance_3d:.3f}m >= {MIN_DISTANCE_3D}m")
+                        break
+                
+                if has_4cm_distance:
+                    break
+            
+            if not has_4cm_distance:
                 if debug_cam:
-                    print(f"❌ Stack-Größe {size} fehlgeschlagen: Ebene {region_name} hat nur {valid_markers}/2 gültige Marker")
-                self.logger.info(f"Stack size {size} failed: region {region_name} has only {valid_markers}/2 valid markers")
+                    print(f"  ❌ Kein 4cm-Abstand zwischen Markern gefunden")
+                    print(f"❌ Stack-Größe {size} fehlgeschlagen: Ebene {region_name} hat keinen 4cm-Abstand zwischen Markern")
+                self.logger.info(f"Stack size {size} failed: region {region_name} has no 4cm distance between markers")
                 return False
+            
+            if debug_cam:
+                print(f"  ✅ Ergebnis {region_name}: {len(valid_markers)} gültige Marker mit 4cm-Abstand - ERFOLGREICH")
         
         if debug_cam:
             print(f"✅ Stack-Größe {size} erfolgreich validiert")
