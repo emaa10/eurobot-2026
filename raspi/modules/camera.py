@@ -86,6 +86,7 @@ class Camera:
         #     return self.frame.copy()
 
         frame = self.picam2.capture_array()
+        frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
         threading.Thread(target=cv2.imwrite, args=(f"/home/eurobot/Desktop/camera/{time.strftime('%Y%m%d_%H%M%S')}.png", frame)).start()
         # threading.Thread(target=cv2.imwrite, args=("/home/eurobot/Desktop/image.png", frame)).start()
         return frame
