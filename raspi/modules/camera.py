@@ -158,16 +158,15 @@ class Camera:
 
         return ok
 
-    def check_stacks(self, debug_cam: bool = False) -> bool:
+    def check_stacks(self, debug_cam: bool = False) -> int:
         """
-        Prüft ob ein Stack der gewünschten Größe korrekt aufgebaut ist.
+        Prüft die Stack-Größe und gibt die erkannte Größe zurück.
         
         Args:
-            size (int): Gewünschte Stack-Größe (1, 2, oder 3)
             debug_cam (bool): Debug-Ausgaben aktivieren
             
         Returns:
-            bool: True wenn Stack korrekt, False sonst
+            int: Erkannte Stack-Größe (0=kein Stack, 1-3=Stack-Größe)
         """
         frame = self._get_frame()
         if debug_cam:
@@ -177,9 +176,9 @@ class Camera:
         width = frame.shape[1]   # 960
         
         regions = {
-            'top': (0, 335),           # oben: 0-335
+            'bottom': (783, 1280),     # unten: 783-1280
             'middle': (335, 783),      # mitte: 335-783
-            'bottom': (783, 1280)      # unten: 783-1280
+            'top': (0, 335)            # oben: 0-335
         }
         
         if debug_cam:
@@ -197,7 +196,7 @@ class Camera:
         if ids is None:
             if debug_cam:
                 print("❌ Keine Marker erkannt!")
-            return False
+            return 0
         
         if debug_cam:
             print(f"✅ {len(ids)} Marker erkannt")
@@ -207,18 +206,17 @@ class Camera:
         
         rotations = self._calculate_rotations(rvecs)
         
-        MIN_DISTANCE = 0.10  # Reduziert von 0.20m
-        MAX_DISTANCE = 1.00  # Erhöht von 0.60m
-        MAX_ROTATION_Z = 15  # Erhöht von 10 Grad
+        #! kann man anpassen
+        MIN_DISTANCE = 0.10
+        MAX_DISTANCE = 1.00
+        MAX_ROTATION_Z = 15
         
-        # Prüfe relevante Ebenen basierend auf Stack-Größe
-        regions_to_check = []
-        regions_to_check.append(('bottom', regions['bottom']))
-        regions_to_check.append(('middle', regions['middle']))
-        regions_to_check.append(('top', regions['top']))
+        region_order = ['bottom', 'middle', 'top']
+        detected_stack_size = 0
         
-        # Prüfe jede Ebene
-        for region_name, (y_start, y_end) in regions_to_check:
+        for region_name in region_order:
+            y_start, y_end = regions[region_name]
+            
             if debug_cam:
                 print(f"--- Prüfe Ebene: {region_name.upper()} (Y: {y_start}-{y_end}) ---")
             
@@ -231,7 +229,7 @@ class Camera:
                     cx = int(M["m10"] / M["m00"])
                     cy = int(M["m01"] / M["m00"])
                     
-                    # Prüfe Y-Position
+                    # Prüfe Y-pos
                     if y_start <= cy <= y_end:
                         distance = tvecs[i][0][2] * self.CALIB_FACTOR
                         rot_z = rotations[i][2]
@@ -240,10 +238,7 @@ class Camera:
                             print(f"  Marker {marker_id[0]} in Ebene: "
                                 f"Pos({cx},{cy}), Dist {distance:.2f}m, Rot {rot_z:.1f}°")
                         
-                        # Prüfe Distanz (lockere Grenzen)
                         distance_ok = MIN_DISTANCE <= distance <= MAX_DISTANCE
-                        
-                        # Prüfe Orientierung (lockere Grenzen)
                         rotation_ok = -MAX_ROTATION_Z <= rot_z <= MAX_ROTATION_Z
                         
                         if debug_cam:
@@ -251,11 +246,10 @@ class Camera:
                             print(f"    Rotation OK: {rotation_ok} (-{MAX_ROTATION_Z}° ≤ {rot_z:.1f}° ≤ {MAX_ROTATION_Z}°)")
                         
                         if distance_ok and rotation_ok:
-                            # Speichere gültige Marker mit ihrer 3D-Position
                             valid_markers.append({
                                 'id': marker_id[0],
                                 'pixel_pos': (cx, cy),
-                                '3d_pos': tvecs[i][0],  # 3D Position für Distanzberechnung
+                                '3d_pos': tvecs[i][0],  # 3D pos für dist
                                 'distance': distance,
                                 'rotation_z': rot_z
                             })
@@ -265,15 +259,13 @@ class Camera:
                             if debug_cam:
                                 print(f"    ❌ Marker {marker_id[0]} ungültig")
             
-            # Prüfe ob mindestens 2 gültige Marker vorhanden sind
             if len(valid_markers) < 2:
                 if debug_cam:
                     print(f"  ❌ Nur {len(valid_markers)} gültige Marker, mindestens 2 benötigt")
-                    print(f"❌ Stack-Größe {size} fehlgeschlagen: Ebene {region_name} hat nur {len(valid_markers)}/2 gültige Marker")
-                self.logger.info(f"Stack size {size} failed: region {region_name} has only {len(valid_markers)}/2 valid markers")
-                return False
+                    print(f"  Ebene {region_name} erfüllt nicht die Kriterien - Stack endet hier")
+                break
             
-            # Prüfe 4cm-Abstand zwischen Markern
+            # distance between markers
             has_4cm_distance = False
             MIN_DISTANCE_3D = 0.03  # 4cm in Metern
             
@@ -305,17 +297,24 @@ class Camera:
             if not has_4cm_distance:
                 if debug_cam:
                     print(f"  ❌ Kein 4cm-Abstand zwischen Markern gefunden")
-                    print(f"❌ Stack-Größe {size} fehlgeschlagen: Ebene {region_name} hat keinen 4cm-Abstand zwischen Markern")
-                self.logger.info(f"Stack size {size} failed: region {region_name} has no 4cm distance between markers")
-                return False
+                    print(f"  Ebene {region_name} erfüllt nicht die Kriterien - Stack endet hier")
+                break
+            
+            # Ebene ist gültig - Stack-Größe erhöhen
+            detected_stack_size += 1
             
             if debug_cam:
                 print(f"  ✅ Ergebnis {region_name}: {len(valid_markers)} gültige Marker mit 4cm-Abstand - ERFOLGREICH")
+                print(f"  Stack-Größe bisher: {detected_stack_size}")
         
         if debug_cam:
-            print(f"✅ Stack-Größe {size} erfolgreich validiert")
-        self.logger.info(f"Stack size {size} validation successful")
-        return True
+            if detected_stack_size == 0:
+                print(f"❌ Kein gültiger Stack erkannt")
+            else:
+                print(f"✅ Stack-Größe {detected_stack_size} erkannt")
+        
+        self.logger.info(f"Detected stack size: {detected_stack_size}")
+        return detected_stack_size
 
     def _group_markers_by_x_distance(self, markers: list, max_pixel_distance: int) -> list:
         """

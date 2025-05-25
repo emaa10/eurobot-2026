@@ -39,9 +39,9 @@ class Task():
             case 'sp':
                 values = msg[2:].split(';')
                 self.motor_controller.set_pos(int(values[0]), int(values[1]), int(values[2]))
-            case 'cs':
-                # check stack
-                print(self.camera.check_stacks(int(msg[2]), True))
+            case 'cs': #check stack
+                print(self.camera.check_stacks(True)) # debug oder nicht
+                # gibt anzahl stacks zurück
             case 'st':  # set tactic
                 start_pos, tactic = msg[2:].split(';')
                 self.set_tactic(int(start_pos), int(tactic))

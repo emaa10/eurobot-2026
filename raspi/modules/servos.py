@@ -84,8 +84,8 @@ class Servos:
     # 1: auf, 2: zu
     def servo_plate_grip(self, pos: int):
         value = 0 
-        if pos == 1: value = 1000
-        else: value = 1650
+        if pos == 1: value = 950
+        else: value = 1600
         self.write_servo(8, value)
         
     def pos_anfahren(self):
