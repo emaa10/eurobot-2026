@@ -158,7 +158,7 @@ class Camera:
 
         return ok
 
-    def check_stacks(self, size: int, debug_cam: bool = False) -> bool:
+    def check_stacks(self, debug_cam: bool = False) -> bool:
         """
         Prüft ob ein Stack der gewünschten Größe korrekt aufgebaut ist.
         
@@ -171,12 +171,11 @@ class Camera:
         """
         frame = self._get_frame()
         if debug_cam:
-            print(f"🎯 Prüfe Stack-Größe {size}")
+            print(f"🎯 Prüfe Stack-Größen")
         
         height = frame.shape[0]  # 1280
         width = frame.shape[1]   # 960
         
-        # Ebenen-Definition (exakte Y-Bereiche)
         regions = {
             'top': (0, 335),           # oben: 0-335
             'middle': (335, 783),      # mitte: 335-783
@@ -189,12 +188,10 @@ class Camera:
             for name, (start, end) in regions.items():
                 print(f"  {name.capitalize()}: Y {start}-{end}")
         
-        # Graustufen-Verarbeitung
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         processed = clahe.apply(gray)
 
-        # Marker erkennen mit optimierten Parametern
         corners, ids, _ = aruco.detectMarkers(processed, self.aruco_dict, parameters=self.parameters)
         
         if ids is None:
@@ -205,26 +202,20 @@ class Camera:
         if debug_cam:
             print(f"✅ {len(ids)} Marker erkannt")
 
-        # Pose estimation für Orientierungs- und Distanzprüfung
         rvecs, tvecs, _ = aruco.estimatePoseSingleMarkers(
             corners, self.TAG_SIZE, self.camera_matrix, self.dist_coeffs)
         
-        # Rotationen berechnen
         rotations = self._calculate_rotations(rvecs)
         
-        # Optimierte Grenzen
         MIN_DISTANCE = 0.10  # Reduziert von 0.20m
         MAX_DISTANCE = 1.00  # Erhöht von 0.60m
         MAX_ROTATION_Z = 15  # Erhöht von 10 Grad
         
         # Prüfe relevante Ebenen basierend auf Stack-Größe
         regions_to_check = []
-        if size >= 1:
-            regions_to_check.append(('bottom', regions['bottom']))
-        if size >= 2:
-            regions_to_check.append(('middle', regions['middle']))
-        if size >= 3:
-            regions_to_check.append(('top', regions['top']))
+        regions_to_check.append(('bottom', regions['bottom']))
+        regions_to_check.append(('middle', regions['middle']))
+        regions_to_check.append(('top', regions['top']))
         
         # Prüfe jede Ebene
         for region_name, (y_start, y_end) in regions_to_check:
