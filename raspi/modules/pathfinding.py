@@ -24,22 +24,22 @@ class Pathfinder():
         self.bot_width = bot_width
         
         # stacks
-        self.add_stack(Position(0, 20), Position(13, 60)) #1
-        self.add_stack(Position(0, 112), Position(13, 152)) #2
-        self.add_stack(Position(65, 165), Position(105, 175)) #3
-        self.add_stack(Position(195, 165), Position(235, 175)) #4
-        self.add_stack(Position(287, 112), Position(299, 152)) #5
-        self.add_stack(Position(287, 20), Position(299, 60)) #6
-        self.add_stack(Position(90, 90), Position(130, 100)) #9
-        self.add_stack(Position(170, 90), Position(210, 100)) #10
+        # self.add_stack(Position(0, 20), Position(13, 60)) #1
+        # self.add_stack(Position(0, 112), Position(13, 152)) #2
+        # self.add_stack(Position(65, 165), Position(105, 175)) #3
+        # self.add_stack(Position(195, 165), Position(235, 175)) #4
+        # self.add_stack(Position(287, 112), Position(299, 152)) #5
+        # self.add_stack(Position(287, 20), Position(299, 60)) #6
+        # self.add_stack(Position(90, 90), Position(130, 100)) #9
+        # self.add_stack(Position(170, 90), Position(210, 100)) #10
         
         # stage and ramp
-        self.add_obstacle(Position(65, 180), Position(235, 199))
-        self.add_obstacle(Position(105, 150), Position(195, 180))
+        # self.add_obstacle(Position(65, 180), Position(235, 199))
+        # self.add_obstacle(Position(105, 150), Position(195, 180))
         
         # simas
-        self.add_obstacle(Position(0, 155), Position(15, 199))
-        self.add_obstacle(Position(285, 155), Position(299, 199))
+        # self.add_obstacle(Position(0, 155), Position(15, 199))
+        # self.add_obstacle(Position(285, 155), Position(299, 199))
         
         # middle_points
         self.middle_points = [Position(150, 75), Position(150, 115), Position(75, 50), Position(225, 50)]
