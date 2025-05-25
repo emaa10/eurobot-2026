@@ -103,7 +103,7 @@ class Servos:
         self.servo_left_grip(2)
         self.servo_right_grip(2)
         self.servo_plate_grip(2)
-        time.sleep(0.4)
+        time.sleep(1)
         self.servo_left_rotate(1)
         self.servo_right_rotate(1)
         
