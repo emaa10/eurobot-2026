@@ -171,6 +171,7 @@ class Task():
                 # await self.motor_controller.drive_distance(-200)
                 
                 await self.motor_controller.drive_to_point(2575, 400, 90)
+                await self.motor_controller.drive_to_point(2600, 400, 90)
                 await self.motor_controller.drive_to_point(2850, 400, 90)
                 
                 self.stepper.down()
@@ -192,7 +193,7 @@ class Task():
                 self.servos.servo_plate_rotate(1)
                 self.servos.cans_in()
                 
-                await self.motor_controller.drive_distance(210)
+                await self.motor_controller.drive_distance(250)
                 self.servos.grip_unten()
                 self.stepper.set_pos_mm(20, 0, 20)
                 

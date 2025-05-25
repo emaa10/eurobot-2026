@@ -92,7 +92,7 @@ class Servos:
         self.servo_left_rotate(2)
         self.servo_right_rotate(2)
         self.servo_mitte_lift(1)
-        self.servo_mitte_grip(3)
+        self.servo_mitte_grip(1)
         self.servo_left_grip(1)
         self.servo_right_grip(1)
         self.servo_plate_rotate(2)
