@@ -48,6 +48,9 @@ class Stepper:
     
     def lift(self):
         self.set_pos_mm(140, 130, 140)
+        
+    def build_1er(self):
+        self.set_pos_mm(30, 15, 30)
     
     def lift_1er(self):
         self.set_pos_mm(30, 30, 30)

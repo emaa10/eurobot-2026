@@ -108,10 +108,8 @@ class Servos:
         self.servo_right_rotate(1)
         
     def grip_one_layer(self):
-        self.servo_plate_grip(2)
         self.servo_left_grip(2)
         self.servo_right_grip(2)
-        time.sleep(0.5)
         self.servo_left_rotate(1)
         self.servo_right_rotate(1)
     
@@ -139,9 +137,6 @@ class Servos:
         self.servo_plate_grip(1)
         time.sleep(0.3)
         self.servo_plate_rotate(1)
-        
-    def pos_wegfahren(self):
-        self.servo_mitte_lift(2)
         
     def grip_unten(self):
         self.servo_left_grip(2)
