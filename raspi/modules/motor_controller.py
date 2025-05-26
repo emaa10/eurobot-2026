@@ -263,7 +263,7 @@ class MotorController():
         self.direction = 0
         self.finished = False
         
-        turn = 10.93
+        turn = 11.3
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
@@ -273,11 +273,17 @@ class MotorController():
         
         if target_theta < 0: target_theta += 360
         if target_theta > 360: target_theta -= 360
+        
         while not self.finished:
             await self.control_loop()
-        
+                                        
+            delta_t = abs(target_theta - self.theta)
+            if delta_t > 180: delta_t = 360 - delta_t
+            
+            if delta_t < angle/120:
+                break
+                    
         await self.set_stop()  
-    
         
     async def turn_to(self, theta: float):
         delta_t = theta - self.theta
@@ -381,7 +387,7 @@ class MotorController():
                 arena_y = distance * math.cos(arena_angle_rad) + self.y 
                 
                 point_in_arena = 0 <= arena_x <= 3000 and 0 <= arena_y <= 2000
-                point_in_arena = False # ÄNDERN FÜR MATCH
+                point_in_arena = True # ÄNDERN FÜR MATCH
                             
                 if (self.direction >= 0 and 0 <= d_y <= 450) and abs(d_x) <= 275 and point_in_arena:
                     self.stop = True

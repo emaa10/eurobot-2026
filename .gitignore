@@ -7,4 +7,4 @@ raspi/modules/__pycache__
 raspi/logs
 raspi/.venv
 robot-visualization
-#raspi/eurobot.log
+raspi/eurobot.log
