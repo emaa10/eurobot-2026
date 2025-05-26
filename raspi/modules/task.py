@@ -94,6 +94,8 @@ class Task():
             case 'ip':
                 increase_points = int(msg[2:])
                 self.points += increase_points
+            case 'fd':
+                self.gripper.servos.servo_flag(2)
             case 'll': #test gripper lift strength
                 self.gripper.servos.servo_plate_rotate(1)
                 sleep(0.1)

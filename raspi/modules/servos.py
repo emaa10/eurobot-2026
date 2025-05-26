@@ -114,6 +114,15 @@ class Servos:
         else: value = 1640
         self.write_servo(8, value)
     
+    def servo_flag(self, pos: int):
+        """
+        1: oben, 2: unten
+        """
+        value = 0 
+        if pos == 1: value = 2200
+        else: value = 750
+        self.write_servo(6, value)
+    
     def pos_anfahren(self):
         """
         servos auf anfahren setzen
@@ -126,6 +135,8 @@ class Servos:
         self.servo_right_grip(1)
         self.servo_plate_rotate(2)
         self.servo_plate_grip(1)
+        self.servo_flag(1)
+        
     
     def grip_cans(self):
         """
