@@ -40,14 +40,6 @@ class Task():
             case 'cs': #check stack
                 print(self.camera.check_stacks(True)) # debug oder nicht
                 # gibt anzahl stacks zurück
-            case 'st':  # set tactic
-                start_pos, tactic = msg[2:].split(';')
-                self.set_tactic(int(start_pos), int(tactic))
-                self.logger.info(f"set tactic: pos:{start_pos} tactic:{tactic}")
-                await self.home()
-                await asyncio.sleep(1)
-                asyncio.create_task(self.run_tactic())
-                await asyncio.sleep(0.5)
             case 'ws': # write servo
                 values = msg[2:].split(';')
                 self.logger.info(f"set servo cmd: {values}")

@@ -17,7 +17,7 @@ class Gripper:
     def anfahren(self):
         self.servos.pos_anfahren()
         sleep(0.3)
-        self.stepper.anfahren()
+        self.stepper.pos_anfahren()
         
     # seperate stack from arena
     def seperate(self):

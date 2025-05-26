@@ -111,7 +111,7 @@ class Servos:
         """
         value = 0 
         if pos == 1: value = 950
-        else: value = 1600
+        else: value = 1640
         self.write_servo(8, value)
     
     def pos_anfahren(self):
