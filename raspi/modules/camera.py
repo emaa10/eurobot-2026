@@ -58,13 +58,6 @@ class Camera:
         self.running = False
         self.picam2.stop()
 
-    def _update_frame(self):
-        while self.running:
-            frame = self.picam2.capture_array()
-            with self._lock: # lässt den lock an, solange frame gecaptured wird
-                self.frame = frame
-            time.sleep(0.01)
-
     def _get_frame(self) -> np.ndarray:
         """
         Retrieve the latest frame. Raises if no frame available yet.
