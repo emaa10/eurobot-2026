@@ -62,11 +62,6 @@ class Camera:
         """
         Retrieve the latest frame. Raises if no frame available yet.
         """
-        # with self._lock:
-        #     if self.frame is None:
-        #         raise RuntimeError("Frame not ready yet. Call start() and wait.")
-        #     return self.frame.copy()
-
         frame = self.picam2.capture_array()
         frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
         threading.Thread(target=cv2.imwrite, args=(f"/home/eurobot/Desktop/camera/{time.strftime('%Y%m%d_%H%M%S')}.png", frame)).start()
