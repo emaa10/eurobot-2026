@@ -429,7 +429,7 @@ class Camera:
             
             correct_count = len(groups) >= 3
             dist_ok = all(
-                0.6 >= np.mean([tvecs[i][0][2]*self.CALIB_FACTOR for i in g]) >= 0.02
+                0.8 >= np.mean([tvecs[i][0][2]*self.CALIB_FACTOR for i in g]) >= 0.02
                 for g in groups)
             rot_ok = any(-10 < r[2] < 10 for r in rots)
             ok = correct_count and dist_ok and rot_ok
@@ -445,10 +445,8 @@ class Camera:
                 if pts:
                     cx = int(np.mean([p[0] for p in pts]))
                     cy = int(np.mean([p[1] for p in pts]))
-                    # cv2.circle(display, (cx, cy), 10, (0,255,0), -1)
 
         color = (0,255,0) if ok else (0,0,255)
-        # cv2.putText(display, f"Check Cans: {ok}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
         return ok, display
         
     def _process_angle(self, frame: np.ndarray):
