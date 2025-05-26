@@ -3,6 +3,7 @@ import sys
 import RPi.GPIO as GPIO
 import logging
 from time import time, sleep
+import signal
 
 from modules.task import Task
 from modules.camera import Camera
@@ -32,7 +33,6 @@ class RobotController:
         self.camera = Camera() if self.CAM else None
         self.servos = Servos()
         self.stepper = Stepper()
-
 
         if self.CAM:
             self.camera.start()
@@ -170,10 +170,50 @@ class RobotController:
             return -1
         return self.tactic.points
         
+    async def cleanup(self):
+        """Clean up all resources before exit"""
+        self.logger.info("Starting cleanup...")
+        
+        # Stop the motor controller
+        await self.motor_controller.set_stop()
+        
+        # Stop the lidar
+        if self.motor_controller.lidar:
+            self.motor_controller.lidar.stop()
+            
+        # Release all servos
+        if self.servos:
+            self.servos.release_all()
+            
+        # Clean up GPIO
+        GPIO.cleanup()
+        
+        self.logger.info("Cleanup completed")
+
 # main bot loop now
 async def main():
     controller = RobotController()
-    await controller.start_server()
+    
+    # Set up signal handler
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(shutdown(controller)))
+    loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(shutdown(controller)))
+    
+    try:
+        await controller.start_server()
+    except Exception as e:
+        controller.logger.error(f"Error in main loop: {e}")
+        await controller.cleanup()
+
+async def shutdown(controller):
+    """Handle shutdown gracefully"""
+    controller.logger.info("Shutdown initiated")
+    await controller.cleanup()
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    [task.cancel() for task in tasks]
+    await asyncio.gather(*tasks, return_exceptions=True)
+    loop = asyncio.get_running_loop()
+    loop.stop()
 
 if __name__ == '__main__':
     try:

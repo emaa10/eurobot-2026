@@ -171,11 +171,7 @@ class MotorController():
         self.abortable = True
         
         self.latest_scan_time = 0
-        self.time_started = 9999999999999999
-        
-        
-        self.gegi = False
-        
+        self.time_started = 9999999999999999        
         
     def set_pos(self, x, y, theta):
         self.x = x
@@ -378,29 +374,26 @@ class MotorController():
             self.stop = False
             for angle, distance in latest_scan:
                 # point in relation to bot
-                d_x = distance * math.sin((angle+180) * math.pi / 180)
-                d_y = distance * math.cos((angle+180) * math.pi / 180)
+                d_x = distance * math.sin(angle * math.pi / 180)
+                d_y = distance * math.cos(angle * math.pi / 180)
                  
                 # point in arena
-                arena_angle_rad = (180 - angle + self.theta) * math.pi / 180 
+                arena_angle_rad = (angle + self.theta) * math.pi / 180 
                 arena_x = -distance * math.sin(arena_angle_rad) + self.x 
                 arena_y = distance * math.cos(arena_angle_rad) + self.y 
                 
                 point_in_arena = 0 <= arena_x <= 3000 and 0 <= arena_y <= 2000
-                point_in_arena = True # ÄNDERN FÜR MATCH
+                point_in_arena = False # ÄNDERN FÜR MATCH
                             
-                if (self.direction >= 0 and 0 <= d_y <= 450) and abs(d_x) <= 275 and point_in_arena:
+                if (self.direction >= 0 and 0 <= d_y <= 450) and abs(d_x) <= 300 and point_in_arena and distance > 50:
                     self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     break
                 
-                if  (self.direction <= 0 and 0 >= d_y >= -200) and abs(d_x) <= 275 and point_in_arena:
+                if  (self.direction <= 0 and 0 >= d_y >= -300) and abs(d_x) <= 300 and point_in_arena and distance > 50:
                     self.stop = True
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
-                    break       
-            
-        if not self.gegi:    
-            self.stop = False     
+                    break          
                                 
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None
