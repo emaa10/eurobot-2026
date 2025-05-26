@@ -8,8 +8,7 @@ import signal
 from modules.task import Task
 from modules.camera import Camera
 from modules.motor_controller import MotorController
-from modules.servos import Servos
-from modules.stepper import Stepper
+from modules.gripper import Gripper
 
 HOST = '127.0.0.1'
 PORT = 5001
@@ -31,15 +30,14 @@ class RobotController:
 
         self.motor_controller = MotorController()
         self.camera = Camera() if self.CAM else None
-        self.servos = Servos()
-        self.stepper = Stepper()
+        self.gripper = Gripper()
 
         if self.CAM:
             self.camera.start()
             self.logger.info("Camera started")
 
-        self.tactic = Task(self.motor_controller, self.camera, self.servos, self.stepper, [[]], 'blue')
-        self.home_routine = Task(self.motor_controller, self.camera, self.servos, self.stepper, [[]], 'blue')
+        self.tactic = Task(self.motor_controller, self.camera, self.gripper, [[]], 'blue')
+        self.home_routine = Task(self.motor_controller, self.camera, self.gripper, [[]], 'blue')
 
         self.start_positions = {
             # gelb
@@ -180,10 +178,6 @@ class RobotController:
         # Stop the lidar
         if self.motor_controller.lidar:
             self.motor_controller.lidar.stop()
-            
-        # Release all servos
-        if self.servos:
-            self.servos.release_all()
             
         # Clean up GPIO
         GPIO.cleanup()

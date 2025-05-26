@@ -6,16 +6,14 @@ import asyncio
 from modules.motor_controller import MotorController
 from modules.camera import Camera
 from modules.pathfinding import Pathfinder
-from modules.stepper import Stepper
-from modules.servos import  Servos
+from modules.gripper import Gripper
 
 
 class Task():
-    def __init__(self, motor_controller: MotorController, camera: Camera, servos: Servos, stepper: Stepper, action_set: list[list[str]], color: str):
+    def __init__(self, motor_controller: MotorController, camera: Camera, gripper: Gripper, action_set: list[list[str]], color: str):
         self.motor_controller = motor_controller
         self.camera = camera
-        self.servos = servos
-        self.stepper = stepper
+        self.gripper = gripper
         
         self.action_set = action_set
         self.initial_actions = self.action_set[0] # if we abort and want to add task to end
@@ -53,16 +51,13 @@ class Task():
             case 'ws': # write servo
                 values = msg[2:].split(';')
                 self.logger.info(f"set servo cmd: {values}")
-                self.servos.write_servo(int(values[0]), int(values[1]))
+                self.gripper.servos.write_servo(int(values[0]), int(values[1]))
             case 'ra':
-                self.servos.release_all()
+                self.gripper.release()
             case 'sl': # stepper lift
                 values = msg[2:].split(';')
                 self.logger.info(f"set stepper heigth XYZ: {values}")
-                self.stepper.set_pos_mm(int(values[0]), int(values[1]), int(values[2]))
-            case 'sh': # stepper home
-                self.logger.info("homed all steppers")
-                self.stepper.home()
+                self.gripper.stepper.set_pos_mm(int(values[0]), int(values[1]), int(values[2]))
             case 'dd': # drive distance
                 self.logger.info(f"drive distance: {int(msg[2:])}")
                 await self.motor_controller.drive_distance(int(msg[2:]))
@@ -83,9 +78,7 @@ class Task():
                 await self.motor_controller.clean_wheels()
             case 'ac': # anfahren cans
                 self.logger.info("anfahren cans")
-                self.servos.pos_anfahren()
-                sleep(0.5)
-                self.stepper.anfahren()
+                self.gripper.anfahren()
             case 'gc': # grip cans
                 self.logger.info("grip cans")
                 self.stepper.down()
@@ -94,177 +87,131 @@ class Task():
                 sleep(0.5)
                 self.stepper.lift()
                 sleep(1)
-                self.servos.cans_in()
+                self.servos.gripper_in()
                 sleep(0.5)
-                self.servos.pos_wegfahren()
+                self.gripper.servos.servo_mitte_lift(2)
             case 'es': # emergency stop
                 await self.motor_controller.set_stop()
                 self.logger.info("emergency stop!")
-            case 'hg': # home gripper (servos and steppers)
-                self.servos.pos_anfahren()
-                sleep(1)
-                self.stepper.home()
+            case 'hg': # home gripper
+                self.gripper.home()
                 self.logger.info("home gripper")
             case 'hb': # home bot
                 self.motor_controller.home()
                 self.logger.info("home bot")
-            case 'xx':
+
+            case 'll': #test gripper lift strength
+                self.gripper.servos.servo_plate_rotate(1)
+                sleep(0.1)
+                self.gripper.stepper.set_pos_mm(5, 0, 5)
+                sleep(0.1)
+                self.gripper.servos.servo_left_rotate(3)
+                self.gripper.servos.servo_right_rotate(3)
+                sleep(1)
+                await self.motor_controller.drive_distance(150)
+
+                self.gripper.servos.servo_left_grip(2)
+                self.gripper.servos.servo_right_grip(2)
+                sleep(1)
+                self.gripper.stepper.set_pos_mm(145, 0, 145)
+                sleep(1)
+                await self.motor_controller.drive_distance(150)
+                self.gripper.release()
+                await self.motor_controller.drive_distance(-300)
+                
+            case 's1': # seperate 1er
+                self.gripper.anfahren()
+                sleep(0.3)
+                await self.motor_controller.drive_distance(350)
+                self.gripper.grip_one_layer()
+                await self.motor_controller.drive_distance(-300)
+                self.gripper.build_one_layer()
+            case 'a2': # add 2er --> aktueller wo wir dran sind
+                self.gripper.anfahren()
+                sleep(0.5)
+                await self.motor_controller.drive_distance(180)
+                self.gripper.seperate()
+                sleep(20)
+                self.gripper.release()
+                await self.motor_controller.drive_distance(-200)
+                self.gripper.grip_unten()
+                await self.motor_controller.drive_distance(250)
+                self.gripper.servos.servo_left_grip(2)
+                self.gripper.servos.servo_right_grip(2)
+                sleep(1)
+                self.gripper.stepper.set_pos_mm(145, 0, 145)
+                await self.motor_controller.drive_distance(200)
+                self.gripper.release()
+                await self.motor_controller.drive_distance(-200)
+                
+            case 'xx': # gerade nur ersten anfahren und zerlegen
                 self.motor_controller.set_pos(1700, 215, 0)
                 
-                self.servos.pos_anfahren()
-                sleep(0.3)
-                self.stepper.anfahren()
+                self.gripper.anfahren()
                 
-                await self.motor_controller.drive_to_point(1900, 700, 0)
-                await self.motor_controller.drive_distance(200)
+                # await self.motor_controller.drive_to_point(1900, 700, 0)
+                # await self.motor_controller.drive_distance(200)
+                await self.motor_controller.drive_distance(250) # entfernen (war nur zum testen)
                 
-                # seperate 1st stapel
-                self.stepper.down()
-                sleep(0.4)
-                self.servos.grip_cans()
-                sleep(0.5)
-                self.stepper.lift()
-                self.servos.servo_mitte_lift(2)
-                sleep(1)
-                self.servos.cans_in()
+                self.gripper.seperate()
+                
+                await self.motor_controller.drive_distance(-250)
                                 
-                # place 1st stapel
-                await self.motor_controller.drive_to_point(1700, 350, 180)
-                self.servos.release_all()
-                sleep(0.5)
+                # # place 1st stapel
+                # await self.motor_controller.drive_to_point(1700, 350, 180)
+                # self.gripper.release()
+                # sleep(0.5)
                 
-                await self.motor_controller.drive_distance(-200)
+                # await self.motor_controller.drive_distance(-200)
 
-                self.servos.pos_anfahren()
-                sleep(0.3)
-                self.stepper.anfahren()
+                # self.gripper.anfahren()
 
-                await self.motor_controller.drive_to_point(2225, 600, 183)
-                await self.motor_controller.drive_to_point(2225, 280, 183)
+                # await self.motor_controller.drive_to_point(2225, 600, 183)
+                # await self.motor_controller.drive_to_point(2225, 280, 183)
 
-                # grip 2nd level
-                self.servos.grip_one_layer()
-                self.stepper.down()
-                sleep(0.3)
-                self.servos.servo_plate_grip(2)
-                sleep(0.2)
-                self.stepper.lift_1er()
+                # # grip 2nd level
+                # self.gripper.grip_one_layer()
                 
-                await self.motor_controller.drive_distance(-300)
+                # await self.motor_controller.drive_distance(-300)
                 
-                # build level
-                self.servos.cans_in()
-                self.stepper.build_1er()
-                sleep(0.2)
-                self.servos.servo_plate_grip(1)
-                sleep(0.2)
-                self.servos.servo_plate_rotate(1)
-                sleep(0.5)
-                self.stepper.lift_3er()
-                self.servos.servo_mitte_grip(1)
+                # # build level
+                # self.gripper.build_one_layer()
                 
-                await self.motor_controller.drive_to_point(1700, 550, 180)
-                await self.motor_controller.drive_to_point(1700, 320, 180)
+                # await self.motor_controller.drive_to_point(1700, 550, 180)
+                # await self.motor_controller.drive_to_point(1700, 320, 180)
                 
-                # place on top of level 2
-                self.servos.release_all()
-                sleep(1)
-                #await self.motor_controller.drive_distance(-200)
-                await self.motor_controller.drive_to_point(1700, 520, 90)
+                # # place on top of level 2
+                # self.servos.release_all()
+                # sleep(1)
+                # #await self.motor_controller.drive_distance(-200)
+                # await self.motor_controller.drive_to_point(1700, 520, 90)
 
-                await self.motor_controller.drive_to_point(2575, 400, 90)
-                # await self.motor_controller.drive_to_point(2600, 400, 90)
-                await self.motor_controller.drive_to_point(2710, 400, 90)
+                # await self.motor_controller.drive_to_point(2575, 400, 90)
+                # # await self.motor_controller.drive_to_point(2600, 400, 90)
+                # await self.motor_controller.drive_to_point(2710, 400, 90)
                 
-                self.stepper.down()
-                sleep(1)
-                self.servos.grip_cans()
-                sleep(1)
-                self.stepper.lift()
-                sleep(1)
-                self.servos.cans_in()
-                sleep(1)
-                self.servos.release_all()
-                sleep(1)
+                # self.stepper.down()
+                # sleep(1)
+                # self.servos.grip_cans()
+                # sleep(1)
+                # self.stepper.lift()
+                # sleep(1)
+                # self.servos.gripper_in()
+                # sleep(1)
+                # self.servos.release_all()
+                # sleep(1)
                 
-                await self.motor_controller.drive_to_point(2510, 400, 90)
+                # await self.motor_controller.drive_to_point(2510, 400, 90)
                 
-                self.servos.pos_anfahren()
-                self.stepper.down()
-                sleep(0.5)
-                self.servos.servo_plate_rotate(1)
-                self.servos.cans_in()
+                # self.servos.pos_anfahren()
+                # self.stepper.down()
+                # sleep(0.5)
+                # self.servos.servo_plate_rotate(1)
+                # self.servos.gripper_in()
                 
-                await self.motor_controller.drive_to_point(2710, 400, 90)
-                self.servos.grip_unten()
-                self.stepper.set_pos_mm(20, 0, 20)
-                
-
-            case 'b3': # 3er stapel
-                await self.motor_controller.drive_distance(300)
-                await self.motor_controller.turn_angle(90)
-                await self.motor_controller.drive_distance(500)
-                
-                # get 1st stapel
-                self.stepper.down()
-                sleep(1)
-                self.servos.grip_cans()
-                sleep(0.5)
-                self.stepper.lift()
-                sleep(1)
-                self.servos.cans_in()
-                self.servos.pos_wegfahren()
-                
-                # place 2nd lvl1
-                self.stepper.down()
-                sleep(1)
-                self.servos.place_1er(2)
-                sleep(0.5)
-                await self.motor_controller.drive_distance(-200)
-                
-                # get 2nd stapel
-                await self.motor_controller.turn_angle(180)
-                self.servos.pos_anfahren()
-                sleep(1)
-                self.stepper.anfahren()
-                sleep(1)
-                await self.motor_controller.drive_distance(200)
-                sleep(10)
-                
-                # grip cans
-                self.stepper.down()
-                sleep(1)
-                self.servos.grip_cans()
-                sleep(1)
-                self.stepper.lift()
-                sleep(1)
-                self.servos.cans_in()
-                sleep(0.5)
-                
-                # release
-                self.servos.place_2er()
-                
-                await self.motor_controller.drive_distance(-150)
-                
-                # grip unten
-                self.stepper.down()
-                sleep(1)
-                
-                await self.motor_controller.drive_distance(200)
-                
-                self.servos.grip_unten()
-                sleep(1)
-                self.stepper.place3er()
-                sleep(1)
-                
-                # drive onto other
-                await self.motor_controller.turn_angle(180)
-                await self.motor_controller.drive_distance(500)
-                self.servos.release_außen()
-                sleep(0.5)
-                await self.motor_controller.drive_distance(-300)
-            case 'rp':
-                self.motor_controller.set_pos(300, 300, 0)
+                # await self.motor_controller.drive_to_point(2710, 400, 90)
+                # self.servos.grip_unten()
+                # self.stepper.set_pos_mm(20, 0, 20)
             case 'gp':
                 x, y, theta = self.motor_controller.encoder.get_pos()
                 print(f'{x}, {y}, {theta}')
