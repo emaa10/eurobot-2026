@@ -49,6 +49,10 @@ class Camera:
         self.running = False
         self._lock = threading.Lock()
 
+    def l(self, msg: str):
+        print(msg)
+        self.logger.info("CAM - " + msg)
+
     def start(self) -> None:
         self.picam2.start()
         #! time.sleep(2)  # warm-up
@@ -66,7 +70,6 @@ class Camera:
         frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
         threading.Thread(target=cv2.imwrite, args=(f"/home/eurobot/Desktop/camera/{time.strftime('%Y%m%d_%H%M%S')}.png", frame)).start()
         return frame
-
             
     def get_angle(self, mid_distance, mid_angle):
         """
@@ -99,6 +102,7 @@ class Camera:
         
         optimal_distance = wall_center_x * math.sin(robot_angle_rad) + wall_center_z * math.cos(robot_angle_rad)
         
+        # old - actions zum anfahren - never tested :(
         # actions = [
         #     f"ta{-90+robot_angle_deg:.1f}",     # Drehe parallel zur Wand
         #     f"dd{optimal_distance:.1f}",     # Fahre optimale Distanz
@@ -109,24 +113,16 @@ class Camera:
 
     def get_distance(self) -> list:
         """
-        Use latest frame, detect cans, show analysis for 3s,
-        return [angle_deg, distance_m].
+        return angle and distance to center of cans
         """
         frame = self._get_frame()
         display, angle, distance = self._process_distance(frame)
-        
         distance *= 1000
-
-        # cv2.imshow("Distance Analysis", display)
-        # cv2.waitKey(3000)
-        # cv2.destroyWindow("Distance Analysis")
-
         return [angle, distance]
 
     def check_cans(self) -> bool:
         """
-        Use latest frame, verify can placement, show preview 3s,
-        return True if OK, else False.
+        returns true or false if cans are there, distance ok and rot ok
         """
         frame = self._get_frame()
         self.logger.info("Camera: got frame")
@@ -134,19 +130,19 @@ class Camera:
 
         return ok
 
-    def check_stacks(self, debug_cam: bool = False) -> int:
+    def check_stacks(self, debug_cam: bool = True) -> int:
         """
-        Prüft die Stack-Größe und gibt die erkannte Größe zurück.
+        tests how many stacks are correctly placed and returns correct count (based on rotation, distance and count of aruco tags)
         
         Args:
-            debug_cam (bool): Debug-Ausgaben aktivieren
+            debug_cam (bool): debug prints
             
         Returns:
-            int: Erkannte Stack-Größe (0=kein Stack, 1-3=Stack-Größe)
+            int: detected stack size (0-3)
         """
         frame = self._get_frame()
         if debug_cam:
-            print(f"🎯 Prüfe Stack-Größen")
+            self.l(f"testing stack sizes")
         
         height = frame.shape[0]  # 1280
         width = frame.shape[1]   # 960
@@ -158,10 +154,10 @@ class Camera:
         }
         
         if debug_cam:
-            print(f"Bildgröße: {width}x{height}")
-            print(f"Ebenen-Aufteilung:")
+            self.l(f"img size: {width}x{height}")
+            self.l(f"Ebenen-Aufteilung:")
             for name, (start, end) in regions.items():
-                print(f"  {name.capitalize()}: Y {start}-{end}")
+                self.l(f"  {name.capitalize()}: Y {start}-{end}")
         
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
@@ -171,15 +167,15 @@ class Camera:
         
         if ids is None:
             if debug_cam:
-                print("❌ Keine Marker erkannt!")
-            return 0
+                self.l("NO MARKERS DETECTED")
+            return 0 # not correct
         
         if debug_cam:
-            print(f"✅ {len(ids)} Marker erkannt")
+            self.l(f"✅ {len(ids)} Marker erkannt")
 
+        # estimate position and rotation
         rvecs, tvecs, _ = aruco.estimatePoseSingleMarkers(
             corners, self.TAG_SIZE, self.camera_matrix, self.dist_coeffs)
-        
         rotations = self._calculate_rotations(rvecs)
         
         #! kann man anpassen
@@ -190,15 +186,16 @@ class Camera:
         region_order = ['bottom', 'middle', 'top']
         detected_stack_size = 0
         
+        # for each region, starting with bottom
         for region_name in region_order:
             y_start, y_end = regions[region_name]
             
             if debug_cam:
-                print(f"--- Prüfe Ebene: {region_name.upper()} (Y: {y_start}-{y_end}) ---")
+                self.l(f"--- Prüfe Ebene: {region_name.upper()} (Y: {y_start}-{y_end}) ---")
             
             valid_markers = []
             
-            # Finde Marker in dieser Ebene
+            # durch alle marker itarieren
             for i, (corner, marker_id) in enumerate(zip(corners, ids)):
                 M = cv2.moments(corner[0])
                 if M["m00"] != 0:
@@ -211,15 +208,15 @@ class Camera:
                         rot_z = rotations[i][2]
                         
                         if debug_cam:
-                            print(f"  Marker {marker_id[0]} in Ebene: "
+                            self.l(f"  Marker {marker_id[0]} in Ebene: "
                                 f"Pos({cx},{cy}), Dist {distance:.2f}m, Rot {rot_z:.1f}°")
                         
                         distance_ok = MIN_DISTANCE <= distance <= MAX_DISTANCE
                         rotation_ok = -MAX_ROTATION_Z <= rot_z <= MAX_ROTATION_Z
                         
                         if debug_cam:
-                            print(f"    Distanz OK: {distance_ok} ({MIN_DISTANCE}m ≤ {distance:.2f}m ≤ {MAX_DISTANCE}m)")
-                            print(f"    Rotation OK: {rotation_ok} (-{MAX_ROTATION_Z}° ≤ {rot_z:.1f}° ≤ {MAX_ROTATION_Z}°)")
+                            self.l(f"    Distanz OK: {distance_ok} ({MIN_DISTANCE}m ≤ {distance:.2f}m ≤ {MAX_DISTANCE}m)")
+                            self.l(f"    Rotation OK: {rotation_ok} (-{MAX_ROTATION_Z}° ≤ {rot_z:.1f}° ≤ {MAX_ROTATION_Z}°)")
                         
                         if distance_ok and rotation_ok:
                             valid_markers.append({
@@ -230,23 +227,24 @@ class Camera:
                                 'rotation_z': rot_z
                             })
                             if debug_cam:
-                                print(f"    ✅ Marker {marker_id[0]} GÜLTIG")
+                                self.l(f"    ✅ Marker {marker_id[0]} GÜLTIG")
                         else:
                             if debug_cam:
-                                print(f"    ❌ Marker {marker_id[0]} ungültig")
+                                self.l(f"    ❌ Marker {marker_id[0]} ungültig")
             
+            # pro ebene 2 benötigt
             if len(valid_markers) < 2:
                 if debug_cam:
-                    print(f"  ❌ Nur {len(valid_markers)} gültige Marker, mindestens 2 benötigt")
-                    print(f"  Ebene {region_name} erfüllt nicht die Kriterien - Stack endet hier")
+                    self.l(f"  ❌ Nur {len(valid_markers)} gültige Marker, mindestens 2 benötigt")
+                    self.l(f"  Ebene {region_name} erfüllt nicht die Kriterien - Stack endet hier")
                 break
             
             # distance between markers
-            has_4cm_distance = False
-            MIN_DISTANCE_3D = 0.03  # 4cm in Metern
+            has_3cm_dist = False
+            MIN_DISTANCE_3D = 0.03  # 3cm in Metern für conversion
             
             if debug_cam:
-                print(f"  Prüfe 4cm-Abstände zwischen {len(valid_markers)} Markern:")
+                self.l(f"  Prüfe 3cm-Abstände zwischen {len(valid_markers)} Markern:")
             
             for i in range(len(valid_markers)):
                 for j in range(i + 1, len(valid_markers)):
@@ -259,35 +257,34 @@ class Camera:
                     distance_3d = np.linalg.norm(pos1 - pos2) * self.CALIB_FACTOR
                     
                     if debug_cam:
-                        print(f"    Marker {marker1['id']} <-> Marker {marker2['id']}: {distance_3d:.3f}m")
+                        self.l(f"    Marker {marker1['id']} <-> Marker {marker2['id']}: {distance_3d:.3f}m")
                     
                     if distance_3d >= MIN_DISTANCE_3D:
-                        has_4cm_distance = True
+                        has_3cm_dist = True
                         if debug_cam:
-                            print(f"    ✅ 4cm-Abstand gefunden: {distance_3d:.3f}m >= {MIN_DISTANCE_3D}m")
+                            self.l(f"    ✅ 3cm-Abstand gefunden: {distance_3d:.3f}m >= {MIN_DISTANCE_3D}m")
                         break
                 
-                if has_4cm_distance:
+                if has_3cm_dist:
                     break
             
-            if not has_4cm_distance:
+            if not has_3cm_dist:
                 if debug_cam:
-                    print(f"  ❌ Kein 4cm-Abstand zwischen Markern gefunden")
-                    print(f"  Ebene {region_name} erfüllt nicht die Kriterien - Stack endet hier")
+                    self.l(f"  ❌ Kein 4cm-Abstand zwischen Markern gefunden")
+                    self.l(f"  Ebene {region_name} erfüllt nicht die Kriterien - Stack endet hier")
                 break
             
             # Ebene ist gültig - Stack-Größe erhöhen
             detected_stack_size += 1
             
             if debug_cam:
-                print(f"  ✅ Ergebnis {region_name}: {len(valid_markers)} gültige Marker mit 4cm-Abstand - ERFOLGREICH")
-                print(f"  Stack-Größe bisher: {detected_stack_size}")
+                self.l(f"  ✅ Ergebnis {region_name}: {len(valid_markers)} gültige Marker mit 3cm-Abstand - ERFOLGREICH")
         
         if debug_cam:
             if detected_stack_size == 0:
-                print(f"❌ Kein gültiger Stack erkannt")
+                self.l(f"❌ Kein gültiger Stack erkannt")
             else:
-                print(f"✅ Stack-Größe {detected_stack_size} erkannt")
+                self.l(f"✅ Stack-Größe {detected_stack_size} erkannt")
         
         self.logger.info(f"Detected stack size: {detected_stack_size}")
         return detected_stack_size
@@ -376,18 +373,10 @@ class Camera:
                 all_centers.append((avg_px, 0))
                 all_distances.append(dist_m)
 
-                # cv2.circle(display, (avg_px, int(self.IMAGE_HEIGHT/2)), 10, (0, 255, 0), -1)
-                # cv2.putText(display, f"{dist_m:.2f}m", (avg_px+15, int(self.IMAGE_HEIGHT/2)-5),
-                #             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 1)
-
             if all_centers:
                 mx = int(np.mean([c[0] for c in all_centers]))
                 distance = np.mean(all_distances)
                 angle = ((mx - self.IMAGE_WIDTH//2) / (self.IMAGE_WIDTH//2)) * self.MAX_ANGLE
-
-                # cv2.circle(display, (mx, int(self.IMAGE_HEIGHT/2)), 15, (255, 0, 0), -1)
-                # cv2.putText(display, f"Gesamt: {angle:.1f}\u00b0 | {distance:.2f}m",
-                #             (mx-100, int(self.IMAGE_HEIGHT/2)-20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
 
         return display, angle, distance
 
@@ -536,8 +525,6 @@ class Camera:
 
 
 def main():
-    # task = Task(None, [['d500', 't50'], ['d340', 't50'], ['d650', 't76']])
-    # task = Task(None, [])
     print("started main")
     
 if __name__ == '__main__':
