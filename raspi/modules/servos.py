@@ -24,18 +24,25 @@ class Servos:
             quit()
 
     def write_servo(self, id, goal_position):
+        """
+        writes servo with id to goal pos
+        """
         self.packet_handler.WritePosEx(id, goal_position, STS_MOVING_SPEED, STS_MOVING_ACC)
 
-    # 1: unten, 2: oben
     def servo_mitte_lift(self, pos: int):
+        """
+        1: unten, 2: oben
+        """
         value = 0
         match pos:
             case 1: value = 2900
             case 2: value = 3000
         self.write_servo(3, value)
 
-    # 1: auf, 2: zu
     def servo_mitte_grip(self, pos: int):
+        """
+        1: auf, 2: zu
+        """
         value = 0 
         match pos:
             case 1: value = 3700
@@ -44,51 +51,66 @@ class Servos:
 
         self.write_servo(7, value)
 
-    # 1: außen, 2: mitte, 3: innen
     def servo_right_rotate(self, pos: int):
+        """
+        1: außen, 2: mitte, 3: innen
+        """
         value = 0 
         if pos == 1: value = 3825
         elif pos == 2: value = 3040
         else: value = 2500
         self.write_servo(11, value)
 
-    # 1: oben, 2: unten
     def servo_plate_rotate(self, pos: int):
+        """
+        1: oben, 2: unten
+        """
         value = 0 
         if pos == 1: value = 1800
         else: value = 2800
         self.write_servo(9, value)
 
-    # 1: auf, 2: zu
     def servo_right_grip(self, pos: int):
+        """
+        1: auf, 2: zu
+        """
         value = 0 
         if pos == 1: value = 3950 #3750
         else: value = 3500 #3650
         self.write_servo(1, value)
 
-    # 1: auf, 2: zu
     def servo_left_grip(self, pos: int):
+        """
+        1: auf, 2: zu
+        """
         value = 0 
         if pos == 1: value = 150 #350
         else: value = 630 #650
         self.write_servo(2, value)
 
-    # 1: außen, 2: mitte, 3: innen
     def servo_left_rotate(self, pos: int):
+        """
+        1: außen, 2: mitte, 3: innen
+        """
         value = 0 
         if pos == 1: value = 220
         elif pos == 2: value = 1025
         else: value = 1500
         self.write_servo(10, value)
 
-    # 1: auf, 2: zu
     def servo_plate_grip(self, pos: int):
+        """
+        1: auf, 2: zu
+        """
         value = 0 
         if pos == 1: value = 950
         else: value = 1600
         self.write_servo(8, value)
         
     def pos_anfahren(self):
+        """
+        servos auf anfahren setzen
+        """
         self.servo_left_rotate(2)
         self.servo_right_rotate(2)
         self.servo_mitte_lift(1)
@@ -99,6 +121,9 @@ class Servos:
         self.servo_plate_grip(1)
         
     def grip_cans(self):
+        """
+        servos auf greifen
+        """
         self.servo_mitte_grip(2)
         self.servo_left_grip(2)
         self.servo_right_grip(2)
