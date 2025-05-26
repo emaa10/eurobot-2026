@@ -51,31 +51,37 @@ class RobotController:
             7: [100, 100, 0],
         }
         self.home_routines = {
-            1: [['hh', 'dd50', 'ta-90', 'hh', 'dd100']],
-            2: [['hh', 'ta-90', 'hh', 'dd50']],
-            3: [['hh', 'dd100']],
-            4: [['hh', 'dd100']],
-            5: [['hh', 'ta90', 'hh', 'dd50']],
-            6: [['hh', 'dd50', 'ta90', 'hh', 'dd100']],
-            7: [['hh']],
+            # yellow
+            1: [['hb', 'dd50', 'ta-90', 'hb', 'dd100']],
+            2: [['hb', 'ta-90', 'hb', 'dd50']],
+            3: [['hb', 'dd100']],
+            # blau
+            4: [['hb', 'dd100']],
+            5: [['hb', 'ta90', 'hb', 'dd50']],
+            6: [['hb', 'dd50', 'ta90', 'hb', 'dd100']],
         }
         self.tactix_yellow = {
-            1: [['hh', 'fd', 'dd400', 'ip20', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'dp790;500;180', 'dp790;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
-            2: [['hh', 'fd', 'dd400', 'ip20', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
-            3: [['hh', 'fd', 'dd400', 'ip20'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
-            4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
+            1: [['hb', 'fd', 'dd400', 'ip20', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'dp790;500;180', 'dp790;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
+            2: [['hb', 'fd', 'dd400', 'ip20', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
+            3: [['dd200', 'ip3', 'ta90']], # keine ahnung
+            4: [['hb', 'fd', 'dd400', 'ip20'], ['dh']], # safe
         }
         self.tactix_blue = {
-            1: [['hh', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'dp2250;500;180', 'dp2250;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
-            2: [['hh', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
-            3: [['hh', 'fd', 'dd400', 'ip20'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
-            4: [['hh', 'fd', 'dd400', 'ip20'], ['dh']], # safe
+            1: [['hb', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'dp2250;500;180', 'dp2250;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
+            2: [['hb', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
+            3: [['hb', 'fd', 'dd400', 'ip20'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
+            4: [['hb', 'fd', 'dd400', 'ip20'], ['dh']], # safe
             5: [['dd100'], ['ta90', 'dp400;400;0']]
         }
 
     def l(self, msg: str):
         print(msg)
         self.logger.info("MAIN - " + msg)
+        
+    def wait_for_pullcord(self):
+        while GPIO.input(pullcord) == GPIO.LOW:
+            sleep(0.1)
+
 
     async def get_command(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         addr = writer.get_extra_info('peername')
@@ -89,6 +95,16 @@ class RobotController:
                     break
                 msg = data.decode().strip()
                 self.l(f"Received from {addr}: {msg}")
+                if msg[:2] == 'st':  # set tactic
+                    start_pos, tactic = msg[2:].split(';')
+                    self.set_tactic(int(start_pos), int(tactic))
+                    self.logger.info(f"set tactic: pos:{start_pos} tactic:{tactic}")
+                    await self.home()
+                    await self.send_message('h')
+                    self.wait_for_pullcord()
+                    await self.send_message('p')
+                    asyncio.create_task(self.run_tactic())
+                    sleep(0.5)
                 await self.tactic.perform_action(msg)
         except Exception as e:
             self.l(f"Error {e} with client {addr}")
@@ -123,13 +139,13 @@ class RobotController:
         
         tactic = self.tactix_blue[tactic_num] if color == 'blue' else self.tactix_yellow[tactic_num]
         
-        self.l(tactic)
+        self.l(str(tactic))
         home_routine = self.home_routines[start_pos_num]
         
         self.l(f'color: {color}, tactic: {tactic}, home_routine: {home_routine}, startpos: {start_pos_num}')
                 
-        self.tactic = Task(self.motor_controller, self.camera, tactic, color)
-        self.home_routine = Task(self.motor_controller, self.camera, home_routine, color)
+        self.tactic = Task(self.motor_controller, self.camera, self.gripper, tactic, color)
+        self.home_routine = Task(self.motor_controller, self.camera, self.gripper, home_routine, color)
 
     async def run_tactic(self):
         self.start()

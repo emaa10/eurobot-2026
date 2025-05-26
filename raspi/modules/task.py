@@ -89,9 +89,11 @@ class Task():
                 self.gripper.home()
                 self.logger.info("home gripper")
             case 'hb': # home bot
-                self.motor_controller.home()
-                self.logger.info("home bot")
-
+                await self.motor_controller.home()
+                self.logger.info("homed bot")
+            case 'ip':
+                increase_points = int(msg[2:])
+                self.points += increase_points
             case 'll': #test gripper lift strength
                 self.gripper.servos.servo_plate_rotate(1)
                 sleep(0.1)

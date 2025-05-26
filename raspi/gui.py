@@ -205,7 +205,7 @@ class MainWindow(QWidget):
         items = [i for i in self.rect_items.get(self.color, []) if i.isSelected()]
         if not items or not self.selected_tactic:
             QMessageBox.warning(self, 'Warn', 'Select start pos and tactic'); return
-        cmd = f'st{items[0].rect_id},{self.selected_tactic}'
+        cmd = f'st{items[0].rect_id};{self.selected_tactic}'
         self.comm.l(cmd)
         self.comm.send_command(cmd); self.comm.l(f"Debug: Game started with command {cmd}.")
         self.stack.setCurrentIndex(1); self.game_state = 1
@@ -214,10 +214,10 @@ class MainWindow(QWidget):
     def update_game(self):
         if self.game_state == 1:
             # Start Homing 1
-            self.game_state = 2
-            self.game_label.setText('Homing 1...')
+            self.game_state = 4
+            self.game_label.setText('Homing...')
             self.comm.l("Debug: Homing 1 started.")
-            self.comm.send_command("hg") # home gripper
+            # self.comm.send_command("hb") # home bot
         
         elif self.game_state == 2 and self.comm.homing_1_done:
             # Ask if user wants to continue
@@ -235,7 +235,7 @@ class MainWindow(QWidget):
                 self.close()
                 return
         
-        elif self.game_state == 4 and self.comm.homing_2_done:
+        elif self.game_state == 4 and self.comm.homing_1_done:
             # Homing 2 done
             self.game_state = 5
             self.game_label.setText("Waiting for pullcord...")
