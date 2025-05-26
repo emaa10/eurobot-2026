@@ -1,0 +1,76 @@
+from modules.stepper import Stepper
+from modules.servos import Servos
+
+from time import sleep
+
+class Gripper:
+    def __init__(self) -> None:
+        self.servos = Servos()
+        self.stepper = Stepper()
+        
+    def home(self):
+        self.servos.pos_anfahren()
+        sleep(1)
+        self.stepper.home()
+    
+    # anfahren stack from arena
+    def anfahren(self):
+        self.servos.pos_anfahren()
+        sleep(0.3)
+        self.stepper.anfahren()
+        
+    # seperate stack from arena
+    def seperate(self):
+        self.stepper.down()
+        sleep(0.4)
+        self.servos.grip_cans()
+        sleep(1)
+        self.servos.gripper_out()
+        sleep(0.5)
+        self.stepper.lift()
+        sleep(1)
+        self.servos.gripper_in()
+        sleep(0.85)
+        self.servos.servo_mitte_lift(2)
+    
+    # grips one layer from arena stack
+    def grip_one_layer(self):
+        self.servos.servo_left_grip(2)
+        self.servos.servo_right_grip(2)
+        self.stepper.down()
+        sleep(1)
+        self.servos.servo_plate_grip(2)
+        self.servos.servo_left_rotate(1)
+        self.servos.servo_right_rotate(1)
+        sleep(1)
+        self.stepper.lift_1er()
+    
+    # build a lvl 1 stack 
+    def build_one_layer(self):
+        self.servos.gripper_in()
+        sleep(1)
+        self.stepper.build_1er()
+        sleep(0.2)
+        self.servos.servo_plate_grip(1)
+        sleep(0.2)
+        self.servos.servo_plate_rotate(1)
+        sleep(0.5)
+        self.stepper.lift_3er()
+        self.servos.servo_mitte_grip(1)
+    
+    # grip a stack at the bottom
+    def grip_unten(self):
+        self.stepper.down()
+        self.servos.servo_plate_rotate(1)
+        sleep(1)
+        self.servos.servo_left_rotate(2)
+        self.servos.servo_right_rotate(2)
+        self.servos.servo_mitte_lift(1)
+        self.servos.servo_mitte_grip(1)
+        self.servos.servo_left_grip(1)
+        self.servos.servo_right_grip(1)
+        self.servos.gripper_in()
+        sleep(1)
+        
+    def release(self):
+        self.servos.release_all()

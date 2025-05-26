@@ -10,21 +10,11 @@ class Stepper:
         self.logger = logging.getLogger(__name__)
     
 
-    def home(self, r: bool = True, m: bool = True, l:bool = True):  # funktioniert (da auch im)
-        if r:
-            self.send("$HX\n")
-        if m:
-            self.send("$HY\n")
-        if l:
-            self.send("$HZ\n")
+    def home(self):
+        self.send("$H\n")
 
-    def set_pos_mm(self, r: int, m: int, l: int):           #funktioniert im Moment nicht, output vom board müsste in den log für richtiges bugfixing
+    def set_pos_mm(self, r: int, m: int, l: int):
         self.send(f"G54 X{abs(r)} Y{abs(m)} Z{abs(l)}\n")
-        
-    def reset(self):
-        self.send("\x18")
-        # wait(2)
-        # self.ser = 
 
     def send(self, command: str):
         print(f'command: {command}')
@@ -40,7 +30,7 @@ class Stepper:
                     print(line.decode("utf-8"))
                 return
             
-    def anfahren(self):
+    def pos_anfahren(self):
         self.set_pos_mm(0, 18, 0)
         
     def down(self):
@@ -52,27 +42,14 @@ class Stepper:
     def build_1er(self):
         self.set_pos_mm(30, 15, 30)
     
-    def lift_1er(self):
+    def seperate_1er(self):
         self.set_pos_mm(30, 30, 30)
         
     def lift_3er(self):
         self.set_pos_mm(265, 0, 265)
-        
-    def place3er(self):
-        self.set_pos_mm(130, 0, 130)
-
-    def start_pos(self):
-        self.set_pos_mm(130, 0, 130)
 
 def main():
     stepper = Stepper()
-    
-    time.sleep(1)
-    
-    # stepper.send('$Z')
-    stepper.lift()
-    # stepper.pos_wegfahren()
-    stepper.get_output()
     
 if __name__ == '__main__':
     main()
