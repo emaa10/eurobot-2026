@@ -36,7 +36,7 @@ class Servos:
         value = 0
         match pos:
             case 1: value = 2900
-            case 2: value = 3000
+            case 2: value = 3030
         self.write_servo(3, value)
 
     def servo_mitte_grip(self, pos: int):
@@ -93,9 +93,9 @@ class Servos:
         1: außen, 2: mitte, 3: innen
         """
         value = 0 
-        if pos == 1: value = 220
-        elif pos == 2: value = 1025
-        else: value = 1500
+        if pos == 1: value = 180
+        elif pos == 2: value = 900
+        else: value = 1460
         self.write_servo(10, value)
 
     def servo_plate_grip(self, pos: int):
@@ -141,6 +141,9 @@ class Servos:
     def cans_in(self):
         self.servo_left_rotate(3)
         self.servo_right_rotate(3)
+
+    def pos_wegfahren(self):
+        self.servo_mitte_lift(2)
         
     def place_1er(self, num: int):
         if num == 1:

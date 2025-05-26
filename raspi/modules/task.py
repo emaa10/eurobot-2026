@@ -95,6 +95,7 @@ class Task():
                 self.stepper.lift()
                 sleep(1)
                 self.servos.cans_in()
+                sleep(0.5)
                 self.servos.pos_wegfahren()
             case 'es': # emergency stop
                 await self.motor_controller.set_stop()
@@ -114,65 +115,66 @@ class Task():
                 sleep(0.3)
                 self.stepper.anfahren()
                 
-                # await self.motor_controller.drive_to_point(1900, 700, 0)
-                # await self.motor_controller.drive_distance(200)
+                await self.motor_controller.drive_to_point(1900, 700, 0)
+                await self.motor_controller.drive_distance(200)
                 
-                # # seperate 1st stapel
-                # self.stepper.down()
-                # sleep(0.4)
-                # self.servos.grip_cans()
-                # sleep(0.5)
-                # self.stepper.lift()
-                # self.servos.servo_mitte_lift(2)
-                # sleep(1)
-                # self.servos.cans_in()
+                # seperate 1st stapel
+                self.stepper.down()
+                sleep(0.4)
+                self.servos.grip_cans()
+                sleep(0.5)
+                self.stepper.lift()
+                self.servos.servo_mitte_lift(2)
+                sleep(1)
+                self.servos.cans_in()
                                 
-                # # place 1st stapel
-                # await self.motor_controller.drive_to_point(1700, 350, 180)
-                # self.servos.release_all()
-                # sleep(0.5)
+                # place 1st stapel
+                await self.motor_controller.drive_to_point(1700, 350, 180)
+                self.servos.release_all()
+                sleep(0.5)
                 
-                # await self.motor_controller.drive_distance(-200)
+                await self.motor_controller.drive_distance(-200)
 
-                # self.servos.pos_anfahren()
-                # sleep(0.3)
-                # self.stepper.anfahren()
+                self.servos.pos_anfahren()
+                sleep(0.3)
+                self.stepper.anfahren()
 
-                # await self.motor_controller.drive_to_point(2200, 600, 183)
-                # await self.motor_controller.drive_to_point(2200, 200, 183)
+                await self.motor_controller.drive_to_point(2225, 600, 183)
+                await self.motor_controller.drive_to_point(2225, 280, 183)
 
-                # # grip 2nd level
-                # self.servos.grip_one_layer()
-                # self.stepper.down()
-                # sleep(0.3)
-                # self.servos.servo_plate_grip(2)
-                # sleep(0.2)
-                # self.stepper.lift_1er()
+                # grip 2nd level
+                self.servos.grip_one_layer()
+                self.stepper.down()
+                sleep(0.3)
+                self.servos.servo_plate_grip(2)
+                sleep(0.2)
+                self.stepper.lift_1er()
                 
-                # await self.motor_controller.drive_distance(-300)
+                await self.motor_controller.drive_distance(-300)
                 
-                # # build level
-                # self.servos.cans_in()
-                # self.stepper.build_1er()
-                # sleep(0.2)
-                # self.servos.servo_plate_grip(1)
-                # sleep(0.2)
-                # self.servos.servo_plate_rotate(1)
-                # sleep(0.5)
-                # self.stepper.lift_3er()
-                # self.servos.servo_mitte_grip(1)
+                # build level
+                self.servos.cans_in()
+                self.stepper.build_1er()
+                sleep(0.2)
+                self.servos.servo_plate_grip(1)
+                sleep(0.2)
+                self.servos.servo_plate_rotate(1)
+                sleep(0.5)
+                self.stepper.lift_3er()
+                self.servos.servo_mitte_grip(1)
                 
-                # await self.motor_controller.drive_to_point(1700, 550, 180)
-                # await self.motor_controller.drive_to_point(1700, 350, 180)
+                await self.motor_controller.drive_to_point(1700, 550, 180)
+                await self.motor_controller.drive_to_point(1700, 320, 180)
                 
-                # # place on top of level 2
-                # self.servos.release_all()
-                # sleep(1)
-                # await self.motor_controller.drive_distance(-200)
-                
+                # place on top of level 2
+                self.servos.release_all()
+                sleep(1)
+                #await self.motor_controller.drive_distance(-200)
+                await self.motor_controller.drive_to_point(1700, 520, 90)
+
                 await self.motor_controller.drive_to_point(2575, 400, 90)
                 # await self.motor_controller.drive_to_point(2600, 400, 90)
-                await self.motor_controller.drive_to_point(2750, 400, 90)
+                await self.motor_controller.drive_to_point(2710, 400, 90)
                 
                 self.stepper.down()
                 sleep(1)
@@ -185,7 +187,7 @@ class Task():
                 self.servos.release_all()
                 sleep(1)
                 
-                await self.motor_controller.drive_distance(-200)
+                await self.motor_controller.drive_to_point(2510, 400, 90)
                 
                 self.servos.pos_anfahren()
                 self.stepper.down()
@@ -193,7 +195,7 @@ class Task():
                 self.servos.servo_plate_rotate(1)
                 self.servos.cans_in()
                 
-                await self.motor_controller.drive_distance(220)
+                await self.motor_controller.drive_to_point(2710, 400, 90)
                 self.servos.grip_unten()
                 self.stepper.set_pos_mm(20, 0, 20)
                 
