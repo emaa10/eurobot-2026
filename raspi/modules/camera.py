@@ -11,7 +11,6 @@ import logging
 
 
 class Camera:
-    # Calibration and detection constants
     CALIB_FACTOR = 0.57
     TAG_SIZE = 0.0235  # size of the ArUco marker in meters
     IMAGE_WIDTH = 1280
@@ -41,38 +40,28 @@ class Camera:
         )
         self.picam2.configure(config)
 
-        # Prepare ArUco detector
+        # aruco detection
         self.aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
         self.parameters = aruco.DetectorParameters_create()
 
-        # For background capture
+        # For background capture - not needed since we dont capture in the background anymore
         self.frame = None
         self.running = False
         self._lock = threading.Lock()
 
     def start(self) -> None:
-        """
-        Start the camera stream and background capture thread.
-        """
         self.picam2.start()
-        time.sleep(2)  # warm-up
+        #! time.sleep(2)  # warm-up
         self.running = True
-        # self._thread = threading.Thread(target=self._update_frame, daemon=True)
-        # self._thread.start()
 
     def stop(self) -> None:
-        """
-        Stop background capture and close all windows.
-        """
         self.running = False
-        self._thread.join(timeout=1)
         self.picam2.stop()
-        cv2.destroyAllWindows()
 
     def _update_frame(self):
         while self.running:
             frame = self.picam2.capture_array()
-            with self._lock:
+            with self._lock: # lässt den lock an, solange frame gecaptured wird
                 self.frame = frame
             time.sleep(0.01)
 
@@ -88,7 +77,6 @@ class Camera:
         frame = self.picam2.capture_array()
         frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
         threading.Thread(target=cv2.imwrite, args=(f"/home/eurobot/Desktop/camera/{time.strftime('%Y%m%d_%H%M%S')}.png", frame)).start()
-        # threading.Thread(target=cv2.imwrite, args=("/home/eurobot/Desktop/image.png", frame)).start()
         return frame
 
             
