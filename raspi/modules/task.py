@@ -34,181 +34,133 @@ class Task():
     async def perform_action(self, msg):
         cmd = msg[:2]
         match cmd:
-            case 'sp':
+            case 'sp':  # set pos
                 values = msg[2:].split(';')
                 self.motor_controller.set_pos(int(values[0]), int(values[1]), int(values[2]))
-            case 'cs': #check stack
+            case 'cs': # check stack
                 print(self.camera.check_stacks(True)) # debug oder nicht
                 # gibt anzahl stacks zurück
             case 'ws': # write servo
                 values = msg[2:].split(';')
                 self.logger.info(f"set servo cmd: {values}")
                 self.gripper.servos.write_servo(int(values[0]), int(values[1]))
-            case 'ra':
-                self.gripper.release()
-            case 'sl': # stepper lift
+            case 'sl':  # stepper lift
                 values = msg[2:].split(';')
                 self.logger.info(f"set stepper heigth XYZ: {values}")
                 self.gripper.stepper.set_pos_mm(int(values[0]), int(values[1]), int(values[2]))
-            case 'dd': # drive distance
+            case 'dd':  # drive distance
                 self.logger.info(f"drive distance: {int(msg[2:])}")
                 await self.motor_controller.drive_distance(int(msg[2:]))
-            case 'dp':
+            case 'dp':  # drive point
                 values = msg[2:].split(';')
                 print(values)
                 print('bassd')
                 await self.motor_controller.drive_to_point(int(values[0]), int(values[1]), int(values[2]))
-            case 'ta': # turn angle
+            case 'ta':  # turn angle
                 self.logger.info(f"turn angle: {int(msg[2:])}")
                 await self.motor_controller.turn_angle(int(msg[2:]))
                 await self.motor_controller.set_stop()
-            case 'tt': # turn to
+            case 'tt':  # turn to
                 self.logger.info(f"turn to {msg[2:]}")
                 await self.motor_controller.turn_to(int(msg[2:]))
-            case 'cw': # clean wheels
+            case 'cw':  # clean wheels
                 self.logger.info(f"clean wheels")
                 await self.motor_controller.clean_wheels()
-            case 'ac': # anfahren cans
+            case 'ac':  # anfahren cans
                 self.logger.info("anfahren cans")
                 self.gripper.anfahren()
-            case 'gc': # grip cans
-                self.logger.info("grip cans")
-                self.stepper.down()
-                sleep(1)
-                self.servos.grip_cans()
                 sleep(0.5)
-                self.stepper.lift()
-                sleep(1)
-                self.servos.gripper_in()
-                sleep(0.5)
-                self.gripper.servos.servo_mitte_lift(2)
-            case 'es': # emergency stop
-                await self.motor_controller.set_stop()
+            case 'es':  # emergency stop
                 self.logger.info("emergency stop!")
-            case 'hg': # home gripper
-                self.gripper.home()
+                await self.motor_controller.set_stop()
+            case 'hg':  # home gripper
                 self.logger.info("home gripper")
-            case 'hb': # home bot
+                self.gripper.home()
+            case 'hb':  # home bot
+                self.logger.info("home bot")
                 await self.motor_controller.home()
-                self.logger.info("homed bot")
-            case 'ip':
+            case 'ip':  # increase points
+                self.logger.info("increase points")
                 increase_points = int(msg[2:])
                 self.points += increase_points
-            case 'fd':
-                self.gripper.servos.servo_flag(2)
-            case 'll': #test gripper lift strength
-                self.gripper.servos.servo_plate_rotate(1)
-                sleep(0.1)
-                self.gripper.stepper.set_pos_mm(5, 0, 5)
-                sleep(0.1)
-                self.gripper.servos.servo_left_rotate(3)
-                self.gripper.servos.servo_right_rotate(3)
-                sleep(1)
-                await self.motor_controller.drive_distance(150)
-
-                self.gripper.servos.servo_left_grip(2)
-                self.gripper.servos.servo_right_grip(2)
-                sleep(1)
-                self.gripper.stepper.set_pos_mm(145, 0, 145)
-                sleep(1)
-                await self.motor_controller.drive_distance(150)
-                self.gripper.release()
-                await self.motor_controller.drive_distance(-300)
-                
-            case 's1': # seperate 1er
-                self.gripper.anfahren()
-                sleep(0.3)
-                await self.motor_controller.drive_distance(350)
+            case 'fd':  # flag down
+                self.logger.info("flag down")
+                self.gripper.servos.servo_flag(2)   
+            case 'rg':  # release gripper
+                self.logger.info("release gripper")
+                self.gripper.release()             
+            case 'b1':  # build a lvl1 from stack in arena
+                self.logger.info("build lvl 1")
                 self.gripper.grip_one_layer()
                 await self.motor_controller.drive_distance(-300)
                 self.gripper.build_one_layer()
-            case 'a2': # add 2er --> aktueller wo wir dran sind
-                self.gripper.anfahren()
-                sleep(0.5)
-                await self.motor_controller.drive_distance(180)
-                self.gripper.seperate()
-                sleep(20)
+            case 'b2':  # build a lvl2 from stack in arena 
+                self.logger.info("build lvl 2")
+                self.gripper.build_2er()
+            case 'gu':  # umgreifen
+                self.logger.info("umgreifen")
                 self.gripper.release()
                 await self.motor_controller.drive_distance(-200)
                 self.gripper.grip_unten()
                 await self.motor_controller.drive_distance(250)
-                self.gripper.servos.servo_left_grip(2)
-                self.gripper.servos.servo_right_grip(2)
+                self.gripper.servos.grip_außen()
                 sleep(1)
                 self.gripper.stepper.set_pos_mm(145, 0, 145)
+            case 'a2': # add lvl2 onto lvl1
+                # ac
+                await self.motor_controller.drive_distance(180)
+                # b2
+                sleep(20)
+                # gu
                 await self.motor_controller.drive_distance(200)
-                self.gripper.release()
+                # rg
                 await self.motor_controller.drive_distance(-200)
                 
-            case 'xx': # gerade nur ersten anfahren und zerlegen
-                self.motor_controller.set_pos(1700, 215, 0)
+            case 'xx':
+                # sp
                 
-                self.gripper.anfahren()
+                # ac
                 
-                # await self.motor_controller.drive_to_point(1900, 700, 0)
-                # await self.motor_controller.drive_distance(200)
-                await self.motor_controller.drive_distance(250) # entfernen (war nur zum testen)
+                await self.motor_controller.drive_to_point(1900, 700, 0)
+                await self.motor_controller.drive_distance(200)
                 
-                self.gripper.seperate()
+                # b2
                 
                 await self.motor_controller.drive_distance(-250)
                                 
-                # # place 1st stapel
-                # await self.motor_controller.drive_to_point(1700, 350, 180)
-                # self.gripper.release()
-                # sleep(0.5)
+                # place 1st stapel
+                await self.motor_controller.drive_to_point(1700, 350, 180)
+                # rg
+                sleep(0.5)
                 
-                # await self.motor_controller.drive_distance(-200)
+                await self.motor_controller.drive_distance(-200)
 
-                # self.gripper.anfahren()
+                # ac
 
-                # await self.motor_controller.drive_to_point(2225, 600, 183)
-                # await self.motor_controller.drive_to_point(2225, 280, 183)
+                await self.motor_controller.drive_to_point(2225, 600, 183)
+                await self.motor_controller.drive_to_point(2225, 280, 183)
 
-                # # grip 2nd level
-                # self.gripper.grip_one_layer()
+                # b1 
                 
-                # await self.motor_controller.drive_distance(-300)
+                await self.motor_controller.drive_to_point(1700, 550, 180)
+                await self.motor_controller.drive_to_point(1700, 320, 180)
                 
-                # # build level
-                # self.gripper.build_one_layer()
+                # rg
+                await self.motor_controller.drive_distance(-200)
                 
-                # await self.motor_controller.drive_to_point(1700, 550, 180)
-                # await self.motor_controller.drive_to_point(1700, 320, 180)
-                
-                # # place on top of level 2
-                # self.servos.release_all()
-                # sleep(1)
-                # #await self.motor_controller.drive_distance(-200)
-                # await self.motor_controller.drive_to_point(1700, 520, 90)
 
-                # await self.motor_controller.drive_to_point(2575, 400, 90)
-                # # await self.motor_controller.drive_to_point(2600, 400, 90)
-                # await self.motor_controller.drive_to_point(2710, 400, 90)
+                # ac
+                await self.motor_controller.drive_to_point(1700, 520, 90)
+                await self.motor_controller.drive_distance(180)
+                # b2 
                 
-                # self.stepper.down()
-                # sleep(1)
-                # self.servos.grip_cans()
-                # sleep(1)
-                # self.stepper.lift()
-                # sleep(1)
-                # self.servos.gripper_in()
-                # sleep(1)
-                # self.servos.release_all()
-                # sleep(1)
+                await self.motor_controller.drive_to_point(1,1,1) # keine Ahnung
                 
-                # await self.motor_controller.drive_to_point(2510, 400, 90)
-                
-                # self.servos.pos_anfahren()
-                # self.stepper.down()
-                # sleep(0.5)
-                # self.servos.servo_plate_rotate(1)
-                # self.servos.gripper_in()
-                
-                # await self.motor_controller.drive_to_point(2710, 400, 90)
-                # self.servos.grip_unten()
-                # self.stepper.set_pos_mm(20, 0, 20)
-            case 'gp':
+                # gu
+                await self.motor_controller.drive_distance(200)
+                # rg
+                await self.motor_controller.drive_distance(-200)
+            case 'gp': # get pos
                 x, y, theta = self.motor_controller.encoder.get_pos()
                 print(f'{x}, {y}, {theta}')
             case _: # default

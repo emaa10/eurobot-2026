@@ -19,8 +19,8 @@ class Gripper:
         sleep(0.3)
         self.stepper.pos_anfahren()
         
-    # seperate stack from arena
-    def seperate(self):
+    # build lvl2 from stack in arena
+    def build_2er(self):
         self.stepper.down()
         sleep(0.4)
         self.servos.grip_cans()
