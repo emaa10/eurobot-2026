@@ -1,5 +1,5 @@
 # Eurobot 2025 Repo
 
 <br>This is our repo of our main bot.
-<br>Here's the 3d model (Dresden version): [Download](https://gitlab.com/-/project/65173348/uploads/4d98ac50aabdc04d955dd4db7a6346a3/Eurobot_Dresden_Version.step)
-<br>Here's the 3d model (Before france version): [Download](https://cloud.bergerhq.de/s/8egGD6sSAywc3jw/download)
+<br>Here's the 3d model as s step file (Dresden version): [Download](https://cloud.bergerhq.de/s/i3qRFsa554YmtiS/download)
+<br>Here's the 3d model as a step file (Before france version): [Download](https://cloud.bergerhq.de/s/HXydYDA4iXCtcGn/download)
