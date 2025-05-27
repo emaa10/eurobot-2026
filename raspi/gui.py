@@ -114,18 +114,6 @@ class Communication(threading.Thread):
                 time.sleep(1)
 
 class MainWindow(QWidget):
-    def parse_servo_pos(self):
-        result = []
-        with open('/home/eurobot/main-bot/raspi/modules/servo.txt', 'r') as file:
-            for line in file:
-                line = line.split('#')[0].strip()
-                if not line:
-                    continue
-                parts = line.split(',')
-                id_ = int(parts[0])
-                values = list(map(int, parts[1:]))
-                result.append([id_, values])
-        return result
 
     def __init__(self):
         super().__init__()
@@ -134,7 +122,6 @@ class MainWindow(QWidget):
         self.selected_tactic = None
         self.color = None
         self.game_state = 0
-        self.servoPos = self.parse_servo_pos()
         self.init_ui()
 
     def init_ui(self):
@@ -456,59 +443,66 @@ class MainWindow(QWidget):
             {
                 'name': 'Mitte Lift',
                 'commands': [
-                    ('Lift oben', f'ws{self.servoPos[0][0]};{self.servoPos[0][1][0]}'),
-                    ('Lift unten', f'ws{self.servoPos[0][0]};{self.servoPos[0][1][1]}')
+                    ('Lift unten', 'ws3;2900'),
+                    ('Lift oben', 'ws3;3030')
                 ]
             },
             {
                 'name': 'Mitte Grip',
                 'commands': [
-                    ('Grip auf', f'ws{self.servoPos[1][0]};{self.servoPos[1][1][0]}'),
-                    ('Grip zu', f'ws{self.servoPos[1][0]};{self.servoPos[1][1][1]}')
+                    ('Grip auf', 'ws7;3700'),
+                    ('Grip zu', 'ws7;3200')
                 ]
             },
             {
                 'name': 'Right Rotate',
                 'commands': [
-                    ('R außen', f'ws{self.servoPos[2][0]};{self.servoPos[2][1][0]}'),
-                    ('R mitte', f'ws{self.servoPos[2][0]};{self.servoPos[2][1][1]}'),
-                    ('R innen', f'ws{self.servoPos[2][0]};{self.servoPos[2][1][2]}')
+                    ('R außen', 'ws11;3825'),
+                    ('R mitte', 'ws11;3040'),
+                    ('R innen', 'ws11;2500'),
                 ]
             },
             {
                 'name': 'Plate Rotate',
                 'commands': [
-                    ('Plate oben', f'ws{self.servoPos[3][0]};{self.servoPos[3][1][0]}'),
-                    ('Plate unten', f'ws{self.servoPos[3][0]};{self.servoPos[3][1][1]}')
+                    ('Plate oben', 'ws9;1800'),
+                    ('Plate unten', 'ws9;2800')
                 ]
             },
             {
                 'name': 'Right Grip',
                 'commands': [
-                    ('R Grip auf', f'ws{self.servoPos[4][0]};{self.servoPos[4][1][0]}'),
-                    ('R Grip zu', f'ws{self.servoPos[4][0]};{self.servoPos[4][1][1]}')
+                    ('R Grip auf', 'ws1;3950'),
+                    ('R Grip zu', 'ws1;3450')
                 ]
             },
             {
                 'name': 'Left Grip',
                 'commands': [
-                    ('L Grip auf', f'ws{self.servoPos[5][0]};{self.servoPos[5][1][0]}'),
-                    ('L Grip zu', f'ws{self.servoPos[5][0]};{self.servoPos[5][1][1]}')
+                    ('L Grip auf', 'ws2;150'),
+                    ('L Grip zu', 'ws2;630')
                 ]
             },
             {
                 'name': 'Left Rotate',
                 'commands': [
-                    ('L außen', f'ws{self.servoPos[6][0]};{self.servoPos[6][1][0]}'),
-                    ('L mitte', f'ws{self.servoPos[6][0]};{self.servoPos[6][1][1]}'),
-                    ('L innen', f'ws{self.servoPos[6][0]};{self.servoPos[6][1][2]}')
+                    ('L außen', 'ws10;180'),
+                    ('L mitte', 'ws10;975'),
+                    ('L innen', 'ws10,1540')
                 ]
             },
             {
                 'name': 'Plate Grip',
                 'commands': [
-                    ('Pl. Grip auf', f'ws{self.servoPos[7][0]};{self.servoPos[7][1][0]}'),
-                    ('Pl. Grip zu', f'ws{self.servoPos[7][0]};{self.servoPos[7][1][1]}')
+                    ('Pl. Grip auf', 'ws8;950'),
+                    ('Pl. Grip zu', 'ws8;1640')
+                ]
+            },
+            {
+                'name': 'Flag',
+                'commands': [
+                    ('Flag o', 'ws6;2200'),
+                    ('Flag u', 'ws6;750')
                 ]
             }
         ]
