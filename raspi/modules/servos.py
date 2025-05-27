@@ -1,4 +1,5 @@
 from modules.STservo_sdk import * 
+from time import time
 
 BAUDRATE                    = 1000000           # STServo default baudrate : 1000000
 STS_MOVING_SPEED            = 2400          # SCServo moving speed
@@ -8,6 +9,8 @@ class Servos:
     def __init__(self, port = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083062-if00") -> None:
         self.port_handler = PortHandler(port)
         self.packet_handler = sts(self.port_handler)
+        
+        self.time_started = 99999999
 
         # Open port
         if self.port_handler.openPort():
@@ -22,11 +25,17 @@ class Servos:
         else:
             print("Failed to change the baudrate")
             quit()
+    
+    def check_time(self) -> bool:
+        if self.time_started + 97 < time():
+            return True
+        return False
 
     def write_servo(self, id, goal_position):
         """
         writes servo with id to goal pos
         """
+        if self.check_time(): return
         self.packet_handler.WritePosEx(id, goal_position, STS_MOVING_SPEED, STS_MOVING_ACC)
 
     def servo_mitte_lift(self, pos: int):

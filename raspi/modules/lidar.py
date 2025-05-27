@@ -2,7 +2,7 @@ import threading
 import logging
 import queue
 import math
-from time import time_ns, sleep
+from time import time_ns, sleep, time
 from pyrplidar import PyRPlidar
 
 class Lidar:
@@ -14,10 +14,12 @@ class Lidar:
         
         # Queue to store scan results
         self.scan_results = queue.Queue(maxsize=10)
+        self.latest_scan_time = time()
         
         # Control flags
         self.running = False
         self.thread = None
+        self.stop = False
     
     def connect(self):
         """Connect to the Lidar device"""
@@ -115,6 +117,40 @@ class Lidar:
             self.lidar = None
         
         self.logger.info("Lidar stopped")
+        
+    def get_stop(self, x, y, theta, direction) -> bool:
+        latest_scan = None
+        
+        if self.latest_scan_time + 0.02 <= time():
+            latest_scan = self.get_latest_scan()
+            self.latest_scan_time = time()
+        
+        if latest_scan: 
+            self.stop = False
+            for angle, distance in latest_scan:
+                # point in relation to bot
+                d_x = distance * math.sin(angle * math.pi / 180)
+                d_y = distance * math.cos(angle * math.pi / 180)
+                 
+                # point in arena
+                arena_angle_rad = (angle + theta) * math.pi / 180 
+                arena_x = -distance * math.sin(arena_angle_rad) + x 
+                arena_y = distance * math.cos(arena_angle_rad) + y 
+                
+                point_in_arena = 0 <= arena_x <= 3000 and 0 <= arena_y <= 2000
+                point_in_arena = False # ÄNDERN FÜR MATCH
+                            
+                if (direction >= 0 and 0 <= d_y <= 450) and abs(d_x) <= 300 and point_in_arena and distance > 50:
+                    self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
+                    self.stop = True
+                    break
+                
+                if  (direction <= 0 and 0 >= d_y >= -300) and abs(d_x) <= 300 and point_in_arena and distance > 50:
+                    self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
+                    self.stop = True
+                    break
+                
+        return self.stop
 
 # Example usage
 def main():

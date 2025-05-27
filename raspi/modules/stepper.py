@@ -1,5 +1,5 @@
 import serial
-import time
+from time import time
 import logging
 
 class Stepper:
@@ -8,7 +8,12 @@ class Stepper:
         self.baudrate = baudrate
         self.ser = serial.Serial(port=port, baudrate=baudrate, timeout=3)
         self.logger = logging.getLogger(__name__)
+        self.time_started = 999999999
     
+    def check_time(self) -> bool:
+        if self.time_started + 97 < time():
+            return True
+        return False
 
     def home(self):
         self.send("$H\n")
@@ -17,6 +22,7 @@ class Stepper:
         self.send(f"G54 X{abs(r)} Y{abs(m)} Z{abs(l)}\n")
 
     def send(self, command: str):
+        if self.check_time(): return
         print(f'command: {command}')
         byte_string = str.encode(command)
         self.ser.write(byte_string)

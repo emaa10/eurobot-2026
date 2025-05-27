@@ -56,6 +56,13 @@ class Task():
                 print(values)
                 print('bassd')
                 await self.motor_controller.drive_to_point(int(values[0]), int(values[1]), int(values[2]))
+            case 'dh':
+                if self.color == 'blue':
+                    await self.motor_controller.drive_to_point(2500, 1300, 0)
+                else:
+                    await self.motor_controller.drive_to_point(500, 1300, 0)
+                    
+                self.points += 10
             case 'ta':  # turn angle
                 self.logger.info(f"turn angle: {int(msg[2:])}")
                 await self.motor_controller.turn_angle(int(msg[2:]))
@@ -83,9 +90,20 @@ class Task():
                 self.logger.info("increase points")
                 increase_points = int(msg[2:])
                 self.points += increase_points
+            case 'ic': # increase points cam
+                self.logger.info("increase points based on cam")
+                stacks = self.camera.check_stacks()
+                increase_points = 0
+                match stacks:
+                    case 0: increase_points = 0
+                    case 1: increase_points = 4
+                    case 2: increase_points = 12
+                    case 3: increase_points = 28
+                self.points += increase_points
             case 'fd':  # flag down
                 self.logger.info("flag down")
-                self.gripper.servos.servo_flag(2)   
+                self.gripper.servos.servo_flag(2)
+                sleep(0.5)   
             case 'rg':  # release gripper
                 self.logger.info("release gripper")
                 self.gripper.release()             

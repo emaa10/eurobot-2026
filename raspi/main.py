@@ -82,7 +82,6 @@ class RobotController:
         while GPIO.input(pullcord) == GPIO.LOW:
             sleep(0.1)
 
-
     async def get_command(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         addr = writer.get_extra_info('peername')
         self.l(f"Connected to client at {addr}")
@@ -171,7 +170,8 @@ class RobotController:
 
     def start(self):
         self.tactic.motor_controller.time_started = time()
-        self.tactic.motor_controller.gegi = True
+        self.tactic.gripper.servos.time_started = time()
+        self.tactic.gripper.stepper.time_started = time()
         self.l(f'Tactic started')
         
     async def run(self) -> int:
