@@ -202,6 +202,9 @@ class MainWindow(QWidget):
         if self.game_state == 1:
             # Start Homing 1
             self.game_state = 4
+            font = QFont()
+            font.setPointSize(45)
+            self.game_label.setFont(font)
             self.game_label.setText('Homing...')
             self.comm.l("Debug: Homing 1 started.")
             # self.comm.send_command("hb") # home bot
@@ -225,6 +228,9 @@ class MainWindow(QWidget):
         elif self.game_state == 4 and self.comm.homing_1_done:
             # Homing 2 done
             self.game_state = 5
+            font = QFont()
+            font.setPointSize(45)
+            self.game_label.setFont(font)
             self.game_label.setText("Waiting for pullcord...")
             self.comm.l("Debug: Homing #2 done, waiting for pullcord.")
         
