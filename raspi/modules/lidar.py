@@ -60,10 +60,8 @@ class Lidar:
         while True:
             try:
                 scan_generator = self.lidar.start_scan()
-                for count, measurement in enumerate(scan_generator()):     
-                    # self.logger.info(f'time:{time()}, start flag: {measurement.start_flag}, quality: {measurement.quality}, distance: {measurement.distance}, angle: {measurement.angle}')               
+                for count, measurement in enumerate(scan_generator()):                 
                     if measurement.start_flag:          
-                        # self.logger.info('NEW SCAN')             
                         try:
                             self.scan_results.put_nowait(current_scan_data)
                         except queue.Full:
@@ -76,7 +74,6 @@ class Lidar:
                         current_scan_data.append((measurement.angle, measurement.distance))
             
             except Exception as e:
-                #self.logger.info(f"Error in scan loop: {e}")
                 if not self.running:
                     break
                 
@@ -138,7 +135,7 @@ class Lidar:
                 arena_y = distance * math.cos(arena_angle_rad) + y 
                 
                 point_in_arena = 0 <= arena_x <= 3000 and 0 <= arena_y <= 2000
-                # point_in_arena = True # ÄNDERN FÜR MATCH
+                point_in_arena = False # ÄNDERN FÜR MATCH
                             
                 if (direction >= 0 and 0 <= d_y <= 500) and abs(d_x) <= 300 and point_in_arena and distance > 70:
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')

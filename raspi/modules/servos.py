@@ -44,7 +44,7 @@ class Servos:
         """
         value = 0
         match pos:
-            case 1: value = 2900
+            case 1: value = 2850
             case 2: value = 3030
             
         self.write_servo(3, value)
@@ -110,10 +110,10 @@ class Servos:
         """
         value = 0 
         match pos:
-            case 1: value = 500
-            case 2: value = 1250
-            case 3: value = 1800
-            case 4: value = 2300
+            case 1: value = 420
+            case 2: value = 1170
+            case 3: value = 1720
+            case 4: value = 2220
         self.write_servo(10, value)
 
     def servo_plate_grip(self, pos: int):
@@ -122,7 +122,7 @@ class Servos:
         """
         value = 0 
         if pos == 1: value = 950
-        else: value = 1640
+        else: value = 1700
         self.write_servo(8, value)
     
     def servo_flag(self, pos: int):

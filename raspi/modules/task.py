@@ -119,6 +119,9 @@ class Task():
             case 'b2':  # build a lvl2 from stack in arena 
                 self.logger.info("build lvl 2")
                 self.gripper.build_2er()
+            case 'l3':
+                self.logger("lift 3er")
+                self.gripper.stepper.lift_3er()
             case 'gu':  # umgreifen
                 self.logger.info("umgreifen")
                 self.gripper.release()
