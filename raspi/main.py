@@ -1,5 +1,4 @@
 import asyncio
-import sys
 import RPi.GPIO as GPIO
 import logging
 from time import time, sleep
@@ -71,7 +70,6 @@ class RobotController:
             2: [['hb', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
             3: [['hb', 'fd', 'dd400', 'ip20'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
             4: [['hb', 'fd', 'dd400', 'ip20'], ['dh']], # safe
-            5: [['dd100'], ['ta90', 'dp400;400;0']]
         }
 
     def l(self, msg: str):
