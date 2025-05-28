@@ -143,15 +143,6 @@ class RobotController:
                 
         self.tactic = Task(self.motor_controller, self.camera, self.gripper, tactic, color)
         self.home_routine = Task(self.motor_controller, self.camera, self.gripper, home_routine, color)
-
-    async def run_tactic(self):
-        self.start()
-        while True:
-            points = await self.run()
-            await self.send_message(f"c{points}")
-            if points == -1: 
-                break
-        await self.motor_controller.set_stop()
         
     async def home(self):
         self.l('Homing routine started')
@@ -183,6 +174,15 @@ class RobotController:
             self.l(f'Tactic complete')
             return -1
         return self.tactic.points
+    
+    async def run_tactic(self):
+        self.start()
+        while True:
+            points = await self.run()
+            await self.send_message(f"c{points}")
+            if points == -1: 
+                break
+        await self.motor_controller.set_stop()
         
     async def cleanup(self):
         """Clean up all resources before exit"""

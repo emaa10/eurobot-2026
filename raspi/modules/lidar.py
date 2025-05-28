@@ -19,7 +19,7 @@ class Lidar:
         # Control flags
         self.running = False
         self.thread = None
-        self.stop = False
+        self.stop_motor = False
     
     def connect(self):
         """Connect to the Lidar device"""
@@ -126,7 +126,7 @@ class Lidar:
             self.latest_scan_time = time()
         
         if latest_scan: 
-            self.stop = False
+            self.stop_motor = False
             for angle, distance in latest_scan:
                 # point in relation to bot
                 d_x = distance * math.sin(angle * math.pi / 180)
@@ -142,15 +142,15 @@ class Lidar:
                             
                 if (direction >= 0 and 0 <= d_y <= 450) and abs(d_x) <= 300 and point_in_arena and distance > 100:
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
-                    self.stop = True
+                    self.stop_motor = True
                     break
                 
                 if  (direction <= 0 and 0 >= d_y >= -300) and abs(d_x) <= 300 and point_in_arena and distance > 100:
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
-                    self.stop = True
+                    self.stop_motor = True
                     break
                 
-        return self.stop
+        return self.stop_motor
 
 # Example usage
 def main():
