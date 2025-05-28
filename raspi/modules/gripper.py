@@ -12,6 +12,16 @@ class Gripper:
         self.servos.pos_anfahren()
         sleep(1)
         self.stepper.home()
+        sleep(10)
+        self.stepper.set_pos_mm(15,0,150)
+        sleep(2)
+        self.pos_home()
+        
+    def pos_home(self):
+        self.servos.grip_außen()
+        self.servos.servo_plate_rotate(1)
+        self.servos.servo_plate_grip(2)
+        self.servos.gripper_in()
     
     # anfahren stack from arena
     def anfahren(self):

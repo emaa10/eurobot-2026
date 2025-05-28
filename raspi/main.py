@@ -158,8 +158,6 @@ class RobotController:
         
         self.gripper.home()
         
-        sleep(10)
-        
         while True:
             self.home_routine = await self.home_routine.run()
             if not self.home_routine: break

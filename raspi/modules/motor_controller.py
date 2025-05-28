@@ -256,6 +256,8 @@ class MotorController():
             await self.control_loop()
         
     async def turn_angle(self, angle: float):
+        await self.control_loop()
+        
         self.direction = 0
         self.finished = False
         
@@ -273,38 +275,17 @@ class MotorController():
         while not self.finished:
             await self.control_loop()
                                         
-            delta_t = abs(target_theta - self.theta)
-            if delta_t > 180: delta_t = 360 - delta_t
+            delta_t = target_theta - self.theta
             
-            print(delta_t)
+            while delta_t > 180: delta_t -= 360
+            while delta_t < -180: delta_t += 360
             
-            if delta_t < angle/170:
+            delta_t = abs(delta_t)
+                        
+            if delta_t < angle/150:
                 break
                     
         await self.set_stop()  
-    
-    # async def turn_angle(self, angle: float):
-    #     self.direction = 0
-    #     self.finished = False
-        
-    #     turn = 11.3
-    #     pulses_per_degree=turn/90
-    #     pulses = angle*pulses_per_degree
-                
-    #     await self.drive_to_target(-pulses, pulses, velocity_limit=35.0, accel_limit=14.0)
-            
-    #     target_theta = self.theta + angle
-        
-    #     if target_theta < 0: target_theta += 360
-    #     if target_theta > 360: target_theta -= 360
-    #     while not self.finished:
-    #         await self.control_loop()
-                            
-    #         if abs(target_theta - self.theta) < target_theta//140:
-    #             break
-        
-    #     await self.set_stop()
-
         
     async def turn_to(self, theta: float):
         delta_t = theta - self.theta
