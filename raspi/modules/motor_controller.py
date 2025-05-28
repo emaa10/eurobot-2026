@@ -259,7 +259,7 @@ class MotorController():
         self.direction = 0
         self.finished = False
         
-        turn = 11.3
+        turn = 11.4
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
@@ -276,10 +276,35 @@ class MotorController():
             delta_t = abs(target_theta - self.theta)
             if delta_t > 180: delta_t = 360 - delta_t
             
-            if delta_t < angle/120:
+            print(delta_t)
+            
+            if delta_t < angle/170:
                 break
                     
         await self.set_stop()  
+    
+    # async def turn_angle(self, angle: float):
+    #     self.direction = 0
+    #     self.finished = False
+        
+    #     turn = 11.3
+    #     pulses_per_degree=turn/90
+    #     pulses = angle*pulses_per_degree
+                
+    #     await self.drive_to_target(-pulses, pulses, velocity_limit=35.0, accel_limit=14.0)
+            
+    #     target_theta = self.theta + angle
+        
+    #     if target_theta < 0: target_theta += 360
+    #     if target_theta > 360: target_theta -= 360
+    #     while not self.finished:
+    #         await self.control_loop()
+                            
+    #         if abs(target_theta - self.theta) < target_theta//140:
+    #             break
+        
+    #     await self.set_stop()
+
         
     async def turn_to(self, theta: float):
         delta_t = theta - self.theta
@@ -364,7 +389,7 @@ class MotorController():
         except:
             self.logger.info("Could not read new pos data")
             
-        self.stop = self.lidar.get_stop(self.x, self.y, self.theta)      
+        self.stop = self.lidar.get_stop(self.x, self.y, self.theta, self.direction)      
                                 
         if self.stopped and not self.stopped_since: self.stopped_since = time()
         if not self.stopped and self.stopped_since: self.stopped_since = None

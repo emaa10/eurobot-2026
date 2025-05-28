@@ -63,13 +63,13 @@ class RobotController:
             1: [['hb', 'fd', 'dd400', 'ip20', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'dp790;500;180', 'dp790;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
             2: [['hb', 'fd', 'dd400', 'ip20', 'dp1100;650;0', 'pg', 'dp1100;750;0', 'gs', 'dd-100', 'dp1250;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
             3: [['dd200', 'ip3', 'ta90']], # keine ahnung
-            4: [['hb', 'fd', 'dd400', 'ip20'], ['dh']], # safe
+            4: [['hb', 'fd', 'dd400', 'ip20'], ['dh', 'gp']], # safe
         }
         self.tactix_blue = {
             1: [['hb', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'dp2250;500;180', 'dp2250;200;180', 'ip4', 'dd-200'], ['dh']], # full takitk
             2: [['hb', 'fd', 'dd400', 'ip20', 'dp1900;650;0', 'pg', 'dp1900;750;0', 'gs', 'dd-100', 'dp1750;400;180', 'ds', 'ip12', 'dd-200', 'ge'], ['dh']], # goat
             3: [['hb', 'fd', 'dd400', 'ip20'], ['dp400;1360;270', 'pg', 'dp270;1350;270', 'gs', 'dd-100', 'dp400;1720;0', 'ds', 'ip12', 'dd-200', 'ge']], # keine ahnung
-            4: [['hb', 'fd', 'dd400', 'ip20'], ['dh']], # safe
+            4: [['hb', 'fd', 'dd400', 'ip20'], ['dh', 'gp']], # safe
         }
 
     def l(self, msg: str):
@@ -155,6 +155,10 @@ class RobotController:
         
     async def home(self):
         self.l('Homing routine started')
+        
+        self.gripper.home()
+        
+        sleep(10)
         
         while True:
             self.home_routine = await self.home_routine.run()

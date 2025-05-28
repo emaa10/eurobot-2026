@@ -10,7 +10,7 @@ class Servos:
         self.port_handler = PortHandler(port)
         self.packet_handler = sts(self.port_handler)
         
-        self.time_started = 99999999
+        self.time_started = 9999999999999999
 
         # Open port
         if self.port_handler.openPort():

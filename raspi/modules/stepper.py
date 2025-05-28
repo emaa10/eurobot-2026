@@ -8,10 +8,12 @@ class Stepper:
         self.baudrate = baudrate
         self.ser = serial.Serial(port=port, baudrate=baudrate, timeout=3)
         self.logger = logging.getLogger(__name__)
-        self.time_started = 999999999
+        self.time_started = 9999999999999999
     
     def check_time(self) -> bool:
         if self.time_started + 97 < time():
+            print(time())
+            print('true')
             return True
         return False
 
@@ -56,6 +58,7 @@ class Stepper:
 
 def main():
     stepper = Stepper()
+    stepper.home()
     
 if __name__ == '__main__':
     main()

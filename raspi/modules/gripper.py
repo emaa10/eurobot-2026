@@ -74,3 +74,10 @@ class Gripper:
         
     def release(self):
         self.servos.release_all()
+        
+def main():
+    gripper = Gripper()
+    gripper.home()
+    
+if __name__ == '__main__':
+    main()
