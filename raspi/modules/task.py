@@ -54,8 +54,8 @@ class Task():
             case 'dp':  # drive point
                 values = msg[2:].split(';')
                 print(values)
-                print('bassd')
-                await self.motor_controller.drive_to_point(int(values[0]), int(values[1]), int(values[2]))
+                await self.motor_controller.drive_to(int(values[0]), int(values[1]))
+                await self.motor_controller.turn_to(int(values[2]))
             case 'dh':
                 if self.color == 'blue':
                     await self.motor_controller.drive_to_point(2500, 1400, 0)
@@ -73,9 +73,13 @@ class Task():
             case 'cw':  # clean wheels
                 self.logger.info(f"clean wheels")
                 await self.motor_controller.clean_wheels()
-            case 'ac':  # anfahren cans
+            case 'a0':  # anfahren cans
                 self.logger.info("anfahren cans")
                 self.gripper.anfahren()
+                sleep(0.5)
+            case 'a1': # anfahren cans first time
+                self.logger.info("anfahren cans")
+                self.gripper.anfahren(True)
                 sleep(0.5)
             case 'es':  # emergency stop
                 self.logger.info("emergency stop!")

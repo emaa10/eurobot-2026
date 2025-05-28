@@ -1,5 +1,5 @@
 from modules.STservo_sdk import * 
-from time import time
+from time import time, sleep
 
 BAUDRATE                    = 1000000           # STServo default baudrate : 1000000
 STS_MOVING_SPEED            = 2400          # SCServo moving speed
@@ -84,12 +84,13 @@ class Servos:
 
     def servo_right_grip(self, pos: int):
         """
-        1: auf, 2: zu
+        1: auf, 2: zu, 3: home pos
         """
         value = 0 
         match pos:
             case 1: value = 3950
             case 2: value = 3450
+            case 3: value = 3000
         self.write_servo(1, value)
 
     def servo_left_grip(self, pos: int):
@@ -105,13 +106,14 @@ class Servos:
 
     def servo_left_rotate(self, pos: int):
         """
-        1: außen, 2: mitte, 3: innen
+        1: außen, 2: mitte, 3: innen, 4: home pos
         """
         value = 0 
         match pos:
-            case 1: value = 180
-            case 2: value = 975
-            case 3: value = 1540
+            case 1: value = 500
+            case 2: value = 1250
+            case 3: value = 1800
+            case 4: value = 2300
         self.write_servo(10, value)
 
     def servo_plate_grip(self, pos: int):
@@ -129,21 +131,22 @@ class Servos:
         """
         value = 0 
         if pos == 1: value = 2200
-        else: value = 750
+        else: value = 950
         self.write_servo(6, value)
     
-    def pos_anfahren(self):
+    def pos_anfahren(self, first_time = False):
         """
         servos auf anfahren setzen
         """
         self.servo_left_rotate(2)
         self.servo_right_rotate(2)
+        if first_time: sleep(0.5)
+        self.servo_plate_rotate(2)
+        self.servo_plate_grip(1)
         self.servo_mitte_lift(1)
         self.servo_mitte_grip(1)
         self.servo_left_grip(1)
         self.servo_right_grip(1)
-        self.servo_plate_rotate(2)
-        self.servo_plate_grip(1)
         self.servo_flag(1)
         
     

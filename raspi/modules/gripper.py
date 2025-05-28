@@ -9,23 +9,29 @@ class Gripper:
         self.stepper = Stepper()
         
     def home(self):
-        self.servos.pos_anfahren()
+        self.servos.pos_anfahren(True)
         sleep(1)
         self.stepper.home()
-        sleep(10)
-        self.stepper.set_pos_mm(15,0,150)
+        self.stepper.get_output()
+        print('first output')
+        sleep(5)
+        self.stepper.set_pos_mm(15,0,200)
         sleep(2)
         self.pos_home()
         
     def pos_home(self):
-        self.servos.grip_außen()
         self.servos.servo_plate_rotate(1)
-        self.servos.servo_plate_grip(2)
+        sleep(1)
+        self.servos.grip_außen()
         self.servos.gripper_in()
+        self.servos.servo_plate_grip(2)
+        self.servos.servo_left_rotate(4)
+        self.servos.servo_right_grip(3)
+        self.servos.servo_flag(1)
     
     # anfahren stack from arena
-    def anfahren(self):
-        self.servos.pos_anfahren()
+    def anfahren(self, first_time = False):
+        self.servos.pos_anfahren(first_time)
         sleep(0.3)
         self.stepper.pos_anfahren()
         
@@ -53,7 +59,7 @@ class Gripper:
         self.servos.servo_left_rotate(1)
         self.servos.servo_right_rotate(1)
         sleep(1)
-        self.stepper.lift_1er()
+        self.stepper.seperate_1er()
     
     # build a lvl 1 stack 
     def build_one_layer(self):

@@ -232,7 +232,7 @@ class MainWindow(QWidget):
             # Game starts after pullcrod pulled
             self.game_state = 6
             font = QFont()
-            font.setPointSize(32)
+            font.setPointSize(45)
             self.game_label.setFont(font)
             self.game_label.setText(f'Punkte: {self.comm.points}')
             self.comm.l(f"Debug: Final points displayed {self.comm.points}.")

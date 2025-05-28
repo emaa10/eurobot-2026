@@ -60,18 +60,18 @@ class Lidar:
         while True:
             try:
                 scan_generator = self.lidar.start_scan()
-                for count, measurement in enumerate(scan_generator()):                    
-                    if measurement.start_flag:                       
+                for count, measurement in enumerate(scan_generator()):     
+                    # self.logger.info(f'time:{time()}, start flag: {measurement.start_flag}, quality: {measurement.quality}, distance: {measurement.distance}, angle: {measurement.angle}')               
+                    if measurement.start_flag:          
+                        # self.logger.info('NEW SCAN')             
                         try:
                             self.scan_results.put_nowait(current_scan_data)
                         except queue.Full:
                             self.scan_results.get_nowait()
                             self.scan_results.put_nowait(current_scan_data)
 
-                        # Clear scan data for next iteration
                         current_scan_data = []
                         
-                    # Store valid measurements
                     if measurement.quality > 10 and measurement.distance > 0:  
                         current_scan_data.append((measurement.angle, measurement.distance))
             
@@ -138,14 +138,14 @@ class Lidar:
                 arena_y = distance * math.cos(arena_angle_rad) + y 
                 
                 point_in_arena = 0 <= arena_x <= 3000 and 0 <= arena_y <= 2000
-                point_in_arena = True # ÄNDERN FÜR MATCH
+                # point_in_arena = True # ÄNDERN FÜR MATCH
                             
-                if (direction >= 0 and 0 <= d_y <= 450) and abs(d_x) <= 300 and point_in_arena and distance > 100:
+                if (direction >= 0 and 0 <= d_y <= 500) and abs(d_x) <= 300 and point_in_arena and distance > 70:
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     self.stop_motor = True
                     break
                 
-                if  (direction <= 0 and 0 >= d_y >= -300) and abs(d_x) <= 300 and point_in_arena and distance > 100:
+                if  (direction <= 0 and 0 >= d_y >= -350) and abs(d_x) <= 300 and point_in_arena and distance > 70:
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     self.stop_motor = True
                     break
@@ -163,33 +163,8 @@ def main():
             return
         
         while True:
-            scan = lidar.get_latest_scan()
-            if scan:
-                for angle, distance in scan:
-                    # point in relation to bot
-                    d_x = distance * math.sin((angle) * math.pi / 180)
-                    d_y = distance * math.cos((angle) * math.pi / 180)  
-                                        
-                    # point in arena 
-                    arena_angle_rad = (angle + 90) * math.pi / 180 
-                    arena_x = distance * math.sin(arena_angle_rad) + 500 
-                    arena_y = distance * math.cos(arena_angle_rad) + 500 
-                    
-                    point_in_arena = 100 <= arena_x <= 2900 and 100 <= arena_y <= 190    # 10cm threshold
-                    point_in_arena = True                  
-                    
-                    if 0 <= d_y <= 500 and abs(d_x) <= 250 and distance > 100:
-                        # print(f'x: {d_x}, y:{d_y}')
-                        print(f'arena_x: {arena_x}')
-                        print(f'arena_y: {arena_y}')
-
-                
-                    if 0 >= d_y >= -500 and abs(d_x) <= 250 and distance > 100:
-                        # print(f'x: {d_x}, y:{d_y}')
-                        print(f'arena_x: {arena_x}')
-                        print(f'arena_y: {arena_y}')
-                    
-            sleep(0.05)
+            test = lidar.get_stop(1800, 1000, 270, 0)
+            sleep(0.02)
                     
     
     except KeyboardInterrupt:

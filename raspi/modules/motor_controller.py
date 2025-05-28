@@ -384,7 +384,7 @@ class MotorController():
                 self.stopped = True
         
         if self.stopped and not self.stop and self.time_started + 97 > time():
-            self.logger.info('continue')
+            self.logger.info(f'continue: stopped={self.stopped}, stop={self.stop}')
             await self.set_target()
             self.finished = False
             self.stopped = False
