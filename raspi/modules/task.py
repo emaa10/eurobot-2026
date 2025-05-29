@@ -65,8 +65,6 @@ class Task():
                     await self.motor_controller.drive_distance(-200)
                     await self.motor_controller.turn_angle(-15)
                     await self.motor_controller.drive_distance(-1150)
-                    
-                self.points += 10
             case 'ta':  # turn angle
                 self.logger.info(f"turn angle: {int(msg[2:])}")
                 await self.motor_controller.turn_angle(int(msg[2:]))
@@ -129,7 +127,7 @@ class Task():
                 self.gripper.release()
                 await self.motor_controller.drive_distance(-200)
                 self.gripper.grip_unten()
-                await self.motor_controller.drive_distance(250)
+                await self.motor_controller.drive_distance(280)
                 self.gripper.servos.grip_außen()
                 sleep(1)
                 self.gripper.stepper.set_pos_mm(145, 0, 145)
