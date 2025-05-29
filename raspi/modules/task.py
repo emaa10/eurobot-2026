@@ -96,6 +96,7 @@ class Task():
                 self.points += increase_points
             case 'ic': # increase points cam
                 self.logger.info("increase points based on cam")
+                sleep(1)
                 stacks = self.camera.check_stacks()
                 increase_points = 0
                 match stacks:
@@ -127,7 +128,7 @@ class Task():
                 self.gripper.release()
                 await self.motor_controller.drive_distance(-200)
                 self.gripper.grip_unten()
-                await self.motor_controller.drive_distance(280)
+                await self.motor_controller.drive_distance(250)
                 self.gripper.servos.grip_außen()
                 sleep(0.6)
                 self.gripper.servos.gripper_in()
