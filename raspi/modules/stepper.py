@@ -54,7 +54,7 @@ class Stepper:
         self.set_pos_mm(30, 30, 30)
         
     def lift_3er(self):
-        self.set_pos_mm(265, 0, 265)
+        self.set_pos_mm(260, 0, 260)
 
 def main():
     stepper = Stepper()

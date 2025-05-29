@@ -68,7 +68,7 @@ class Servos:
         value = 0 
         match pos:
             case 1: value = 3825
-            case 2: value = 3040
+            case 2: value = 2980
             case 3: value = 2500
             case 4: value = 2450
             
@@ -89,7 +89,7 @@ class Servos:
         """
         value = 0 
         match pos:
-            case 1: value = 3950
+            case 1: value = 4000
             case 2: value = 3450
             case 3: value = 3000
         self.write_servo(1, value)
@@ -100,7 +100,7 @@ class Servos:
         """
         value = 0 
         match pos:
-            case 1: value = 150
+            case 1: value = 100
             case 2: value = 630
 
         self.write_servo(2, value)
@@ -112,7 +112,7 @@ class Servos:
         value = 0 
         match pos:
             case 1: value = 470
-            case 2: value = 1220
+            case 2: value = 1300
             case 3: value = 1775
             case 4: value = 1825
             case 5: value = 2220

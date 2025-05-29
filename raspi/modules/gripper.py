@@ -14,7 +14,7 @@ class Gripper:
         self.stepper.home()
         sleep(8)
         self.stepper.set_pos_mm(15,0,200)
-        sleep(2)
+        sleep(1)
         self.pos_home()
         
     def pos_home(self):
@@ -64,10 +64,6 @@ class Gripper:
         self.servos.gripper_in()
         sleep(1)
         self.stepper.build_1er()
-        sleep(0.2)
-        self.servos.servo_plate_grip(1)
-        sleep(0.2)
-        self.servos.servo_plate_rotate(1)
         self.servos.servo_mitte_grip(1)
     
     # grip a stack at the bottom
@@ -83,7 +79,14 @@ class Gripper:
         self.servos.servo_right_grip(1)
         self.servos.servo_left_rotate(4)
         self.servos.servo_right_rotate(4)
-        
+    
+    def lift_3er(self):
+        self.servos.servo_plate_grip(1)
+        sleep(0.3)
+        self.servos.servo_plate_rotate(1)
+        sleep(0.5)
+        self.stepper.lift_3er()
+    
     def release(self):
         self.servos.release_all()
         

@@ -121,7 +121,7 @@ class Task():
                 self.gripper.build_2er()
             case 'l3':
                 self.logger.info("lift 3er")
-                self.gripper.stepper.lift_3er()
+                self.gripper.lift_3er()
             case 'gu':  # umgreifen
                 self.logger.info("umgreifen")
                 self.gripper.release()
@@ -132,7 +132,7 @@ class Task():
                 sleep(0.6)
                 self.gripper.servos.gripper_in()
                 sleep(0.2)
-                self.gripper.stepper.set_pos_mm(145, 0, 145)
+                self.gripper.stepper.set_pos_mm(135, 0, 135)
             case 'a2': # add lvl2 onto lvl1
                 # ac
                 await self.motor_controller.drive_distance(180)

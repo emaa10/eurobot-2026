@@ -261,7 +261,7 @@ class MotorController():
         self.direction = 0
         self.finished = False
         
-        turn = 11.4
+        turn = 11.6
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
