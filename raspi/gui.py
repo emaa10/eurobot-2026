@@ -240,7 +240,7 @@ class MainWindow(QWidget):
             font = QFont()
             font.setPointSize(45)
             self.game_label.setFont(font)
-            self.game_label.setText(f'Punkte: {self.comm.points}')
+            self.game_label.setText(f'Points: {self.comm.points}')
             self.comm.l(f"Debug: Final points displayed {self.comm.points}.")
 
             # Live points update
@@ -249,7 +249,7 @@ class MainWindow(QWidget):
             self.points_timer.start(200)
 
     def update_points_label(self):
-        self.game_label.setText(f'Punkte: {self.comm.points}')
+        self.game_label.setText(f'Points: {self.comm.points}')
 
     def init_game_screen(self):
         w = QWidget()

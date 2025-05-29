@@ -74,7 +74,7 @@ class Gripper:
     def grip_unten(self):
         self.stepper.down()
         self.servos.servo_plate_rotate(1)
-        sleep(1)
+        sleep(0.7)
         self.servos.servo_left_rotate(2)
         self.servos.servo_right_rotate(2)
         self.servos.servo_mitte_lift(1)
@@ -82,7 +82,6 @@ class Gripper:
         self.servos.servo_left_grip(1)
         self.servos.servo_right_grip(1)
         self.servos.gripper_in()
-        sleep(1)
         
     def release(self):
         self.servos.release_all()
