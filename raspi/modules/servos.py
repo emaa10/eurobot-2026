@@ -123,7 +123,7 @@ class Servos:
         1: auf, 2: zu
         """
         value = 0 
-        if pos == 1: value = 950
+        if pos == 1: value = 800
         else: value = 1700
         self.write_servo(8, value)
     
