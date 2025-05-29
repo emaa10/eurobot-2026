@@ -58,10 +58,13 @@ class Task():
                 await self.motor_controller.turn_to(int(values[2]))
             case 'dh':
                 if self.color == 'blue':
-                    await self.motor_controller.drive_distance(-950)
-                    await self.motor_controller.turn_angle(-90)
+                    await self.motor_controller.drive_distance(-200)
+                    await self.motor_controller.turn_angle(15)
+                    await self.motor_controller.drive_distance(-1150)
                 else:
-                    await self.motor_controller.drive_to(500, 1400)
+                    await self.motor_controller.drive_distance(-200)
+                    await self.motor_controller.turn_angle(-15)
+                    await self.motor_controller.drive_distance(-1150)
                     
                 self.points += 10
             case 'ta':  # turn angle
