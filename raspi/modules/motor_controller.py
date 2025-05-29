@@ -337,16 +337,15 @@ class MotorController():
         [await controller.set_output_exact(position=0.0)
         for motor_id, controller in self.controllers.items()]
         
-        await self.drive_to_target(-999, -999, 5, 50, 0.05)
+        await self.drive_to_target(-999, -999, 7, 50, 0.05)
         
         accellerated = False
         
         while True:
             torque = await self.get_torque()
             velocity = await self.get_velocity()
-            if velocity > 4.9: accellerated = True
+            if velocity > 6.9: accellerated = True
             if accellerated and torque > 0.049 and velocity < 0.1: break
-        
         await self.set_stop()
         
     async def drive_home(self, color):
@@ -359,7 +358,7 @@ class MotorController():
     async def control_loop(self):        
         self.finished = await self.get_finished()
         
-        if self.time_started + 96 < time():
+        if self.time_started + 99 < time():
             self.logger.info('Cutoff')
             await self.set_stop()
             self.finished = True
@@ -383,7 +382,7 @@ class MotorController():
                 await self.set_stop()
                 self.stopped = True
         
-        if self.stopped and not self.stop and self.time_started + 97 > time():
+        if self.stopped and not self.stop and self.time_started + 99 > time():
             self.logger.info(f'continue: stopped={self.stopped}, stop={self.stop}')
             await self.set_target()
             self.finished = False

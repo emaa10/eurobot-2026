@@ -2,8 +2,8 @@ from modules.STservo_sdk import *
 from time import time, sleep
 
 BAUDRATE                    = 1000000           # STServo default baudrate : 1000000
-STS_MOVING_SPEED            = 2400          # SCServo moving speed
-STS_MOVING_ACC              = 50            # SCServo moving acc
+STS_MOVING_SPEED            = 3000          # SCServo moving speed
+STS_MOVING_ACC              = 80            # SCServo moving acc
 
 class Servos:
     def __init__(self, port = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083062-if00") -> None:
@@ -27,7 +27,7 @@ class Servos:
             quit()
     
     def check_time(self) -> bool:
-        if self.time_started + 97 < time():
+        if self.time_started + 99 < time():
             return True
         return False
 
@@ -112,7 +112,7 @@ class Servos:
         match pos:
             case 1: value = 420
             case 2: value = 1170
-            case 3: value = 1720
+            case 3: value = 1650
             case 4: value = 2220
         self.write_servo(10, value)
 
@@ -140,7 +140,7 @@ class Servos:
         """
         self.servo_left_rotate(2)
         self.servo_right_rotate(2)
-        if first_time: sleep(0.5)
+        if first_time: sleep(0.3)
         self.servo_plate_rotate(2)
         self.servo_plate_grip(1)
         self.servo_mitte_lift(1)

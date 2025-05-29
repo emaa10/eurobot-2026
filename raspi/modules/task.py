@@ -58,9 +58,9 @@ class Task():
                 await self.motor_controller.turn_to(int(values[2]))
             case 'dh':
                 if self.color == 'blue':
-                    await self.motor_controller.drive_to_point(2500, 1400, 0)
+                    await self.motor_controller.drive_to(2500, 1400)
                 else:
-                    await self.motor_controller.drive_to_point(500, 1400, 0)
+                    await self.motor_controller.drive_to(500, 1400)
                     
                 self.points += 10
             case 'ta':  # turn angle
@@ -76,11 +76,9 @@ class Task():
             case 'a0':  # anfahren cans
                 self.logger.info("anfahren cans")
                 self.gripper.anfahren()
-                sleep(0.5)
             case 'a1': # anfahren cans first time
                 self.logger.info("anfahren cans")
                 self.gripper.anfahren(True)
-                sleep(0.5)
             case 'es':  # emergency stop
                 self.logger.info("emergency stop!")
                 await self.motor_controller.set_stop()
@@ -107,7 +105,7 @@ class Task():
             case 'fd':  # flag down
                 self.logger.info("flag down")
                 self.gripper.servos.servo_flag(2)
-                sleep(0.5)   
+                sleep(0.3)   
             case 'rg':  # release gripper
                 self.logger.info("release gripper")
                 self.gripper.release()             
@@ -120,7 +118,7 @@ class Task():
                 self.logger.info("build lvl 2")
                 self.gripper.build_2er()
             case 'l3':
-                self.logger("lift 3er")
+                self.logger.info("lift 3er")
                 self.gripper.stepper.lift_3er()
             case 'gu':  # umgreifen
                 self.logger.info("umgreifen")
@@ -192,7 +190,7 @@ class Task():
                 self.logger.info(f"Unknown msg: {msg}")
                 
     async def run(self) -> Self:        
-        if self.motor_controller.time_started + 96 < time():
+        if self.motor_controller.time_started + 99 < time():
             await self.motor_controller.set_stop()
             return None
         

@@ -38,7 +38,7 @@ class Gripper:
         self.stepper.down()
         sleep(0.4)
         self.servos.grip_cans()
-        sleep(1)
+        sleep(0.5)
         self.servos.gripper_out()
         sleep(0.5)
         self.stepper.lift()
