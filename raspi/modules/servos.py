@@ -63,13 +63,14 @@ class Servos:
 
     def servo_right_rotate(self, pos: int):
         """
-        1: außen, 2: mitte, 3: innen
+        1: außen, 2: mitte, 3: innen, 4: grip unten
         """
         value = 0 
         match pos:
             case 1: value = 3825
             case 2: value = 3040
             case 3: value = 2500
+            case 4: value = 2400
             
         self.write_servo(11, value)
 
@@ -106,14 +107,15 @@ class Servos:
 
     def servo_left_rotate(self, pos: int):
         """
-        1: außen, 2: mitte, 3: innen, 4: home pos
+        1: außen, 2: mitte, 3: innen, 4: grip unten, 5: home pos
         """
         value = 0 
         match pos:
             case 1: value = 420
             case 2: value = 1170
             case 3: value = 1650
-            case 4: value = 2220
+            case 4: value = 1750
+            case 5: value = 2220
         self.write_servo(10, value)
 
     def servo_plate_grip(self, pos: int):

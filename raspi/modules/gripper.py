@@ -23,7 +23,7 @@ class Gripper:
         self.servos.grip_außen()
         self.servos.gripper_in()
         self.servos.servo_plate_grip(2)
-        self.servos.servo_left_rotate(4)
+        self.servos.servo_left_rotate(5)
         self.servos.servo_right_grip(3)
         self.servos.servo_flag(1)
     
@@ -81,7 +81,8 @@ class Gripper:
         self.servos.servo_mitte_grip(1)
         self.servos.servo_left_grip(1)
         self.servos.servo_right_grip(1)
-        self.servos.gripper_in()
+        self.servos.servo_left_rotate(4)
+        self.servos.servo_right_rotate(4)
         
     def release(self):
         self.servos.release_all()

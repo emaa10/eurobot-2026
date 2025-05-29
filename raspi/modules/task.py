@@ -129,7 +129,9 @@ class Task():
                 self.gripper.grip_unten()
                 await self.motor_controller.drive_distance(280)
                 self.gripper.servos.grip_außen()
-                sleep(1)
+                sleep(0.6)
+                self.gripper.servos.gripper_in()
+                sleep(0.2)
                 self.gripper.stepper.set_pos_mm(145, 0, 145)
             case 'a2': # add lvl2 onto lvl1
                 # ac
