@@ -325,9 +325,12 @@ class MotorController():
         await self.turn_to(float(theta))
         
     async def clean_wheels(self) -> None:
+        [await controller.set_output_exact(position=0.0)
+        for motor_id, controller in self.controllers.items()]
+        
         for motor_id, controller in self.controllers.items():
             await controller.set_position(
-                position=99999999, 
+                position=9999999999, 
                 velocity_limit=10, 
                 accel_limit=50, 
                 watchdog_timeout=math.nan

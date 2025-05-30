@@ -59,12 +59,12 @@ class Task():
             case 'dh':
                 if self.color == 'blue':
                     await self.motor_controller.drive_distance(-200)
-                    await self.motor_controller.turn_angle(15)
-                    await self.motor_controller.drive_distance(-1150)
+                    await self.motor_controller.turn_angle(20)
+                    await self.motor_controller.drive_distance(-1100)
                 else:
                     await self.motor_controller.drive_distance(-200)
-                    await self.motor_controller.turn_angle(-15)
-                    await self.motor_controller.drive_distance(-1150)
+                    await self.motor_controller.turn_angle(-20)
+                    await self.motor_controller.drive_distance(-1100)
             case 'ta':  # turn angle
                 self.logger.info(f"turn angle: {int(msg[2:])}")
                 await self.motor_controller.turn_angle(int(msg[2:]))

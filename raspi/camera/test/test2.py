@@ -356,7 +356,7 @@ class OptimizedMockCamera:
 
 def test_perfect_stack(debug_cam: bool = False):
     """Haupttest mit perfektem Algorithmus"""
-    test_image_path = "20250524_153844.png"
+    test_image_path = "20250529_200923.png"
 
     try:
         # Optimierte Kamera erstellen
