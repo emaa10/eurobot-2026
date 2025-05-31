@@ -100,6 +100,9 @@ class RobotController:
                     await self.home()
                     await self.send_message('h')
                     self.wait_for_pullcord()
+                    x, y, theta = self.start_positions[self.start_pos]
+                    self.tactic.motor_controller.set_pos(x, y, theta)
+                    sleep(0.1)
                     await self.send_message('p')
                     asyncio.create_task(self.run_tactic())
                     sleep(0.5)
@@ -153,9 +156,6 @@ class RobotController:
         while True:
             self.home_routine = await self.home_routine.run()
             if not self.home_routine: break
-        
-        x, y, theta = self.start_positions[self.start_pos]
-        self.tactic.motor_controller.set_pos(x, y, theta)
         
         self.l('Homing done')
         await self.send_message('h')
