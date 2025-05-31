@@ -61,13 +61,13 @@ class RobotController:
             6: [['hb', 'dd50', 'ta90', 'hb', 'dd100']],
         }
         self.tactix_yellow = {
-            1: [['hb', 'fd', 'dd400', 'ip20', 'a1', 'dp1100;650;0', 'dp1100;800;0', 'dd30','b2', 'dp1280;500;180', 'rg', 'ip12', 'dd-200', 'a0', 'dp775;650;180', 'dp775;300;180', 'ip4', 'b1', 'dp1250;650;180', 'l3', 'dd200', 'rg', 'ip16', 'dd-300', 'a0', 'dp600;365;270', 'dp400;365;270', 'dp260;365;270', 'b2', 'dd-200', 'dp775;550;180', 'gu', 'dd200', 'rg', 'ip24', 'dh', 'ip10']], # full tacitc
+            1: [['hb', 'fd', 'dd400', 'ip20', 'a1', 'dp1100;650;0', 'dp1100;800;0', 'dd30','b2', 'dp1300;500;180', 'rg', 'ip12', 'dd-200', 'a0', 'dp775;650;180', 'dp775;300', 'ip4', 'b1', 'dp1275;650;180', 'l3', 'dd225', 'rg', 'ip16', 'dd-300', 'a0', 'dp600;365', 'dp400;365', 'dp260;365;270', 'b2', 'dd-200', 'dp775;550;180', 'gu', 'dd220', 'rg', 'ip24', 'dh', 'ip10']], # full tacitc
             2: [['dd400', 'ta90', 'dd400', 'ta90', 'dd400', 'ta90', 'dd400', 'ta90']], # not in use
             3: [['hb', 'fd', 'dd400', 'dp500;1400;0']], # not in use
             4: [['hb', 'fd', 'dd400', 'dh']], # safe
         }
         self.tactix_blue = {
-            1: [['hb', 'fd', 'dd400', 'ip20', 'a1', 'dp1905;650;0', 'dp1905;800;0', 'dd30', 'b2', 'dp1650;400;180', 'rg', 'ip12', 'dd-200', 'a0', 'dp2225;650;180', 'dp2225;300;180', 'ip4', 'b1', 'dp1700;650;180', 'l3', 'dp1700;335;180', 'rg', 'ip16', 'dd-300', 'a0', 'dp2500;350;90', 'dp2600;350;90', 'dp2750;350;90', 'b2', 'dd-200', 'dp2225;600;182', 'gu', 'dd200', 'rg', 'ip24', 'dh', 'ip10']], # full tactic
+            1: [['hb', 'fd', 'dd400', 'ip20', 'a1', 'dp1905;650;0', 'dp1905;800;0', 'dd30', 'b2', 'dp1650;400;180', 'rg', 'ip12', 'dd-200', 'a0', 'dp2225;650;180', 'dp2225;300;180', 'ip4', 'b1', 'dp1700;650;180', 'l3', 'dp1700;335;180', 'rg', 'ip16', 'dd-300', 'a0', 'dp2500;310', 'dp2600;320', 'dp2750;300', 'b2', 'dd-200', 'dp2250;600;187', 'gu', 'dd250', 'rg', 'ip24', 'dh', 'ip10']], # full tactic
             2: [['hb', 'fd', 'dd400', 'ip20', 'a1', 'dp1905;650;0', 'dp1905;800;0', 'b2', 'dp1700;400;180', 'dp1700;400;180', 'rg', 'ip12', 'dd-200']], # not in use
             3: [['hb', 'fd', 'dd400', 'ip20', 'dp2500;1400;0']], # not in use
             4: [['hb', 'fd', 'dd400', 'ip20', 'dh']], # safe
@@ -102,7 +102,6 @@ class RobotController:
                     self.wait_for_pullcord()
                     x, y, theta = self.start_positions[self.start_pos]
                     self.tactic.motor_controller.set_pos(x, y, theta)
-                    sleep(0.1)
                     await self.send_message('p')
                     asyncio.create_task(self.run_tactic())
                     sleep(0.5)

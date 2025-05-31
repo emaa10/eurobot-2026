@@ -247,7 +247,7 @@ class MotorController():
         self.direction = 1 if dist > 0 else -1
         self.finished = False
         
-        pulses_per_mm = 0.067
+        pulses_per_mm = 0.065
         pulses = dist * pulses_per_mm
         
         await self.drive_to_target(pulses, pulses)
@@ -261,7 +261,7 @@ class MotorController():
         self.direction = 0
         self.finished = False
         
-        turn = 11.6
+        turn = 11.0
         pulses_per_degree=turn/90
         pulses = angle*pulses_per_degree
                 
@@ -281,8 +281,12 @@ class MotorController():
             while delta_t < -180: delta_t += 360
             
             delta_t = abs(delta_t)
+            
+            print(self.theta)
+            print(delta_t)
                         
-            if delta_t < angle/150:
+            if delta_t < angle/140:
+                print('break')
                 break
                     
         await self.set_stop()  

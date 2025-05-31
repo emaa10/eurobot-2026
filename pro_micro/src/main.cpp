@@ -3,12 +3,12 @@
 
 unsigned long lastPosUpdate = millis();
 
-#define ENC_LEFT_A_PHASE 2
-#define ENC_LEFT_B_PHASE 3
-#define ENC_RIGHT_A_PHASE 18
-#define ENC_RIGHT_B_PHASE 19
+#define ENC_LEFT_A_PHASE 1
+#define ENC_LEFT_B_PHASE 0
+#define ENC_RIGHT_A_PHASE 3
+#define ENC_RIGHT_B_PHASE 2
 
-#define WHEELBASE_ENC 127.5
+#define WHEELBASE_ENC 127.225
 #define WHEELBASE_DRIVE 207
 #define PULSES_PER_REV 1200
 #define ENC_WHEEL_DIAMETER 50                                                                           
@@ -135,7 +135,7 @@ void setup() {
 }
 
 void loop() {
-    if(millis() >= lastPosUpdate + 8){
+    if(millis() >= lastPosUpdate + 3){
         updatePos();
     }
     getData();

@@ -138,11 +138,11 @@ class Lidar:
                 point_in_arena = 0 <= arena_x <= 3000 and 0 <= arena_y <= 2000
                 # point_in_arena = False # ÄNDERN FÜR MATCH
                             
-                if (direction >= 0 and 0 <= d_y <= 500) and abs(d_x) <= 250 and point_in_arena and distance > 70:
+                if (direction >= 0 and 0 <= d_y <= 450) and abs(d_x) <= 220 and point_in_arena and distance > 70:
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     obstacles += 1
                 
-                if  (direction <= 0 and 0 >= d_y >= -350) and abs(d_x) <= 250 and point_in_arena and distance > 70:
+                if  (direction <= 0 and 0 >= d_y >= -320) and abs(d_x) <= 220 and point_in_arena and distance > 70:
                     self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
                     obstacles += 1
                 
