@@ -1,0 +1,101 @@
+name: PlatformIO Build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check-python:
+    name: Check Python Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y git
+          python -m venv venv
+          source venv/bin/activate
+          pip install platformio
+
+      - name: Check Python syntax
+        run: |
+          echo "Checking Python syntax..."
+          ls -alh
+          find raspi/ -name "*.py" -exec python3 -m py_compile {} +
+
+  build-promicro:
+    name: Build Promicro
+    runs-on: ubuntu-latest
+    needs: check-python
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: |
+          sudo apt-get update && sudo apt-get install -y git
+          python -m venv venv
+          source venv/bin/activate
+          pip install platformio
+
+      - name: Build Promicro code
+        run: |
+          echo "Building Promicro code with PlatformIO..."
+          cd pro_micro
+          pio run
+
+      - name: Upload Promicro build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: promicro-build
+          path: pro_micro/.pio/build/
+
+  build-pico:
+    name: Build Pico
+    runs-on: ubuntu-latest
+    needs: check-python
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: |
+          sudo apt-get update && sudo apt-get install -y git
+          python -m venv venv
+          source venv/bin/activate
+          pip install platformio
+
+      - name: Build Pico code
+        run: |
+          echo "Building Pico code with PlatformIO..."
+          cd pico
+          pio run
+
+      - name: Upload Pico build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pico-build
+          path: pico/.pio/build/
