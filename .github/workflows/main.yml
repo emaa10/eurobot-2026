@@ -30,6 +30,7 @@ jobs:
         run: |
           echo "Checking Python syntax..."
           ls -alh
+          source venv/bin/activate
           find raspi/ -name "*.py" -exec python3 -m py_compile {} +
 
   build-promicro:
@@ -57,6 +58,7 @@ jobs:
       - name: Build Promicro code
         run: |
           echo "Building Promicro code with PlatformIO..."
+          source venv/bin/activate
           cd pro_micro
           pio run
 
@@ -91,6 +93,7 @@ jobs:
       - name: Build Pico code
         run: |
           echo "Building Pico code with PlatformIO..."
+          source venv/bin/activate
           cd pico
           pio run
 
