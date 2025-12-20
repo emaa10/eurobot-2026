@@ -45,12 +45,12 @@ void loop() {
   if (messen(TRIG_1,ECHO_1) <= GEGNER_DIST || messen(TRIG_2,ECHO_2) <= GEGNER_DIST || messen(TRIG_3,ECHO_3))
   {
     ALARM = true;
-    //digitalWrite(ARLAMMMMMMM, HIGH); to communicate with other controller
+    digitalWrite(ARLAMMMMMMM, HIGH); //to communicate with other controller
     digitalWrite(LED_BUILTIN, HIGH);
   }
   else{
     ALARM = false;
-    //digitalWrite(ARLAMMMMMMM, LOW);
+    digitalWrite(ARLAMMMMMMM, LOW);
     digitalWrite(LED_BUILTIN, LOW);
   }
  delay(10);
