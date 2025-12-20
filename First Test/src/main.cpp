@@ -1,30 +1,33 @@
 #include <Arduino.h>
+#define TRIG_1 2
+#define ECHO_1 3
+#define TRIG_2 4
+#define ECHO_2 5
 
-#define stepRight 4
-#define stepLeft 8
-#define ENLeft 6
-#define ENRight 10
+const int GEGNER_DIST = 30; // cm
+
+long messen(int trig, int echo) {
+  digitalWrite(trig, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+
+  long d = pulseIn(echo, HIGH, 25000);
+  if (d == 0) return -1;
+  return d * 0.034 / 2;
+}
+
 
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(stepLeft, OUTPUT);
-  pinMode(stepRight, OUTPUT);
-  pinMode(ENRight, OUTPUT);
-  pinMode(ENLeft, OUTPUT);
-  digitalWrite(ENLeft, LOW);
-  digitalWrite(ENRight, LOW);
-}
-void drive(int stepintervall) {
-  digitalWrite(stepLeft, HIGH);
-  digitalWrite(stepRight, HIGH);
-  delayMicroseconds(600);
-  digitalWrite(stepLeft, LOW);
-  digitalWrite(stepRight, LOW);
-  delayMicroseconds(600);  
+  pinMode(TRIG_1, OUTPUT);
+  pinMode(ECHO_1, INPUT);
+  pinMode(TRIG_2, OUTPUT);
+  pinMode(ECHO_2, INPUT);
 
+  Serial.begin(9600);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  drive(600);
+  Serial.println(messen(TRIG_1, ECHO_1));
 }
