@@ -11,6 +11,7 @@
 #define ECHO_5 11
 #define TRIG_6 12
 #define ECHO_6 13
+#define ARLAMMMMMMM 1
 
 const int GEGNER_DIST = 15; // cm
 bool ALARM = false;
@@ -35,22 +36,22 @@ void setup() {
   pinMode(ECHO_2, INPUT);
   pinMode(TRIG_3, OUTPUT);
   pinMode(ECHO_3, INPUT);
+  pinMode(ARLAMMMMMMM, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(9600);
 }
 
 void loop() {
-  if (messen(TRIG_1,ECHO_1) <= GEGNER_DIST || messen(TRIG_2,ECHO_2) <= GEGNER_DIST || messen(TRIG_3,ECHO_3) <= GEGNER_DIST || messen(TRIG_4,ECHO_4) <= GEGNER_DIST || messen(TRIG_5,ECHO_5) <= GEGNER_DIST || messen(TRIG_6,ECHO_6) <= GEGNER_DIST)
+  if (messen(TRIG_1,ECHO_1) <= GEGNER_DIST || messen(TRIG_2,ECHO_2) <= GEGNER_DIST || messen(TRIG_3,ECHO_3))
   {
     ALARM = true;
+    //digitalWrite(ARLAMMMMMMM, HIGH); to communicate with other controller
+    digitalWrite(LED_BUILTIN, HIGH);
   }
   else{
     ALARM = false;
+    //digitalWrite(ARLAMMMMMMM, LOW);
+    digitalWrite(LED_BUILTIN, LOW);
   }
-  if (ALARM)
-  {
-    Serial.println("Gegner erkannt");
-  }
-  else{
-    Serial.println("kein Gegner erkannt");
-  }
+ delay(10);
 }
