@@ -38,6 +38,52 @@ void stopMotoren() {
   stepperRight.setSpeed(0);
 }
 
+void stop_procedure(float &leftSpeed, float &rightSpeed) {
+    stepperLeft.setSpeed(0);
+    stepperRight.setSpeed(0);
+
+    while (digitalRead(STOP_PIN) == LOW) {
+        stepperLeft.run();
+        stepperRight.run();
+        delay(1); 
+    }
+    stepperLeft.setSpeed(leftSpeed);
+    stepperRight.setSpeed(rightSpeed);
+    emergencyStop = false;
+}
+
+void turn(float speed, long steps) {
+    //long steps = 1595; // 90 Grad
+    stepperLeft.move(steps);
+    stepperRight.move(-steps);
+
+    stepperLeft.setSpeed(speed);
+    stepperRight.setSpeed(speed);
+    while (stepperLeft.distanceToGo() != 0 || stepperRight.distanceToGo() != 0) {
+      stepperLeft.run();
+      stepperRight.run();
+      /*if (emergencyStop) {
+        stop_procedure(speed, speed);
+      }*/
+    }
+}
+
+void drive(float speed, long steps) {
+    //long steps = 16970; // 1 Meter
+    stepperLeft.move(steps);
+    stepperRight.move(steps);
+
+    stepperLeft.setSpeed(speed);
+    stepperRight.setSpeed(speed);
+    while (stepperLeft.distanceToGo() != 0 || stepperRight.distanceToGo() != 0) {
+      stepperLeft.run();
+      stepperRight.run();
+      /*if (emergencyStop) {
+        stop_procedure(speed, speed);
+      }*/
+    }
+}
+
 void setup() {
   pinMode(STOP_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(STOP_PIN), stopISR, FALLING);
