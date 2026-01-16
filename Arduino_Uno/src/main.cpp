@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <NewPing.h>
 #define TRIG_1 2
 #define ECHO_1 3
 #define TRIG_2 4
@@ -15,19 +16,22 @@
 
 const int GEGNER_DIST = 15; // cm
 bool ALARM = false;
+#define MAX_DIST 200   // cm
 
-long messen(int trig, int echo) {
-  digitalWrite(trig, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trig, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trig, LOW);
+NewPing sonar1(TRIG_1, ECHO_1, MAX_DIST);
+NewPing sonar2(TRIG_2, ECHO_2, MAX_DIST);
+NewPing sonar3(TRIG_3, ECHO_3, MAX_DIST);
+NewPing sonar4(TRIG_4, ECHO_4, MAX_DIST);
+NewPing sonar5(TRIG_5, ECHO_5, MAX_DIST);
+NewPing sonar6(TRIG_6, ECHO_6, MAX_DIST);
 
-  long d = pulseIn(echo, HIGH, 25000);
-  if (d == 0) return -1;
-  return d * 0.034 / 2;
+int messen(NewPing &sonar) {
+  delay(50);                  // Mindestpause
+  int dist = sonar.ping_cm(); // Ergebnis in cm
+
+  if (dist == 0) return -1;   // kein Echo / außerhalb MAX_DIST
+  return dist;
 }
-
 
 void setup() {
   pinMode(TRIG_1, OUTPUT);
@@ -36,13 +40,19 @@ void setup() {
   pinMode(ECHO_2, INPUT);
   pinMode(TRIG_3, OUTPUT);
   pinMode(ECHO_3, INPUT);
+  pinMode(TRIG_4, OUTPUT);
+  pinMode(ECHO_4, INPUT);
+  pinMode(TRIG_5, OUTPUT);
+  pinMode(ECHO_5, INPUT);
+  pinMode(TRIG_6, OUTPUT);
+  pinMode(ECHO_6, INPUT);
   pinMode(ARLAMMMMMMM, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(9600);
 }
 
 void loop() {
-  if (messen(TRIG_1,ECHO_1) <= GEGNER_DIST || messen(TRIG_2,ECHO_2) <= GEGNER_DIST || messen(TRIG_3,ECHO_3))
+  if (messen(sonar1) <= GEGNER_DIST || messen(sonar2) <= GEGNER_DIST || messen(sonar3) <= GEGNER_DIST)
   {
     ALARM = true;
     digitalWrite(ARLAMMMMMMM, HIGH); //to communicate with other controller
@@ -57,8 +67,8 @@ void loop() {
 }
 
 void testUs() {
-  int distance = messen((TRIG_1,ECHO_1));
-  SerialPrintln(distance);
+  int distance = messen((sonar1));
+  Serial.println(distance);
   if(distance <= GEGNER_DIST) {
     digitalWrite(LED_BUILTIN, HIGH);
   }
