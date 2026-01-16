@@ -55,3 +55,15 @@ void loop() {
   }
  delay(10);
 }
+
+void testUs() {
+  int distance = messen((TRIG_1,ECHO_1));
+  SerialPrintln(distance);
+  if(distance <= GEGNER_DIST) {
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  else {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+  delay(10);
+}
