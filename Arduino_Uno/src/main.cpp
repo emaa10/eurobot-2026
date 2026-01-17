@@ -52,7 +52,7 @@ void setup() {
 }
 
 void testUs() {
-  int distance = messen((sonar1));
+  int distance = messen((sonar2));
   Serial.println(distance);
   if(distance <= GEGNER_DIST) {
     digitalWrite(LED_BUILTIN, HIGH);
@@ -65,7 +65,7 @@ void testUs() {
 
 
 void loop() {
-  /*if (messen(sonar1) <= GEGNER_DIST || messen(sonar2) <= GEGNER_DIST || messen(sonar3) <= GEGNER_DIST)
+  if (messen(sonar1) <= GEGNER_DIST || messen(sonar2) <= GEGNER_DIST || messen(sonar3) <= GEGNER_DIST)
   {
     ALARM = true;
     digitalWrite(ARLAMMMMMMM, HIGH); //to communicate with other controller
@@ -76,7 +76,6 @@ void loop() {
     digitalWrite(ARLAMMMMMMM, LOW);
     digitalWrite(LED_BUILTIN, LOW);
   }
- delay(10);*/
- testUs();
+ delay(10);
 }
 

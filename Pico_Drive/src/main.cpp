@@ -2,11 +2,13 @@
 #include <AccelStepper.h>
 //#include "com.h"
 
-#define L_STEP 1
-#define L_DIR 2
-#define R_STEP 3
-#define R_DIR 4
-#define STOP_PIN 5
+#define L_STEP 5
+#define L_DIR 6
+#define R_STEP 1
+#define R_DIR 2
+#define STOP_PIN 8
+#define EN_L 7
+#define EN_R 3
 
 AccelStepper stepperLeft(AccelStepper::DRIVER, L_STEP, L_DIR);
 AccelStepper stepperRight(AccelStepper::DRIVER, R_STEP, R_DIR);
