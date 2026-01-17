@@ -86,6 +86,7 @@ void drive(float speed, long steps) {
 
 void setup() {
   pinMode(STOP_PIN, INPUT_PULLUP);
+  pinMode(25, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(STOP_PIN), stopISR, FALLING);
 
   stepperLeft.setMaxSpeed(2000);
@@ -96,10 +97,14 @@ void setup() {
 }
 
 void loop() {
-  if (emergencyStop) {
+  /*if (emergencyStop) {
     stopMotoren();
     return;
   }
   stepperLeft.runSpeed();
-  stepperRight.runSpeed();
+  stepperRight.runSpeed();*/
+  digitalWrite(25, HIGH);
+  delay(500);
+  digitalWrite(25, LOW);
+  delay(500);
 }
