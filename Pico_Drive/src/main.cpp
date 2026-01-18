@@ -86,6 +86,50 @@ void drive(float speed, long steps) {
     }
 }
 
+void testMotors() {
+  const float testSpeed = 600;   // Schrittgeschwindigkeit
+  const long testSteps = 1000;   // Schritte pro Test
+
+  // --- Linker Motor vor ---
+  stepperLeft.move(testSteps);
+  stepperLeft.setSpeed(testSpeed);
+  while (stepperLeft.distanceToGo() != 0) {
+    stepperLeft.run();
+  }
+  delay(500);
+
+  // --- Linker Motor zurück ---
+  stepperLeft.move(-testSteps);
+  while (stepperLeft.distanceToGo() != 0) {
+    stepperLeft.run();
+  }
+  delay(500);
+
+  // --- Rechter Motor vor ---
+  stepperRight.move(testSteps);
+  stepperRight.setSpeed(testSpeed);
+  while (stepperRight.distanceToGo() != 0) {
+    stepperRight.run();
+  }
+  delay(500);
+
+  // --- Rechter Motor zurück ---
+  stepperRight.move(-testSteps);
+  while (stepperRight.distanceToGo() != 0) {
+    stepperRight.run();
+  }
+  delay(500);
+
+  // --- Beide Motoren vor ---
+  stepperLeft.move(testSteps);
+  stepperRight.move(testSteps);
+  while (stepperLeft.distanceToGo() != 0 || stepperRight.distanceToGo() != 0) {
+    stepperLeft.run();
+    stepperRight.run();
+  }
+  delay(1000);
+}
+
 void setup() {
   pinMode(STOP_PIN, INPUT_PULLUP);
   pinMode(25, OUTPUT);
@@ -105,8 +149,10 @@ void loop() {
   }
   stepperLeft.runSpeed();
   stepperRight.runSpeed();*/
-  digitalWrite(25, HIGH);
+  /*digitalWrite(25, HIGH);
   delay(500);
   digitalWrite(25, LOW);
-  delay(500);
+  delay(500);*/
+  testMotors();
+  while (1);
 }
