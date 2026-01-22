@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <NewPing.h>
+//#include <AccelStepper.h>
 #define TRIG_1 2
 #define ECHO_1 3
 #define TRIG_2 4
@@ -8,29 +9,33 @@
 #define ECHO_3 7
 #define TRIG_4 8
 #define ECHO_4 9
-#define TRIG_5 10
-#define ECHO_5 11
-#define TRIG_6 12
-#define ECHO_6 13
-#define ARLAMMMMMMM 1
+
+//#define ARLAMMMMMMM 1
+#define L_STEP 10
+#define L_DIR 11
+#define R_STEP 12
+#define R_DIR 13
+
+
+/*AccelStepper stepperLeft(AccelStepper::DRIVER, L_STEP, L_DIR);
+AccelStepper stepperRight(AccelStepper::DRIVER, R_STEP, R_DIR);*/
 
 const int GEGNER_DIST = 15; // cm
 bool ALARM = false;
-#define MAX_DIST 200   // cm
+#define MAX_DIST 50   // cm
+unsigned long lastPing = 0;
+const unsigned long pingInterval = 50; // ms
+const unsigned int tperStep = 600;
 
 NewPing sonar1(TRIG_1, ECHO_1, MAX_DIST);
 NewPing sonar2(TRIG_2, ECHO_2, MAX_DIST);
 NewPing sonar3(TRIG_3, ECHO_3, MAX_DIST);
 NewPing sonar4(TRIG_4, ECHO_4, MAX_DIST);
-NewPing sonar5(TRIG_5, ECHO_5, MAX_DIST);
-NewPing sonar6(TRIG_6, ECHO_6, MAX_DIST);
 
 int messen(NewPing &sonar) {
-  delay(50);                  // Mindestpause
-  int dist = sonar.ping_cm(); // Ergebnis in cm
-
-  if (dist == 0) return -1;   // kein Echo / außerhalb MAX_DIST
-  return dist;
+  int d = sonar.ping_cm();
+  if (d == 0) return -1;
+  return d;
 }
 
 void setup() {
@@ -42,11 +47,10 @@ void setup() {
   pinMode(ECHO_3, INPUT);
   pinMode(TRIG_4, OUTPUT);
   pinMode(ECHO_4, INPUT);
-  pinMode(TRIG_5, OUTPUT);
-  pinMode(ECHO_5, INPUT);
-  pinMode(TRIG_6, OUTPUT);
-  pinMode(ECHO_6, INPUT);
-  pinMode(ARLAMMMMMMM, OUTPUT);
+  pinMode(L_STEP, OUTPUT);
+  pinMode(L_DIR, OUTPUT);
+  pinMode(R_STEP, OUTPUT);    
+  //pinMode(ARLAMMMMMMM, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(9600);
 }
@@ -60,24 +64,80 @@ void testUs() {
   else {
     digitalWrite(LED_BUILTIN, LOW);
   }
-  delay(10);
+}
+
+void gegi() {
+    int d1 = sonar1.ping_cm();
+    int d2 = sonar2.ping_cm();
+    int d3 = sonar3.ping_cm();
+
+    // Alarm Logik
+    ALARM = false;
+    if ((d1 != 0 && d1 <= GEGNER_DIST) || 
+        (d2 != 0 && d2 <= GEGNER_DIST) || 
+        (d3 != 0 && d3 <= GEGNER_DIST)) 
+    {
+      ALARM = true;
+      digitalWrite(LED_BUILTIN, HIGH);
+      while ((d1 != 0 && d1 <= GEGNER_DIST) || 
+        (d2 != 0 && d2 <= GEGNER_DIST) || 
+        (d3 != 0 && d3 <= GEGNER_DIST))
+      {
+        delay(10);
+        d1 = sonar1.ping_cm();
+        d2 = sonar2.ping_cm();
+        d3 = sonar3.ping_cm();
+      } 
+    }
+    else {
+      ALARM = false;
+      digitalWrite(LED_BUILTIN, LOW);
+    }
+}
+
+void drive(int steps) {
+  unsigned long lastMillis = 0;
+  for (int i = 0; i < steps; i++)
+  {
+    digitalWrite(L_STEP, HIGH);
+    digitalWrite(R_STEP, HIGH);
+    lastMillis = millis();
+    gegi();
+    digitalWrite(L_STEP, LOW);
+    digitalWrite(R_STEP, LOW);
+    lastMillis = millis();
+    gegi(); // Gegner check
+    while (millis() - lastMillis < 1) {} // 1 ms ~ 1000 µs
+  }
 }
 
 
+
+
 void loop() {
-  int d1 = messen(sonar1);
-  int d2 = messen(sonar2);
-  int d3 = messen(sonar3);
-  if ((d1 <= GEGNER_DIST && d1 != -1) || (d2 <= GEGNER_DIST && d2 != -1) || (d3 <= GEGNER_DIST && d3 != -1))
-  {
-    ALARM = true;
-    digitalWrite(ARLAMMMMMMM, HIGH); //to communicate with other controller
-    digitalWrite(LED_BUILTIN, HIGH);
-  }
-  else{
+  /*// Stepper laufen lassen
+
+  // Ultraschall nur alle pingInterval ms
+  if(millis() - lastPing >= pingInterval) {
+    lastPing = millis();
+
+    // Non-blocking messen
+    int d1 = sonar1.ping_cm();
+    int d2 = sonar2.ping_cm();
+    int d3 = sonar3.ping_cm();
+
+    // Alarm Logik
     ALARM = false;
-    digitalWrite(ARLAMMMMMMM, LOW);
-    digitalWrite(LED_BUILTIN, LOW);
-  }
+    if ((d1 != 0 && d1 <= GEGNER_DIST) || 
+        (d2 != 0 && d2 <= GEGNER_DIST) || 
+        (d3 != 0 && d3 <= GEGNER_DIST)) 
+    {
+      ALARM = true;
+    }
+
+    // LED setzen
+    digitalWrite(LED_BUILTIN, ALARM ? HIGH : LOW);*/
+    drive(200); // Vorwaerts 200 Schritte
+  
 }
 
