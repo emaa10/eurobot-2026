@@ -24,7 +24,7 @@ const int GEGNER_DIST = 15; // cm
 bool ALARM = false;
 #define MAX_DIST 30   // cm
 unsigned long lastPing = 0;
-const unsigned long pingInterval = 250; // ms
+const unsigned long pingInterval = 400; // ms
 const unsigned int tperStep = 600;
 
 NewPing sonar1(TRIG_1, ECHO_1, MAX_DIST);
@@ -94,7 +94,7 @@ void gegi() {
     }
 }
 
-void drive(int steps, bool dir, bool gegnerCheck) {
+void drive(int steps, bool gegnerCheck) {
   for (int i = 0; i < steps; i++)
   {
     digitalWrite(L_STEP, HIGH);
@@ -108,6 +108,32 @@ void drive(int steps, bool dir, bool gegnerCheck) {
       gegi();
     }
   }
+}
+
+void turn(int angle, bool dir, bool GegnerErkennung) {
+  int steps = angle * 2; 
+  if (dir){
+    digitalWrite(L_DIR, HIGH);
+    digitalWrite(R_DIR, HIGH);
+  }
+  else {
+    digitalWrite(L_DIR, LOW);
+    digitalWrite(R_DIR, LOW);
+  }
+  drive(steps, GegnerErkennung);
+}
+
+void drivecm(int cm, bool dir, bool gegnerCheck) {
+  int steps = cm * 10; 
+  if (dir) {
+    digitalWrite(L_DIR, LOW);
+    digitalWrite(R_DIR, HIGH);
+  }
+  else {
+    digitalWrite(L_DIR, LOW);
+    digitalWrite(R_DIR, HIGH);
+  }
+  drive(steps, gegnerCheck);
 }
 
 void gegidrive(int steps, bool dir) {  //nicht besser, nur ein Ansatz
@@ -188,7 +214,7 @@ void loop() {
 
     // LED setzen
     digitalWrite(LED_BUILTIN, ALARM ? HIGH : LOW);*/
-    gegidrive(200,true); // Vorwaerts 200 Schritte
+    drive(200,true,true); // Vorwaerts 200 Schritte
   
 }
 
