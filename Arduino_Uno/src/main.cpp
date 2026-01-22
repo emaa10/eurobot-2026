@@ -22,7 +22,7 @@ AccelStepper stepperRight(AccelStepper::DRIVER, R_STEP, R_DIR);*/
 
 const int GEGNER_DIST = 15; // cm
 bool ALARM = false;
-#define MAX_DIST 50   // cm
+#define MAX_DIST 30   // cm
 unsigned long lastPing = 0;
 const unsigned long pingInterval = 250; // ms
 const unsigned int tperStep = 600;
@@ -110,6 +110,58 @@ void drive(int steps, bool dir, bool gegnerCheck) {
   }
 }
 
+void gegidrive(int steps, bool dir) {  //nicht besser, nur ein Ansatz
+  int d1;
+  int d2;
+  int d3;
+  for (int i = 0; i < steps; i += 2)
+  {
+    digitalWrite(L_STEP, HIGH);
+    digitalWrite(R_STEP, HIGH);
+    if (millis() - lastPing >= pingInterval)
+    {
+      d1 = sonar1.ping_cm();
+      while (d1 != 0 && d1 <= GEGNER_DIST)
+      {
+        d1 = sonar1.ping_cm();
+      }
+    }
+    else{
+      delayMicroseconds(tperStep);
+    }
+    digitalWrite(L_STEP, LOW);
+    digitalWrite(R_STEP, LOW);
+    if (millis() - lastPing >= pingInterval)
+    {
+      d2 = sonar2.ping_cm();
+      while (d2 != 0 && d2 <= GEGNER_DIST)
+      {
+        d2 = sonar2.ping_cm();
+      }
+    }
+    else{
+      delayMicroseconds(tperStep);
+    }
+    digitalWrite(L_STEP, HIGH);
+    digitalWrite(R_STEP, HIGH);
+    if (millis() - lastPing >= pingInterval)
+    {
+      d3 = sonar3.ping_cm();
+      while (d3 != 0 && d3 <= GEGNER_DIST)
+      {
+        d3 = sonar3.ping_cm();
+      }
+      lastPing = millis();
+    }
+    else{
+      delayMicroseconds(tperStep);
+    }
+    digitalWrite(L_STEP, LOW);
+    digitalWrite(R_STEP, LOW);
+    delayMicroseconds(tperStep);
+  }
+}
+
 
 
 
@@ -136,7 +188,7 @@ void loop() {
 
     // LED setzen
     digitalWrite(LED_BUILTIN, ALARM ? HIGH : LOW);*/
-    drive(200,true,true); // Vorwaerts 200 Schritte
+    gegidrive(200,true); // Vorwaerts 200 Schritte
   
 }
 
