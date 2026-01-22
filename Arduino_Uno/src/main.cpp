@@ -72,24 +72,22 @@ void gegi() {
     int d3 = sonar3.ping_cm();
 
     // Alarm Logik
-    ALARM = false;
     if ((d1 != 0 && d1 <= GEGNER_DIST) || 
         (d2 != 0 && d2 <= GEGNER_DIST) || 
         (d3 != 0 && d3 <= GEGNER_DIST)) 
     {
-      ALARM = true;
       digitalWrite(LED_BUILTIN, HIGH);
       while ((d1 != 0 && d1 <= GEGNER_DIST) || 
         (d2 != 0 && d2 <= GEGNER_DIST) || 
-        (d3 != 0 && d3 <= GEGNER_DIST))
+        (d3 != 0 && d3 <= GEGNER_DIST) && ALARM)
       {
         d1 = sonar1.ping_cm();
         d2 = sonar2.ping_cm();
         d3 = sonar3.ping_cm();
       } 
+      ALARM = true;
     }
     else {
-      ALARM = false;
       digitalWrite(LED_BUILTIN, LOW);
     }
 }
