@@ -95,19 +95,30 @@ void gegi() {
     }
 }
 
-void drive(int steps) {
-  unsigned long lastMillis = 0;
+void drive(int steps, bool dir, bool gegnerCheck) {
+  unsigned long tStart = micros();
   for (int i = 0; i < steps; i++)
   {
+    tStart = micros();
     digitalWrite(L_STEP, HIGH);
     digitalWrite(R_STEP, HIGH);
-    lastMillis = millis();
-    gegi();
+    if (gegnerCheck){
+      gegi();
+      while (micros() - tStart < tperStep) {}
+    }
+    else {
+      delayMicroseconds(tperStep);
+    }
+    tStart = micros();
     digitalWrite(L_STEP, LOW);
     digitalWrite(R_STEP, LOW);
-    lastMillis = millis();
-    gegi(); // Gegner check
-    while (millis() - lastMillis < 1) {} // 1 ms ~ 1000 µs
+    if (gegnerCheck){
+        gegi();
+        while (micros() - tStart < tperStep) {}
+      }
+      else {
+        delayMicroseconds(tperStep);
+      }
   }
 }
 
@@ -137,7 +148,7 @@ void loop() {
 
     // LED setzen
     digitalWrite(LED_BUILTIN, ALARM ? HIGH : LOW);*/
-    drive(200); // Vorwaerts 200 Schritte
+    drive(200,true,false); // Vorwaerts 200 Schritte
   
 }
 
