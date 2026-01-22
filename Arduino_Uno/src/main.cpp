@@ -214,7 +214,7 @@ void loop() {
 
     // LED setzen
     digitalWrite(LED_BUILTIN, ALARM ? HIGH : LOW);*/
-    drive(200,true,true); // Vorwaerts 200 Schritte
+    drivecm(200, true, true); // Vorwaerts 200 Schritte
   
 }
 
