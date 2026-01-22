@@ -24,7 +24,7 @@ const int GEGNER_DIST = 15; // cm
 bool ALARM = false;
 #define MAX_DIST 50   // cm
 unsigned long lastPing = 0;
-const unsigned long pingInterval = 50; // ms
+const unsigned long pingInterval = 250; // ms
 const unsigned int tperStep = 600;
 
 NewPing sonar1(TRIG_1, ECHO_1, MAX_DIST);
@@ -83,7 +83,6 @@ void gegi() {
         (d2 != 0 && d2 <= GEGNER_DIST) || 
         (d3 != 0 && d3 <= GEGNER_DIST))
       {
-        delay(10);
         d1 = sonar1.ping_cm();
         d2 = sonar2.ping_cm();
         d3 = sonar3.ping_cm();
@@ -96,29 +95,18 @@ void gegi() {
 }
 
 void drive(int steps, bool dir, bool gegnerCheck) {
-  unsigned long tStart = micros();
   for (int i = 0; i < steps; i++)
   {
-    tStart = micros();
     digitalWrite(L_STEP, HIGH);
     digitalWrite(R_STEP, HIGH);
-    if (gegnerCheck){
-      gegi();
-      while (micros() - tStart < tperStep) {}
-    }
-    else {
-      delayMicroseconds(tperStep);
-    }
-    tStart = micros();
+    delayMicroseconds(tperStep);
     digitalWrite(L_STEP, LOW);
     digitalWrite(R_STEP, LOW);
-    if (gegnerCheck){
-        gegi();
-        while (micros() - tStart < tperStep) {}
-      }
-      else {
-        delayMicroseconds(tperStep);
-      }
+    delayMicroseconds(tperStep);
+    if (millis() - lastPing >= pingInterval) {
+      lastPing = millis();
+      gegi();
+    }
   }
 }
 
@@ -148,7 +136,7 @@ void loop() {
 
     // LED setzen
     digitalWrite(LED_BUILTIN, ALARM ? HIGH : LOW);*/
-    drive(200,true,false); // Vorwaerts 200 Schritte
+    drive(200,true,true); // Vorwaerts 200 Schritte
   
 }
 
