@@ -125,8 +125,8 @@ void turn(int angle, bool dir, bool GegnerErkennung) {
 void drivecm(int cm, bool dir, bool gegnerCheck) {
   int steps = cm * 10; 
   if (dir) {
-    digitalWrite(L_DIR, LOW);
-    digitalWrite(R_DIR, HIGH);
+    digitalWrite(L_DIR, HIGH);
+    digitalWrite(R_DIR, LOW);
   }
   else {
     digitalWrite(L_DIR, LOW);
@@ -155,6 +155,7 @@ void gegidrive(int steps, bool dir) {  //nicht besser, nur ein Ansatz
       delayMicroseconds(tperStep);
     }
     digitalWrite(L_STEP, LOW);
+    i
     digitalWrite(R_STEP, LOW);
     if (millis() - lastPing >= pingInterval)
     {
