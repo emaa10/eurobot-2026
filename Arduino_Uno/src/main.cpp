@@ -50,6 +50,7 @@ void setup() {
   pinMode(L_STEP, OUTPUT);
   pinMode(L_DIR, OUTPUT);
   pinMode(R_STEP, OUTPUT);    
+  pinMode(R_DIR, OUTPUT);
   //pinMode(ARLAMMMMMMM, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
   Serial.begin(9600);
