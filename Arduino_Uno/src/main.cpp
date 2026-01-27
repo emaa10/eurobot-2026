@@ -80,7 +80,7 @@ void gegi() {
       digitalWrite(LED_BUILTIN, HIGH);
       while ((d1 != 0 && d1 <= GEGNER_DIST) || 
         (d2 != 0 && d2 <= GEGNER_DIST) || 
-        (d3 != 0 && d3 <= GEGNER_DIST) && ALARM)
+        (d3 != 0 && d3 <= GEGNER_DIST))
       {
         d1 = sonar1.ping_cm();
         d2 = sonar2.ping_cm();
@@ -155,7 +155,6 @@ void gegidrive(int steps, bool dir) {  //nicht besser, nur ein Ansatz
       delayMicroseconds(tperStep);
     }
     digitalWrite(L_STEP, LOW);
-    i
     digitalWrite(R_STEP, LOW);
     if (millis() - lastPing >= pingInterval)
     {
