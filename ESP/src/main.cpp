@@ -1,11 +1,12 @@
 #include <Arduino.h>
+#include <ESP32Servo.h>
 
 // LED
 #define LED_PIN 2
 
 // Ultraschall
 #define TRIG_PIN 5
-#define ECHO1 18
+#define ECHO1 18 
 #define ECHO2 19
 #define ECHO3 21
 
@@ -18,56 +19,56 @@
 #define DIR2_PIN  33
 
 // Step Delay
-#define STEP_DELAY_US 80
+#define STEP_DELAY_US 300
+#define STEPS_TO_MOVE 10000
 
+// Servos
+#define SERVO1_PIN 22
+#define SERVO2_PIN 23
+Servo servo1;
+Servo servo2;
+
+// Gemeinsame Variablen
 volatile bool enemyDetected = false;
 volatile unsigned long stopUntil = 0;
-
+volatile long stepCounter = 0;
 
 long readDistance(int echoPin)
 {
     digitalWrite(TRIG_PIN, LOW);
     delayMicroseconds(2);
-
     digitalWrite(TRIG_PIN, HIGH);
     delayMicroseconds(10);
     digitalWrite(TRIG_PIN, LOW);
 
     long duration = pulseIn(echoPin, HIGH, 30000);
-
-    if(duration == 0)
-        return -1;
+    if(duration == 0) return -1;
 
     long distance = duration * 0.034 / 2;
     return distance;
 }
 
-
-// Sensor Task (Core 0)
-void ledTask(void *pvParameters) {
-
+// Sensor + LED Task (Core 0)
+void ledTask(void *pvParameters)
+{
     pinMode(LED_PIN, OUTPUT);
-
     pinMode(TRIG_PIN, OUTPUT);
     pinMode(ECHO1, INPUT);
     pinMode(ECHO2, INPUT);
     pinMode(ECHO3, INPUT);
 
-    while (true) {
-
+    while (true)
+    {
         long d1 = readDistance(ECHO1);
         long d2 = readDistance(ECHO2);
         long d3 = readDistance(ECHO3);
 
         bool detected = false;
-
         if(d1 != -1 && d1 < 30) detected = true;
         if(d2 != -1 && d2 < 30) detected = true;
         if(d3 != -1 && d3 < 30) detected = true;
 
-        if(detected)
-            stopUntil = millis() + 2000;   // 2 Sekunden stoppen
-
+        if(detected) stopUntil = millis() + 2000; // 2 Sekunden stoppen
         enemyDetected = detected;
 
         digitalWrite(LED_PIN, detected);
@@ -76,62 +77,77 @@ void ledTask(void *pvParameters) {
     }
 }
 
+portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
-// Stepper Loop (Core 1)
-void loopingStepper(void *pvParameters) {
-
+void loopingStepper(void *pvParameters)
+{
     pinMode(STEP1_PIN, OUTPUT);
     pinMode(DIR1_PIN, OUTPUT);
-
     pinMode(STEP2_PIN, OUTPUT);
     pinMode(DIR2_PIN, OUTPUT);
 
     digitalWrite(DIR1_PIN, HIGH);
-    digitalWrite(DIR2_PIN, HIGH);
+    digitalWrite(DIR2_PIN, LOW);
 
-    while (true) {
+    while (stepCounter < STEPS_TO_MOVE)
+    {
+        bool stop = false;
 
-        // Stop solange Zeit noch nicht abgelaufen
-        if(millis() < stopUntil)
+        // Critical Section, um auf stopUntil sicher zuzugreifen
+        portENTER_CRITICAL(&mux);
+        stop = millis() < stopUntil;
+        portEXIT_CRITICAL(&mux);
+
+        if(stop)
         {
-            delayMicroseconds(100);
+            delay(1); // kleine Pause
             continue;
         }
 
         digitalWrite(STEP1_PIN, HIGH);
         digitalWrite(STEP2_PIN, HIGH);
-
         delayMicroseconds(STEP_DELAY_US);
-
         digitalWrite(STEP1_PIN, LOW);
         digitalWrite(STEP2_PIN, LOW);
-
         delayMicroseconds(STEP_DELAY_US);
+
+        stepCounter++;
     }
+
+    vTaskDelete(NULL);
 }
 
+void setup()
+{
+    // Servos initialisieren
+    servo1.attach(SERVO1_PIN);
+    servo2.attach(SERVO2_PIN);
 
-void setup() {
+    // Sensor/LED Task auf Core 0
+    xTaskCreatePinnedToCore(ledTask, "LedTask", 4096, NULL, 1, NULL, 0);
 
-    xTaskCreatePinnedToCore(
-        ledTask,
-        "LedTask",
-        4096,
-        NULL,
-        1,
-        NULL,
-        0
-    );
+    // Stepper Task auf Core 1
+    xTaskCreatePinnedToCore(loopingStepper, "StepperLoop", 4096, NULL, 1, NULL, 1);
 
-    xTaskCreatePinnedToCore(
-        loopingStepper,
-        "StepperLoop",
-        4096,
-        NULL,
-        1,
-        NULL,
-        1
-    );
+    // Warten bis Stepper-Task abgeschlossen
+    while (stepCounter < STEPS_TO_MOVE)
+    {
+        delay(10);
+    }
+
+    // Servos 0 -> 180 -> 0 bewegen
+    for (int pos = 0; pos <= 180; pos++)
+    {
+        servo1.write(pos);
+        servo2.write(pos);
+        delay(10);
+    }
+    for (int pos = 180; pos >= 0; pos--)
+    {
+        servo1.write(pos);
+        servo2.write(pos);
+        delay(10);
+    }
 }
 
 void loop() {}
