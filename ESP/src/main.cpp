@@ -3,6 +3,12 @@
 // LED
 #define LED_PIN 2
 
+// Ultraschall
+#define TRIG_PIN 5
+#define ECHO1 18
+#define ECHO2 19
+#define ECHO3 21
+
 // Stepper 1
 #define STEP1_PIN 25
 #define DIR1_PIN  26
@@ -11,23 +17,58 @@
 #define STEP2_PIN 32
 #define DIR2_PIN  33
 
-// Step Delay (Geschwindigkeit)
-#define STEP_DELAY_US 500
+// Step Delay
+#define STEP_DELAY_US 300
 
-// LED Task (Core 0)
+
+long readDistance(int echoPin)
+{
+    digitalWrite(TRIG_PIN, LOW);
+    delayMicroseconds(2);
+
+    digitalWrite(TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW);
+
+    long duration = pulseIn(echoPin, HIGH, 30000);
+
+    if(duration == 0)
+        return -1;
+
+    long distance = duration * 0.034 / 2;
+
+    return distance;
+}
+
+
+// LED + Sensor Task (Core 0)
 void ledTask(void *pvParameters) {
 
     pinMode(LED_PIN, OUTPUT);
 
+    pinMode(TRIG_PIN, OUTPUT);
+    pinMode(ECHO1, INPUT);
+    pinMode(ECHO2, INPUT);
+    pinMode(ECHO3, INPUT);
+
     while (true) {
 
-        digitalWrite(LED_PIN, HIGH);
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        long d1 = readDistance(ECHO1);
+        long d2 = readDistance(ECHO2);
+        long d3 = readDistance(ECHO3);
 
-        digitalWrite(LED_PIN, LOW);
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        bool detected = false;
+
+        if(d1 != -1 && d1 < 30) detected = true;
+        if(d2 != -1 && d2 < 30) detected = true;
+        if(d3 != -1 && d3 < 30) detected = true;
+
+        digitalWrite(LED_PIN, detected);
+
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
+
 
 // Stepper Loop (Core 1)
 void loopingStepper(void *pvParameters) {
@@ -38,19 +79,16 @@ void loopingStepper(void *pvParameters) {
     pinMode(STEP2_PIN, OUTPUT);
     pinMode(DIR2_PIN, OUTPUT);
 
-    // Richtung setzen
     digitalWrite(DIR1_PIN, HIGH);
     digitalWrite(DIR2_PIN, LOW);
 
     while (true) {
 
-        // STEP HIGH
         digitalWrite(STEP1_PIN, HIGH);
         digitalWrite(STEP2_PIN, HIGH);
 
         delayMicroseconds(STEP_DELAY_US);
 
-        // STEP LOW
         digitalWrite(STEP1_PIN, LOW);
         digitalWrite(STEP2_PIN, LOW);
 
@@ -58,20 +96,21 @@ void loopingStepper(void *pvParameters) {
     }
 }
 
+
 void setup() {
 
-    // LED Task auf Core 0
+    // Core 0 → Sensor + LED
     xTaskCreatePinnedToCore(
         ledTask,
         "LedTask",
-        1024,
+        4096,
         NULL,
         1,
         NULL,
         0
     );
 
-    // Stepper Loop auf Core 1
+    // Core 1 → Stepper
     xTaskCreatePinnedToCore(
         loopingStepper,
         "StepperLoop",
@@ -84,5 +123,4 @@ void setup() {
 }
 
 void loop() {
-    // leer
 }
