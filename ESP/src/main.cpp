@@ -20,6 +20,9 @@
 // Step Delay
 #define STEP_DELAY_US 300
 
+// gemeinsame Variable zwischen den Cores
+volatile bool enemyDetected = false;
+
 
 long readDistance(int echoPin)
 {
@@ -36,12 +39,11 @@ long readDistance(int echoPin)
         return -1;
 
     long distance = duration * 0.034 / 2;
-
     return distance;
 }
 
 
-// LED + Sensor Task (Core 0)
+// Sensor Task (Core 0)
 void ledTask(void *pvParameters) {
 
     pinMode(LED_PIN, OUTPUT);
@@ -62,6 +64,8 @@ void ledTask(void *pvParameters) {
         if(d1 != -1 && d1 < 30) detected = true;
         if(d2 != -1 && d2 < 30) detected = true;
         if(d3 != -1 && d3 < 30) detected = true;
+
+        enemyDetected = detected;
 
         digitalWrite(LED_PIN, detected);
 
@@ -84,6 +88,13 @@ void loopingStepper(void *pvParameters) {
 
     while (true) {
 
+        // Motor stoppen wenn Gegner erkannt
+        if(enemyDetected)
+        {
+            delayMicroseconds(100);
+            continue;
+        }
+
         digitalWrite(STEP1_PIN, HIGH);
         digitalWrite(STEP2_PIN, HIGH);
 
@@ -99,7 +110,6 @@ void loopingStepper(void *pvParameters) {
 
 void setup() {
 
-    // Core 0 → Sensor + LED
     xTaskCreatePinnedToCore(
         ledTask,
         "LedTask",
@@ -110,7 +120,6 @@ void setup() {
         0
     );
 
-    // Core 1 → Stepper
     xTaskCreatePinnedToCore(
         loopingStepper,
         "StepperLoop",
