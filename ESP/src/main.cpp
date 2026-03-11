@@ -18,10 +18,10 @@
 #define DIR2_PIN  33
 
 // Step Delay
-#define STEP_DELAY_US 300
+#define STEP_DELAY_US 80
 
-// gemeinsame Variable zwischen den Cores
 volatile bool enemyDetected = false;
+volatile unsigned long stopUntil = 0;
 
 
 long readDistance(int echoPin)
@@ -65,6 +65,9 @@ void ledTask(void *pvParameters) {
         if(d2 != -1 && d2 < 30) detected = true;
         if(d3 != -1 && d3 < 30) detected = true;
 
+        if(detected)
+            stopUntil = millis() + 2000;   // 2 Sekunden stoppen
+
         enemyDetected = detected;
 
         digitalWrite(LED_PIN, detected);
@@ -84,12 +87,12 @@ void loopingStepper(void *pvParameters) {
     pinMode(DIR2_PIN, OUTPUT);
 
     digitalWrite(DIR1_PIN, HIGH);
-    digitalWrite(DIR2_PIN, LOW);
+    digitalWrite(DIR2_PIN, HIGH);
 
     while (true) {
 
-        // Motor stoppen wenn Gegner erkannt
-        if(enemyDetected)
+        // Stop solange Zeit noch nicht abgelaufen
+        if(millis() < stopUntil)
         {
             delayMicroseconds(100);
             continue;
@@ -131,5 +134,4 @@ void setup() {
     );
 }
 
-void loop() {
-}
+void loop() {}
