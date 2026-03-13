@@ -48,6 +48,74 @@ long readDistance(int echoPin)
     return distance;
 }
 
+// --- Konfiguration (anpassen!) ---
+#define STEPS_PER_REV     200      // Schritte pro Umdrehung deines Steppers
+#define WHEEL_DIAMETER_CM 6.5f     // Raddurchmesser in cm
+#define WHEELBASE_CM      15.0f    // Abstand zwischen den Rädern in cm
+
+static int servoPos = 0; // aktuell gespeicherte Servo-Position
+
+// --- Interne Hilfsfunktion ---
+// dir1/dir2: true = HIGH, false = LOW
+void stepBoth(bool dir1, bool dir2, long steps) {
+    digitalWrite(DIR1_PIN, dir1 ? HIGH : LOW);
+    digitalWrite(DIR2_PIN, dir2 ? HIGH : LOW);
+
+    for (long i = 0; i < steps; i++) {
+        // Hindernis-Check
+        portENTER_CRITICAL(&mux);
+        bool blocked = millis() < stopUntil;
+        portEXIT_CRITICAL(&mux);
+
+        while (blocked) {
+            delay(1);
+            portENTER_CRITICAL(&mux);
+            blocked = millis() < stopUntil;
+            portEXIT_CRITICAL(&mux);
+        }
+
+        digitalWrite(STEP1_PIN, HIGH);
+        digitalWrite(STEP2_PIN, HIGH);
+        delayMicroseconds(STEP_DELAY_US);
+        digitalWrite(STEP1_PIN, LOW);
+        digitalWrite(STEP2_PIN, LOW);
+        delayMicroseconds(STEP_DELAY_US);
+    }
+}
+
+// --- Öffentliche Methoden ---
+
+// Positiv = vorwärts, negativ = rückwärts
+void drive(float cm) {
+    long steps = (long)(fabsf(cm) * STEPS_PER_REV / (PI * WHEEL_DIAMETER_CM));
+    bool fwd = cm >= 0;
+    stepBoth(fwd, !fwd, steps); // Motor 2 ist gespiegelt montiert
+}
+
+// Positiv = Uhrzeigersinn, negativ = gegen Uhrzeigersinn
+void turnAngle(float angle) {
+    float arcCm = fabsf(angle) / 360.0f * PI * WHEELBASE_CM;
+    long steps = (long)(arcCm * STEPS_PER_REV / (PI * WHEEL_DIAMETER_CM));
+    bool cw = angle >= 0;
+    stepBoth(cw, cw, steps); // beide Motoren gleiche Richtung = Drehung
+}
+
+void servoUp() {
+    for (; servoPos <= 180; servoPos++) {
+        servo1.write(servoPos);
+        servo2.write(servoPos);
+        delay(10);
+    }
+}
+
+void servoDown() {
+    for (; servoPos >= 0; servoPos--) {
+        servo1.write(servoPos);
+        servo2.write(servoPos);
+        delay(10);
+    }
+}
+
 // Sensor + LED Task (Core 0)
 void ledTask(void *pvParameters)
 {
