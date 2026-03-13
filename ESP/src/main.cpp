@@ -157,31 +157,11 @@ void loopingStepper(void *pvParameters)
     digitalWrite(DIR1_PIN, HIGH);
     digitalWrite(DIR2_PIN, LOW);
 
-    while (stepCounter < STEPS_TO_MOVE)
-    {
-        bool stop = false;
-
-        // Critical Section, um auf stopUntil sicher zuzugreifen
-        portENTER_CRITICAL(&mux);
-        stop = millis() < stopUntil;
-        portEXIT_CRITICAL(&mux);
-
-        if(stop)
-        {
-            delay(1); // kleine Pause
-            continue;
-        }
-
-        digitalWrite(STEP1_PIN, HIGH);
-        digitalWrite(STEP2_PIN, HIGH);
-        delayMicroseconds(STEP_DELAY_US);
-        digitalWrite(STEP1_PIN, LOW);
-        digitalWrite(STEP2_PIN, LOW);
-        delayMicroseconds(STEP_DELAY_US);
-
-        stepCounter++;
-    }
-
+    drive(50);        // 50 cm vorwärts
+    turnAngle(90);    // 90° rechts
+    servoUp();
+    drive(20);
+    servoDown();
     vTaskDelete(NULL);
 }
 
