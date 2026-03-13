@@ -156,12 +156,13 @@ void loopingStepper(void *pvParameters)
 
     digitalWrite(DIR1_PIN, HIGH);
     digitalWrite(DIR2_PIN, LOW);
-
+    //hier taktik schreiben
     drive(50);        // 50 cm vorwärts
     turnAngle(90);    // 90° rechts
     servoUp();
     drive(20);
     servoDown();
+    //ende der taktik
     vTaskDelete(NULL);
 }
 
