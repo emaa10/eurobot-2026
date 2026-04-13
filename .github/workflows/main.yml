@@ -19,22 +19,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update && sudo apt-get install -y git
-          python -m venv venv
-          source venv/bin/activate
-          pip install platformio
-
       - name: Check Python syntax
         run: |
-          echo "Checking Python syntax..."
-          ls -alh
-          source venv/bin/activate
           find raspi/ -name "*.py" -exec python3 -m py_compile {} +
 
-  build-pico:
-    name: Build Pico
+  build-esp:
+    name: Build ESP
     runs-on: ubuntu-latest
     needs: check-python
     steps:
@@ -50,55 +40,18 @@ jobs:
 
       - name: Install PlatformIO
         run: |
-          sudo apt-get update && sudo apt-get install -y git
           python -m venv venv
           source venv/bin/activate
           pip install platformio
 
-      - name: Build Pico code
+      - name: Build ESP code
         run: |
-          echo "Building Pico code with PlatformIO..."
           source venv/bin/activate
-          cd Pico_Drive
+          cd ESP
           pio run
 
-      - name: Upload Pico build artifacts
+      - name: Upload ESP build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pico-build
-          path: pico/.pio/build/
-
-  build-Arduino:
-    name: Build Arduino
-    runs-on: ubuntu-latest
-    needs: check-python
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install PlatformIO
-        run: |
-          sudo apt-get update && sudo apt-get install -y git
-          python -m venv venv
-          source venv/bin/activate
-          pip install platformio
-
-      - name: Build Arduino code
-        run: |
-          echo "Building Pico code with PlatformIO..."
-          source venv/bin/activate
-          cd Arduino_Uno
-          pio run
-
-      - name: Upload Pico build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: pico-build
-          path: pico/.pio/build/
+          name: esp-build
+          path: ESP/.pio/build/
