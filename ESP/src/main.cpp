@@ -1,202 +1,171 @@
 #include <Arduino.h>
-#include <ESP32Servo.h>
 
-// LED
-#define LED_PIN 2
+// --- Pins ---
+#define STEP_L  25
+#define DIR_L   26
+#define STEP_R  32
+#define DIR_R   33
 
-// Ultraschall
-#define TRIG_PIN 5
-#define ECHO1 18 
-#define ECHO2 19
-#define ECHO3 21
+// --- Geometrie ---
+#define STEPS_PER_REV   200
+#define WHEEL_DIAM_CM   6.5f
+#define WHEELBASE_CM    15.0f
+static const float STEPS_PER_CM = STEPS_PER_REV / (PI * WHEEL_DIAM_CM);
 
-// Stepper 1
-#define STEP1_PIN 25
-#define DIR1_PIN  26
+// --- Shared State ---
+portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+volatile bool  stopFlag = false;
+volatile long  posL = 0, posR = 0;   // steps (vorwärts positiv)
+volatile float spdL = 10.0f;          // cm/s
+volatile float spdR = 10.0f;
 
-// Stepper 2
-#define STEP2_PIN 32
-#define DIR2_PIN  33
+// --- Command Queue ---
+enum CmdType { CMD_DRIVE, CMD_TURN, CMD_SPEED };
+struct Cmd { CmdType type; float p1, p2; };
+QueueHandle_t cmdQueue;
 
-// Step Delay
-#define STEP_DELAY_US 300
-#define STEPS_TO_MOVE 10000
-
-// Servos
-#define SERVO1_PIN 22
-#define SERVO2_PIN 23
-Servo servo1;
-Servo servo2;
-
-// Gemeinsame Variablen
-volatile bool enemyDetected = false;
-volatile unsigned long stopUntil = 0;
-volatile long stepCounter = 0;
-
-long readDistance(int echoPin)
-{
-    digitalWrite(TRIG_PIN, LOW);
-    delayMicroseconds(2);
-    digitalWrite(TRIG_PIN, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(TRIG_PIN, LOW);
-
-    long duration = pulseIn(echoPin, HIGH, 30000);
-    if(duration == 0) return -1;
-
-    long distance = duration * 0.034 / 2;
-    return distance;
+// cm/s → halbe Periodendauer in µs
+static int toDelayUs(float cmS) {
+    if (cmS <= 0.0f) return 5000;
+    int d = (int)(500000.0f / (cmS * STEPS_PER_CM));
+    return max(d, 100);
 }
 
-// --- Konfiguration (anpassen!) ---
-#define STEPS_PER_REV     200      // Schritte pro Umdrehung deines Steppers
-#define WHEEL_DIAMETER_CM 6.5f     // Raddurchmesser in cm
-#define WHEELBASE_CM      15.0f    // Abstand zwischen den Rädern in cm
+// Beide Motoren gleichzeitig schrittweise fahren, jeder mit eigener Geschwindigkeit.
+// dirL/dirR: HIGH oder LOW (Hardwarepegel, Motor R ist gespiegelt montiert)
+// Rückgabe: false wenn durch STOP unterbrochen
+bool doSteps(uint8_t dirL, uint8_t dirR, long stepsL, long stepsR) {
+    digitalWrite(DIR_L, dirL);
+    digitalWrite(DIR_R, dirR);
 
-static int servoPos = 0; // aktuell gespeicherte Servo-Position
+    int dL = toDelayUs(spdL), dR = toDelayUs(spdR);
+    long doneL = 0, doneR = 0;
+    unsigned long nextL = micros(), nextR = micros();
 
-// --- Interne Hilfsfunktion ---
-// dir1/dir2: true = HIGH, false = LOW
-void stepBoth(bool dir1, bool dir2, long steps) {
-    digitalWrite(DIR1_PIN, dir1 ? HIGH : LOW);
-    digitalWrite(DIR2_PIN, dir2 ? HIGH : LOW);
+    while (doneL < stepsL || doneR < stepsR) {
+        if (stopFlag) return false;
+        unsigned long now = micros();
 
-    for (long i = 0; i < steps; i++) {
-        // Hindernis-Check
-        portENTER_CRITICAL(&mux);
-        bool blocked = millis() < stopUntil;
-        portEXIT_CRITICAL(&mux);
-
-        while (blocked) {
-            delay(1);
+        if (doneL < stepsL && (long)(now - nextL) >= 0) {
+            digitalWrite(STEP_L, HIGH);
+            delayMicroseconds(5);
+            digitalWrite(STEP_L, LOW);
+            nextL = now + (unsigned long)(dL * 2);
             portENTER_CRITICAL(&mux);
-            blocked = millis() < stopUntil;
+            posL += (dirL == HIGH) ? 1 : -1;
             portEXIT_CRITICAL(&mux);
+            doneL++;
+        }
+        if (doneR < stepsR && (long)(now - nextR) >= 0) {
+            digitalWrite(STEP_R, HIGH);
+            delayMicroseconds(5);
+            digitalWrite(STEP_R, LOW);
+            nextR = now + (unsigned long)(dR * 2);
+            // R ist gespiegelt: LOW = vorwärts → posR += 1
+            portENTER_CRITICAL(&mux);
+            posR += (dirR == LOW) ? 1 : -1;
+            portEXIT_CRITICAL(&mux);
+            doneR++;
+        }
+    }
+    return true;
+}
+
+// --- Core 0: Stepper-Task ---
+void stepperTask(void *) {
+    pinMode(STEP_L, OUTPUT); pinMode(DIR_L, OUTPUT);
+    pinMode(STEP_R, OUTPUT); pinMode(DIR_R, OUTPUT);
+
+    Cmd cmd;
+    while (true) {
+        if (xQueueReceive(cmdQueue, &cmd, portMAX_DELAY) != pdTRUE) continue;
+        stopFlag = false;
+
+        if (cmd.type == CMD_SPEED) {
+            spdL = cmd.p1;
+            spdR = cmd.p2;
+            Serial.println("OK");
+            continue;
         }
 
-        digitalWrite(STEP1_PIN, HIGH);
-        digitalWrite(STEP2_PIN, HIGH);
-        delayMicroseconds(STEP_DELAY_US);
-        digitalWrite(STEP1_PIN, LOW);
-        digitalWrite(STEP2_PIN, LOW);
-        delayMicroseconds(STEP_DELAY_US);
+        bool ok;
+        if (cmd.type == CMD_DRIVE) {
+            long steps = (long)(fabsf(cmd.p1) * STEPS_PER_CM);
+            bool fwd = cmd.p1 >= 0;
+            // vorwärts: L=HIGH, R=LOW (gespiegelt)
+            ok = doSteps(fwd ? HIGH : LOW, fwd ? LOW : HIGH, steps, steps);
+        } else { // CMD_TURN
+            float arc = fabsf(cmd.p1) / 360.0f * PI * WHEELBASE_CM;
+            long steps = (long)(arc * STEPS_PER_CM);
+            bool cw = cmd.p1 >= 0;
+            // CW: L vorwärts, R vorwärts (gespiegelt → beide HIGH drehen auf der Stelle)
+            ok = doSteps(cw ? HIGH : LOW, cw ? HIGH : LOW, steps, steps);
+        }
+        Serial.println(ok ? "OK" : "INTERRUPTED");
     }
 }
 
-// --- Öffentliche Methoden ---
+// --- Core 1: UART-Task ---
+static void parseCmd(const String &s) {
+    Cmd cmd = {};
+    if (s.startsWith("DRIVE ")) {
+        cmd.type = CMD_DRIVE;
+        cmd.p1   = s.substring(6).toFloat();
+        xQueueSend(cmdQueue, &cmd, 0);
 
-// Positiv = vorwärts, negativ = rückwärts
-void drive(float cm) {
-    long steps = (long)(fabsf(cm) * STEPS_PER_REV / (PI * WHEEL_DIAMETER_CM));
-    bool fwd = cm >= 0;
-    stepBoth(fwd, !fwd, steps); // Motor 2 ist gespiegelt montiert
-}
+    } else if (s.startsWith("TURN ")) {
+        cmd.type = CMD_TURN;
+        cmd.p1   = s.substring(5).toFloat();
+        xQueueSend(cmdQueue, &cmd, 0);
 
-// Positiv = Uhrzeigersinn, negativ = gegen Uhrzeigersinn
-void turnAngle(float angle) {
-    float arcCm = fabsf(angle) / 360.0f * PI * WHEELBASE_CM;
-    long steps = (long)(arcCm * STEPS_PER_REV / (PI * WHEEL_DIAMETER_CM));
-    bool cw = angle >= 0;
-    stepBoth(cw, cw, steps); // beide Motoren gleiche Richtung = Drehung
-}
+    } else if (s.startsWith("SPEED ")) {
+        // "SPEED <links_cm_s> <rechts_cm_s>"
+        String rest = s.substring(6);
+        int sp = rest.indexOf(' ');
+        cmd.type = CMD_SPEED;
+        cmd.p1   = (sp < 0) ? rest.toFloat() : rest.substring(0, sp).toFloat();
+        cmd.p2   = (sp < 0) ? cmd.p1         : rest.substring(sp + 1).toFloat();
+        xQueueSend(cmdQueue, &cmd, 0);
 
-void servoUp() {
-    for (; servoPos <= 180; servoPos++) {
-        servo1.write(servoPos);
-        servo2.write(servoPos);
-        delay(10);
+    } else if (s == "STOP") {
+        stopFlag = true;
+        xQueueReset(cmdQueue);
+        Serial.println("OK");
+
+    } else if (s == "POS") {
+        long l, r;
+        portENTER_CRITICAL(&mux); l = posL; r = posR; portEXIT_CRITICAL(&mux);
+        Serial.printf("POS %.2f %.2f\n", l / STEPS_PER_CM, r / STEPS_PER_CM);
+
+    } else {
+        Serial.println("ERR unknown command");
     }
 }
 
-void servoDown() {
-    for (; servoPos >= 0; servoPos--) {
-        servo1.write(servoPos);
-        servo2.write(servoPos);
-        delay(10);
+void uartTask(void *) {
+    String buf = "";
+    while (true) {
+        while (Serial.available()) {
+            char c = (char)Serial.read();
+            if (c == '\n' || c == '\r') {
+                buf.trim();
+                if (buf.length() > 0) parseCmd(buf);
+                buf = "";
+            } else {
+                buf += c;
+            }
+        }
+        vTaskDelay(1 / portTICK_PERIOD_MS);
     }
 }
 
-// Sensor + LED Task (Core 0)
-void ledTask(void *pvParameters)
-{
-    pinMode(LED_PIN, OUTPUT);
-    pinMode(TRIG_PIN, OUTPUT);
-    pinMode(ECHO1, INPUT);
-    pinMode(ECHO2, INPUT);
-    pinMode(ECHO3, INPUT);
-
-    while (true)
-    {
-        long d1 = readDistance(ECHO1);
-        long d2 = readDistance(ECHO2);
-        long d3 = readDistance(ECHO3);
-
-        bool detected = false;
-        if(d1 != -1 && d1 < 30) detected = true;
-        if(d2 != -1 && d2 < 30) detected = true;
-        if(d3 != -1 && d3 < 30) detected = true;
-
-        if(detected) stopUntil = millis() + 2000; // 2 Sekunden stoppen
-        enemyDetected = detected;
-
-        digitalWrite(LED_PIN, detected);
-
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-    }
+void setup() {
+    Serial.begin(115200);
+    cmdQueue = xQueueCreate(16, sizeof(Cmd));
+    xTaskCreatePinnedToCore(stepperTask, "Stepper", 4096, NULL, 2, NULL, 0);
+    xTaskCreatePinnedToCore(uartTask,    "UART",    4096, NULL, 1, NULL, 1);
 }
 
-portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-
-void loopingStepper(void *pvParameters)
-{
-    pinMode(STEP1_PIN, OUTPUT);
-    pinMode(DIR1_PIN, OUTPUT);
-    pinMode(STEP2_PIN, OUTPUT);
-    pinMode(DIR2_PIN, OUTPUT);
-
-    digitalWrite(DIR1_PIN, HIGH);
-    digitalWrite(DIR2_PIN, LOW);
-    //hier taktik schreiben
-    drive(50);        // 50 cm vorwärts
-    turnAngle(90);    // 90° rechts
-    servoUp();
-    drive(20);
-    servoDown();
-    //ende der taktik
-    vTaskDelete(NULL);
+void loop() {
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
-
-void setup()
-{
-    // Servos initialisieren
-    servo1.attach(SERVO1_PIN);
-    servo2.attach(SERVO2_PIN);
-
-    // Sensor/LED Task auf Core 0
-    xTaskCreatePinnedToCore(ledTask, "LedTask", 4096, NULL, 1, NULL, 0);
-
-    // Stepper Task auf Core 1
-    xTaskCreatePinnedToCore(loopingStepper, "StepperLoop", 4096, NULL, 1, NULL, 1);
-
-    // Warten bis Stepper-Task abgeschlossen
-    while (stepCounter < STEPS_TO_MOVE)
-    {
-        delay(10);
-    }
-
-    // Servos 0 -> 180 -> 0 bewegen
-    for (int pos = 0; pos <= 180; pos++)
-    {
-        servo1.write(pos);
-        servo2.write(pos);
-        delay(10);
-    }
-    for (int pos = 180; pos >= 0; pos--)
-    {
-        servo1.write(pos);
-        servo2.write(pos);
-        delay(10);
-    }
-}
-
-void loop() {}
