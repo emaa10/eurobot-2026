@@ -36,10 +36,6 @@ class Task:
         self.initial_actions = self.action_set[0]
         self.actions         = self.action_set.pop(0)
 
-    # ------------------------------------------------------------------
-    # Coordinate mirroring
-    # ------------------------------------------------------------------
-
     def _pt(self, x: int, y: int, theta: int | None = None):
         if self.color == 'yellow':
             return _mirror(x, y, theta)
@@ -60,7 +56,7 @@ class Task:
                 dist = int(msg[2:])
                 await self.esp32.drive_distance(dist if self.color == 'blue' else -dist)
 
-            case 'dp':  # drive to point x;y[;theta]
+            case 'dp':  # drive to point  x;y[;theta]
                 vals = msg[2:].split(';')
                 x, y = int(vals[0]), int(vals[1])
                 theta = int(vals[2]) if len(vals) >= 3 else None
@@ -81,7 +77,7 @@ class Task:
                     _, __, theta = _mirror(0, 0, theta)
                 await self.esp32.turn_to(theta)
 
-            case 'sp':  # set odometry position x;y;theta
+            case 'sp':  # set odometry  x;y;theta
                 vals = msg[2:].split(';')
                 x, y, t = int(vals[0]), int(vals[1]), int(vals[2])
                 if self.color == 'yellow':
@@ -95,70 +91,45 @@ class Task:
                 await self.esp32.set_stop()
 
             case 'hm':  # autonomous wall homing
-                self.logger.info(f"autonomous homing ({self.color})")
-
+                self.logger.info(f"homing ({self.color})")
                 back_dist = -300 if self.color == 'blue' else 300
                 await self.esp32.drive_distance(back_dist)
                 await asyncio.sleep(0.5)
                 await self.esp32.drive_distance(-back_dist // 6)
-
-                # +90° → faces left wall (blue) or right wall (yellow)
                 await self.esp32.turn_angle(90)
-
                 await self.esp32.drive_distance(300)
                 await asyncio.sleep(0.5)
                 await self.esp32.drive_distance(-50)
-
                 await self.esp32.turn_angle(-90)
-
-                # Rotation axis: 55mm from rear → y=1945; 135mm from left
                 if self.color == 'blue':
                     self.esp32.set_pos(135, 1945, 180)
                 else:
                     self.esp32.set_pos(2865, 1945, 0)
-                self.logger.info("homing done → pos set")
+                self.logger.info("homing done")
 
             case 'hg':  # home gripper
                 self.gripper.home()
 
-            case 'a0':  # anfahren
-                self.gripper.anfahren()
+            case 'gr':  # greifer zu
+                self.gripper.greifen()
 
-            case 'a1':  # anfahren first time
-                self.gripper.anfahren(True)
+            case 'go':  # greifer auf (open)
+                self.gripper.loslassen()
 
-            case 'b2':  # build 2er stack
-                self.gripper.build_2er()
+            case 'gi':  # innen greifer zu
+                self.gripper.innen_greifen()
 
-            case 'b1':  # grip + build 1 layer
-                self.gripper.grip_one_layer()
-                await self.esp32.drive_distance(-300)
-                self.gripper.build_one_layer()
+            case 'ga':  # außen greifer zu
+                self.gripper.aussen_greifen()
 
-            case 'l3':  # lift 3er stack
-                self.gripper.lift_3er()
-
-            case 'rg':  # release gripper
-                self.gripper.release()
-
-            case 'gu':  # umgreifen
-                self.gripper.release()
-                await self.esp32.drive_distance(-200)
-                self.gripper.grip_unten()
-                await self.esp32.drive_distance(250)
-                self.gripper.servos.grip_außen()
-                sleep(0.6)
-                self.gripper.servos.gripper_in()
-                sleep(0.2)
-
-            case 'ws':  # write servo manually id;pos
+            case 'ws':  # write servo manually  id;pos
                 vals = msg[2:].split(';')
                 self.gripper.servos.write_servo(int(vals[0]), int(vals[1]))
 
-            case 'ip':  # increase points fixed amount
+            case 'ip':  # increase points by fixed amount
                 self.points += int(msg[2:])
 
-            case 'ic':  # increase points via camera stack count
+            case 'ic':  # increase points via camera stack detection
                 sleep(1)
                 stacks = self.camera.check_stacks() if self.camera else 0
                 match stacks:

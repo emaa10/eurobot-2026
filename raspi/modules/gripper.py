@@ -7,60 +7,19 @@ class Gripper:
         self.servos = servos
 
     def home(self):
-        self.servos.pos_anfahren(True)
+        self.servos.home()
         sleep(1)
-        self._pos_home()
 
-    def _pos_home(self):
-        self.servos.servo_plate_rotate(1)
-        sleep(1)
-        self.servos.grip_außen()
-        self.servos.gripper_in()
-        self.servos.servo_plate_grip(2)
-        self.servos.servo_left_rotate(5)
-        self.servos.servo_right_grip(3)
+    def greifen(self):
+        """Alle 4 Greifer schließen."""
+        self.servos.alle_zu()
 
-    def anfahren(self, first_time: bool = False):
-        self.servos.pos_anfahren(first_time)
+    def loslassen(self):
+        """Alle 4 Greifer öffnen."""
+        self.servos.alle_auf()
 
-    def build_2er(self):
-        self.servos.grip_cans()
-        sleep(0.5)
-        self.servos.gripper_out()
-        sleep(0.5)
-        self.servos.gripper_in()
-        sleep(0.85)
-        self.servos.servo_mitte_lift(2)
+    def innen_greifen(self):
+        self.servos.innen_zu()
 
-    def grip_one_layer(self):
-        self.servos.servo_left_grip(2)
-        self.servos.servo_right_grip(2)
-        sleep(1)
-        self.servos.servo_plate_grip(2)
-        self.servos.servo_left_rotate(1)
-        self.servos.servo_right_rotate(1)
-
-    def build_one_layer(self):
-        self.servos.gripper_in()
-        sleep(1)
-        self.servos.servo_mitte_grip(1)
-
-    def grip_unten(self):
-        self.servos.servo_plate_rotate(1)
-        sleep(0.7)
-        self.servos.servo_left_rotate(2)
-        self.servos.servo_right_rotate(2)
-        self.servos.servo_mitte_lift(1)
-        self.servos.servo_mitte_grip(1)
-        self.servos.servo_left_grip(1)
-        self.servos.servo_right_grip(1)
-        self.servos.servo_left_rotate(4)
-        self.servos.servo_right_rotate(4)
-
-    def lift_3er(self):
-        self.servos.servo_plate_grip(1)
-        sleep(0.3)
-        self.servos.servo_plate_rotate(1)
-
-    def release(self):
-        self.servos.release_all()
+    def aussen_greifen(self):
+        self.servos.aussen_zu()

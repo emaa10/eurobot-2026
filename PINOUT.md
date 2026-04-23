@@ -4,55 +4,39 @@
 
 | GPIO (BCM) | Pin | Funktion | Beschreibung |
 |---|---|---|---|
-| GPIO 14 | 8  | TXD0 (USB-Serial) | TX → ESP32 via USB |
-| GPIO 15 | 10 | RXD0 (USB-Serial) | RX ← ESP32 via USB |
 | GPIO 17 | 11 | Input, Pull-Up | **Team Select**: LOW = Blau, HIGH = Gelb |
-| GPIO 22 | 15 | Input, Pull-Up | **Zugschnur (Pull Cord)**: LOW = kein Start, HIGH-Flanke = Start |
-| GPIO 2  | 3  | SDA (I²C) | (reserviert, falls I²C-Gerät) |
-| GPIO 3  | 5  | SCL (I²C) | (reserviert, falls I²C-Gerät) |
+| GPIO 22 | 15 | Input, Pull-Up | **Zugschnur**: LOW = Schnur drin, HIGH-Flanke = Start |
 
 ### USB-Geräte am Raspberry Pi
-| Gerät | Typ | Device-Pfad (Beispiel) |
+| Gerät | Typ | Device-Pfad |
 |---|---|---|
-| ESP32 (CP2102) | USB-UART | `/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB...` |
-| STServo Controller | USB-UART (CH340) | `/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083062-if00` |
-| Lidar (RPLIDAR/YDLidar) | USB-Serial | `/dev/serial/by-id/usb-Silicon_Labs_...` |
+| ESP32 (CP2102) | USB-UART | `/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_...-if00` |
+| STServo Controller (CH340) | USB-UART | `/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083062-if00` |
+| Lidar | USB-Serial | `/dev/serial/by-id/usb-Silicon_Labs_...-if00` |
 
-> **Hinweis:** Nach dem ersten Anschließen des ESP32 den tatsächlichen Pfad prüfen:
-> ```bash
-> ls /dev/serial/by-id/
-> ```
-> Dann in `raspi/modules/esp32.py` → `PORT = '...'` eintragen.
+> Nach dem ersten Anschließen Pfade prüfen: `ls /dev/serial/by-id/`
+> Dann in `raspi/modules/esp32.py` → `PORT` und `raspi/modules/servos.py` → `PORT` eintragen.
 
 ---
 
-## ESP32 DevKit v1 (38-Pin)
-
-### Antrieb (2× Stepper-Treiber, z.B. A4988 / DRV8825 / TMC2208)
+## ESP32 DevKit v1 (38-Pin)  –  nur Stepper-Antrieb
 
 | ESP32 GPIO | Funktion | Anmerkung |
 |---|---|---|
 | **GPIO 25** | STEP – Linker Motor | |
 | **GPIO 26** | DIR  – Linker Motor | HIGH = vorwärts |
 | **GPIO 32** | STEP – Rechter Motor | |
-| **GPIO 33** | DIR  – Rechter Motor | LOW = vorwärts (Motor physisch gespiegelt!) |
-| **GPIO 27** | ENABLE (shared, aktiv LOW) | LOW = aktiv; beide Antriebsstepper |
+| **GPIO 33** | DIR  – Rechter Motor | LOW = vorwärts (gespiegelt montiert) |
 
 ### Serielle Kommunikation ESP32 ↔ Raspberry Pi
+UART0 (GPIO 1 TX / GPIO 3 RX) über USB (CP2102). Kein separates Kabel nötig.
 
-| ESP32 | Funktion |
-|---|---|
-| **UART0** (GPIO 1/TX, GPIO 3/RX) | USB → Raspberry Pi (via eingebautem CP2102/CH340) |
-
-> GPIO 1 und 3 werden automatisch durch den USB-UART-Chip verwendet.
-> Kein zusätzliches Kabel nötig – nur USB-Kabel ESP32 ↔ Raspi.
-
-### Nicht verwenden!
+### Gesperrte Pins
 | GPIO | Grund |
 |---|---|
-| GPIO 6–11 | Intern: Flash-Speicher |
-| GPIO 0, 2, 12, 15 | Boot-Mode-Pins (vorsichtig verwenden) |
-| GPIO 1, 3 | UART0 (bereits belegt für Raspi) |
+| GPIO 6–11 | Intern: Flash |
+| GPIO 0, 2, 12, 15 | Boot-Mode |
+| GPIO 1, 3 | UART0 (belegt) |
 
 ---
 
@@ -61,65 +45,84 @@
 ```
 ESP32 GPIO25 ──► STEP  ┐
 ESP32 GPIO26 ──► DIR   │  Treiber Linker Motor
-ESP32 GPIO27 ──► EN    │  (aktiv LOW)
 GND          ──► GND   │
 3.3V / 5V    ──► VDD   │  Logikspannung
 Vmotor       ──► VMOT  ┘  Motorspannung (12–24V)
 Motor A1/A2/B1/B2 ──► Spulen
 
-Microstepping (16×):
-A4988:  MS1=HIGH, MS2=HIGH, MS3=HIGH
-DRV8825: M0=HIGH, M1=HIGH,  M2=HIGH
+ESP32 GPIO32 ──► STEP  ┐
+ESP32 GPIO33 ──► DIR   │  Treiber Rechter Motor (gespiegelt montiert!)
 ```
-
-## Endstop-Schaltung (für GPIO 34-36)
-
-```
-3.3V ──┬── 10kΩ ──► GPIO 34/35/36
-       │
-       └── Endstop-Schalter (NO) ──► GND
-```
-Wenn Schalter schließt: GPIO liest LOW = Endstop ausgelöst.
 
 ---
 
-## STServo Bus (Greifer-Servos, über separaten USB-Controller)
+## STServo Bus – 8 Servos (USB-Adapter am Raspi)
 
-| Servo-ID | Funktion |
-|---|---|
-| 1  | Rechter Grip |
-| 2  | Linker Grip |
-| 3  | Mitte Lift |
-| 5  | (reserviert) |
-| 6  | Flagge |
-| 7  | Mitte Grip |
-| 8  | Platten-Grip |
-| 9  | Platten-Rotation |
-| 10 | Linke Rotation |
-| 11 | Rechte Rotation |
+Halbduplex UART, 1 MBaud. Alle Servos auf einem Bus.
 
-Alle Servos laufen auf einem Halbduplex-Bus (UART). Der USB-Serial-Adapter
-fungiert als Bus-Master (1 MBaud).
+### Frontgreifer (von links nach rechts)
+| Servo-ID | Funktion | Positionen (raw) |
+|---|---|---|
+| **2** | Greifer links außen | 100 = auf, 630 = zu |
+| **1** | Greifer links innen | 4000 = auf, 3450 = zu, 3000 = home |
+| **11** | Greifer rechts innen | 3825 = auf, 2500 = zu  ← **TODO kalibrieren** |
+| **9** | Greifer rechts außen | 1800 = auf, 2800 = zu  ← **TODO kalibrieren** |
+
+### Weitere Servos
+| Servo-ID | Funktion | Positionen (raw) |
+|---|---|---|
+| **3** | Mitte Lift | 2850 = unten, 3030 = oben |
+| **7** | Mitte Grip | 3700 = auf, 3200 = zu |
+| **10** | Arm Rotation | 470=außen, 1300=mitte, 1775=innen, 1825=unten, 2220=home |
+| **?** | (8. Servo – ID eintragen) | |
+
+---
+
+## Serielles Protokoll ESP32 ↔ Raspi  (115200 Baud, Newline-terminiert)
+
+| Richtung | Befehl | Bedeutung |
+|---|---|---|
+| Raspi→ESP32 | `DD{mm}` | Fahre mm vorwärts (negativ = rückwärts) |
+| Raspi→ESP32 | `TA{deg}` | Drehe deg Grad (positiv = Uhrzeigersinn) |
+| Raspi→ESP32 | `ST` | Sofort stoppen |
+| Raspi→ESP32 | `SP{x};{y};{t}` | Odometrie setzen |
+| ESP32→Raspi | `OK` | Befehl fertig |
+| ESP32→Raspi | `INTERRUPTED` | Durch ST abgebrochen |
+| ESP32→Raspi | `ERR` | Unbekannter Befehl |
 
 ---
 
 ## Spielfeld-Koordinaten (Eurobot 2026)
 
 ```
-x: 0 (links, Zuschauersicht) → 3000 mm (rechts)
-y: 0 (vorne, Zuschauer)      → 2000 mm (hinten, Körnerkammer)
+x: 0 (links) → 3000 mm (rechts)    [Zuschauerperspektive]
+y: 0 (vorne) → 2000 mm (hinten)
 
-Startzone Blau:  x=0–450,    y=1550–2000  (hintere linke Ecke)
+Startzone Blau:  x=0–450,     y=1550–2000  (hintere linke Ecke)
 Startzone Gelb:  x=2550–3000, y=1550–2000  (hintere rechte Ecke)
 
-Roboter-Nullwinkel  θ=0:   fährt in +y Richtung (nach hinten)
-                    θ=90:  fährt in +x Richtung (nach rechts)
-                    θ=180: fährt in -y Richtung (zum Zuschauer)
-                    θ=270: fährt in -x Richtung (nach links)
+Winkelkonvention:
+  θ=0:   fährt in +y (Richtung Hinterwand)
+  θ=90:  fährt in +x (nach rechts)
+  θ=180: fährt in -y (zum Zuschauer)
+  θ=270: fährt in -x (nach links)
 
-Drehachse am Roboter:
-  55 mm von der Hinterkante  → y_rot = 2000 - 55 = 1945 mm nach Wall-Homing
-  135 mm von der linken Kante (Zuschauersicht)
-  Blau nach Homing: x=135,  y=1945, θ=180
-  Gelb nach Homing: x=2865, y=1945, θ=0  (ESP32-intern, gespiegelt)
+Nach Wall-Homing:
+  Drehachse 55 mm von Hinterwand → y_rot = 1945 mm
+  Drehachse 135 mm von linker Wand
+  Blau:  x=135,  y=1945, θ=180
+  Gelb:  x=2865, y=1945, θ=0
+```
+
+---
+
+## Startablauf
+
+```
+python3 raspi/main.py [taktik] [startpos]
+
+  1. Team-Farbe von GPIO 17 lesen
+  2. Homing (Wand-Kalibrierung + Greifer-Home)
+  3. Warten auf Zugschnur (GPIO 22)
+  4. Taktik ausführen (99 s)
 ```

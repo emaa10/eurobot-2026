@@ -29,48 +29,71 @@ class Servos:
             return
         self.packet_handler.WritePosEx(id, goal_position, STS_MOVING_SPEED, STS_MOVING_ACC)
 
-    # ── Per-servo named positions ──────────────────────────────────────────
+    # ── 4 Frontgreifer (von links nach rechts: ID 2, 1, 11, 9) ────────────
 
-    def servo_mitte_lift(self, pos: int):
-        """1: unten, 2: oben"""
+    def grip_links_aussen(self, pos: int):
+        """ID 2 – ganz links. 1: auf, 2: zu"""
         match pos:
-            case 1: self.write_servo(3, 2850)
-            case 2: self.write_servo(3, 3030)
+            case 1: self.write_servo(2, 100)
+            case 2: self.write_servo(2, 630)
 
-    def servo_mitte_grip(self, pos: int):
-        """1: auf, 2: zu"""
-        match pos:
-            case 1: self.write_servo(7, 3700)
-            case 2: self.write_servo(7, 3200)
-            case _: self.write_servo(7, 3600)
-
-    def servo_right_rotate(self, pos: int):
-        """1: außen, 2: mitte, 3: innen, 4: grip unten"""
-        match pos:
-            case 1: self.write_servo(11, 3825)
-            case 2: self.write_servo(11, 2980)
-            case 3: self.write_servo(11, 2500)
-            case 4: self.write_servo(11, 2450)
-
-    def servo_plate_rotate(self, pos: int):
-        """1: oben, 2: unten"""
-        self.write_servo(9, 1800 if pos == 1 else 2800)
-
-    def servo_right_grip(self, pos: int):
-        """1: auf, 2: zu, 3: home"""
+    def grip_links_innen(self, pos: int):
+        """ID 1 – zweiter von links. 1: auf, 2: zu, 3: home"""
         match pos:
             case 1: self.write_servo(1, 4000)
             case 2: self.write_servo(1, 3450)
             case 3: self.write_servo(1, 3000)
 
-    def servo_left_grip(self, pos: int):
-        """1: auf, 2: zu"""
+    def grip_rechts_innen(self, pos: int):
+        """ID 11 – zweiter von rechts. 1: auf, 2: zu (TODO: Positionen kalibrieren)"""
         match pos:
-            case 1: self.write_servo(2, 100)
-            case 2: self.write_servo(2, 630)
+            case 1: self.write_servo(11, 3825)
+            case 2: self.write_servo(11, 2500)
 
-    def servo_left_rotate(self, pos: int):
-        """1: außen, 2: mitte, 3: innen, 4: grip unten, 5: home"""
+    def grip_rechts_aussen(self, pos: int):
+        """ID 9 – ganz rechts. 1: auf, 2: zu (TODO: Positionen kalibrieren)"""
+        match pos:
+            case 1: self.write_servo(9, 1800)
+            case 2: self.write_servo(9, 2800)
+
+    # ── Kombinierte Greif-Aktionen ─────────────────────────────────────────
+
+    def alle_auf(self):
+        self.grip_links_aussen(1)
+        self.grip_links_innen(1)
+        self.grip_rechts_innen(1)
+        self.grip_rechts_aussen(1)
+
+    def alle_zu(self):
+        self.grip_links_aussen(2)
+        self.grip_links_innen(2)
+        self.grip_rechts_innen(2)
+        self.grip_rechts_aussen(2)
+
+    def innen_zu(self):
+        self.grip_links_innen(2)
+        self.grip_rechts_innen(2)
+
+    def aussen_zu(self):
+        self.grip_links_aussen(2)
+        self.grip_rechts_aussen(2)
+
+    # ── Weiterer Mechanismus (IDs 3, 7, 10 – anpassen falls nötig) ────────
+
+    def servo_mitte_lift(self, pos: int):
+        """ID 3. 1: unten, 2: oben"""
+        match pos:
+            case 1: self.write_servo(3, 2850)
+            case 2: self.write_servo(3, 3030)
+
+    def servo_mitte_grip(self, pos: int):
+        """ID 7. 1: auf, 2: zu"""
+        match pos:
+            case 1: self.write_servo(7, 3700)
+            case 2: self.write_servo(7, 3200)
+
+    def servo_arm_rotation(self, pos: int):
+        """ID 10. 1: außen, 2: mitte, 3: innen, 4: unten, 5: home"""
         match pos:
             case 1: self.write_servo(10, 470)
             case 2: self.write_servo(10, 1300)
@@ -78,49 +101,10 @@ class Servos:
             case 4: self.write_servo(10, 1825)
             case 5: self.write_servo(10, 2220)
 
-    def servo_plate_grip(self, pos: int):
-        """1: auf, 2: zu"""
-        self.write_servo(8, 800 if pos == 1 else 1700)
+    # ── Home-Position ──────────────────────────────────────────────────────
 
-    # ── Combined positions ─────────────────────────────────────────────────
-
-    def pos_anfahren(self, first_time: bool = False):
-        self.servo_left_rotate(2)
-        self.servo_right_rotate(2)
-        if first_time:
-            sleep(0.3)
-        self.servo_plate_rotate(2)
-        self.servo_plate_grip(1)
+    def home(self):
+        self.alle_auf()
         self.servo_mitte_lift(1)
         self.servo_mitte_grip(1)
-        self.servo_left_grip(1)
-        self.servo_right_grip(1)
-
-    def grip_cans(self):
-        self.servo_mitte_grip(2)
-        self.servo_left_grip(2)
-        self.servo_right_grip(2)
-        self.servo_plate_grip(2)
-
-    def gripper_out(self):
-        self.servo_left_rotate(1)
-        self.servo_right_rotate(1)
-
-    def gripper_in(self):
-        self.servo_left_rotate(3)
-        self.servo_right_rotate(3)
-
-    def grip_außen(self):
-        self.servo_left_grip(2)
-        self.servo_right_grip(2)
-
-    def release_außen(self):
-        self.servo_left_grip(1)
-        self.servo_right_grip(1)
-
-    def release_all(self):
-        self.servo_mitte_lift(1)
-        self.servo_left_grip(1)
-        self.servo_right_grip(1)
-        self.servo_mitte_grip(1)
-        self.servo_plate_grip(1)
+        self.servo_arm_rotation(5)

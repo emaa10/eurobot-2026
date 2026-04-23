@@ -1,14 +1,11 @@
 /*
  * Eurobot 2026 – ESP32 Drive Controller
- * Basis: Christophs doSteps-Architektur (dual-core FreeRTOS)
- * Protokoll auf DD/TA/ST/RS/SP angepasst (mm / Grad)
  *
  * Raspi → ESP32:
  *   DD{mm}         Geradeaus  (+ vorwärts, – rückwärts)
  *   TA{deg}        Drehen     (+ im Uhrzeigersinn)
- *   ST             Sofort stoppen, aktuellen Befehl abbrechen
- *   RS             (reserviert, kein aktives Resume – neuer Befehl nötig)
- *   SP{x};{y};{t}  Odometrie setzen (kein OK, nur Raspi-intern)
+ *   ST             Sofort stoppen
+ *   SP{x};{y};{t}  Odometrie setzen (kein Ack)
  *
  * ESP32 → Raspi:
  *   OK             Befehl vollständig ausgeführt
@@ -19,30 +16,27 @@
 #include <Arduino.h>
 
 // ═══════════════════════════════════════════════════════════
-//  PINS
+//  PINS  – nur Stepper
 // ═══════════════════════════════════════════════════════════
 #define STEP_L  25
 #define DIR_L   26
 #define STEP_R  32
 #define DIR_R   33
-// Kein separater Enable-Pin nötig wenn Treiber permanent aktiv
 
 // ═══════════════════════════════════════════════════════════
-//  MECHANIK  – Christophs Hardware-Parameter
+//  MECHANIK
 // ═══════════════════════════════════════════════════════════
-#define STEPS_PER_REV   200       // Vollschritt (kein Microstepping)
-#define WHEEL_DIAM_MM   65.0f     // Raddurchmesser mm
-#define WHEELBASE_MM   150.0f     // Radabstand mm  (Christoph: 15 cm)
-#define DRIVE_SPEED_CM_S 10.0f    // Standard-Fahrgeschwindigkeit cm/s
+#define STEPS_PER_REV    200
+#define WHEEL_DIAM_MM    65.0f
+#define WHEELBASE_MM    150.0f
+#define DRIVE_SPEED_CM_S  10.0f
 
 static const float STEPS_PER_MM = STEPS_PER_REV / (PI * WHEEL_DIAM_MM);
 static const float STEPS_PER_CM = STEPS_PER_REV / (PI * WHEEL_DIAM_MM * 0.1f);
 
-// cm/s → halbe Periodendauer µs (Christophs Formel)
 static int toDelayUs(float cmS) {
     if (cmS <= 0.0f) return 5000;
-    int d = (int)(500000.0f / (cmS * STEPS_PER_CM));
-    return max(d, 100);
+    return max((int)(500000.0f / (cmS * STEPS_PER_CM)), 100);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -50,7 +44,7 @@ static int toDelayUs(float cmS) {
 // ═══════════════════════════════════════════════════════════
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 volatile bool  stopFlag = false;
-volatile long  posL = 0, posR = 0;   // steps, vorwärts positiv
+volatile long  posL = 0, posR = 0;
 volatile float spdL = DRIVE_SPEED_CM_S;
 volatile float spdR = DRIVE_SPEED_CM_S;
 
@@ -62,9 +56,7 @@ struct Cmd { CmdType type; float val; };
 QueueHandle_t cmdQueue;
 
 // ═══════════════════════════════════════════════════════════
-//  STEPPER-KERN (Christophs doSteps)
-//  dirL/dirR: HIGH oder LOW  |  R ist gespiegelt montiert
-//  Rückgabe false = durch ST unterbrochen
+//  STEPPER CORE (Christophs doSteps)
 // ═══════════════════════════════════════════════════════════
 static bool doSteps(uint8_t dirL, uint8_t dirR, long stepsL, long stepsR) {
     digitalWrite(DIR_L, dirL);
@@ -100,7 +92,7 @@ static bool doSteps(uint8_t dirL, uint8_t dirR, long stepsL, long stepsR) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  STEPPER-TASK  (Core 0)
+//  STEPPER TASK  (Core 0)
 // ═══════════════════════════════════════════════════════════
 void stepperTask(void *) {
     pinMode(STEP_L, OUTPUT); pinMode(DIR_L, OUTPUT);
@@ -115,15 +107,12 @@ void stepperTask(void *) {
         if (cmd.type == CMD_DRIVE) {
             long steps = (long)(fabsf(cmd.val) * STEPS_PER_MM);
             bool fwd = cmd.val >= 0;
-            // vorwärts: L=HIGH, R=LOW (gespiegelt)
             ok = doSteps(fwd ? HIGH : LOW, fwd ? LOW : HIGH, steps, steps);
-
-        } else {  // CMD_TURN
-            // Bogen pro Rad = Radabstand × π × |deg| / 360
+        } else {
             float arc_mm = fabsf(cmd.val) / 360.0f * PI * WHEELBASE_MM;
             long steps = (long)(arc_mm * STEPS_PER_MM);
             bool cw = cmd.val >= 0;
-            // CW: L vorwärts (HIGH), R vorwärts gespiegelt (HIGH)
+            // CW: L vorwärts (HIGH), R gespiegelt vorwärts (HIGH)
             ok = doSteps(cw ? HIGH : LOW, cw ? HIGH : LOW, steps, steps);
         }
 
@@ -132,32 +121,27 @@ void stepperTask(void *) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  UART-TASK  (Core 1)
+//  UART TASK  (Core 1)
 // ═══════════════════════════════════════════════════════════
 static void parseCmd(const String &s) {
     Cmd cmd = {};
 
     if (s.startsWith("DD")) {
         cmd.type = CMD_DRIVE;
-        cmd.val  = s.substring(2).toFloat();   // mm
+        cmd.val  = s.substring(2).toFloat();
         xQueueSend(cmdQueue, &cmd, 0);
 
     } else if (s.startsWith("TA")) {
         cmd.type = CMD_TURN;
-        cmd.val  = s.substring(2).toFloat();   // Grad
+        cmd.val  = s.substring(2).toFloat();
         xQueueSend(cmdQueue, &cmd, 0);
 
     } else if (s == "ST") {
         stopFlag = true;
         xQueueReset(cmdQueue);
-        // kein OK – INTERRUPTED kommt vom stepperTask
-
-    } else if (s == "RS") {
-        // Nach ST muss ein neuer DD/TA-Befehl kommen; RS ist hier no-op
-        (void)0;
 
     } else if (s.startsWith("SP")) {
-        // Odometrie-Reset – nur Raspi-intern, kein OK
+        // Odometrie-Reset – kein Ack
 
     } else {
         Serial.println("ERR");
