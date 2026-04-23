@@ -106,6 +106,46 @@ class Task:
                 self.logger.info("home bot")
                 # TODO: implement homing routine for ESP32
 
+            case 'hm':  # autonomous wall homing + position calibration
+                self.logger.info(f"autonomous homing ({self.color})")
+                # Drehachse: 55mm von hinten, 135mm von links (Zuschauerperspektive)
+
+                # Schritt 1: rückwärts an Hinterwand (y=2000)
+                # Blue (theta≈180): drive_distance(-300) → y steigt → trifft y=2000
+                # Yellow (theta≈0): drive_distance(+300) → y steigt → trifft y=2000
+                back_dist = -300 if self.color == 'blue' else 300
+                await self.esp32.drive_distance(back_dist)
+                await asyncio.sleep(0.5)
+
+                # Schritt 2: etwas von Hinterwand wegfahren
+                await self.esp32.drive_distance(-back_dist // 6)
+
+                # Schritt 3: +90° drehen → blaue Seite zu Linker Wand (x=0),
+                #             gelbe Seite zu Rechter Wand (x=3000)
+                # Blue:   theta 180→270 (Richtung -x)
+                # Yellow: theta   0→90  (Richtung +x)
+                await self.esp32.turn_angle(90)
+
+                # Schritt 4: vorwärts in Seitenwand fahren
+                await self.esp32.drive_distance(300)
+                await asyncio.sleep(0.5)
+
+                # Schritt 5: etwas von Seitenwand wegfahren
+                await self.esp32.drive_distance(-50)
+
+                # Schritt 6: -90° zurückdrehen → Roboter schaut wieder aufs Feld
+                # Blue:   theta 270→180  Yellow: theta 90→0
+                await self.esp32.turn_angle(-90)
+
+                # Schritt 7: kalibrierte Position setzen
+                # Drehachse_y = 2000 - 55 = 1945
+                # Drehachse_x = 135 (blau) | 2865 (gelb, da 3000-135)
+                if self.color == 'blue':
+                    self.esp32.set_pos(135, 1945, 180)
+                else:
+                    self.esp32.set_pos(2865, 1945, 0)
+                self.logger.info(f"homing done → pos set")
+
             case 'hg':  # home gripper
                 self.logger.info("home gripper")
                 self.gripper.home()

@@ -1,144 +1,318 @@
+/*
+ * Eurobot 2026 – ESP32 Motor Controller
+ *
+ * Protokoll (Raspi → ESP32, newline-terminated):
+ *   DD{mm}         Geradeaus fahren (+ vorwärts, – rückwärts)
+ *   TA{deg}        Drehen um relativen Winkel (+ im Uhrzeigersinn)
+ *   SL{r};{m};{l}  Lift-Stepper auf Absolutposition in mm setzen
+ *   SH             Alle Lift-Stepper homen (fährt bis Endstop)
+ *   ST             Antrieb pausieren (für Hindernis-Erkennung)
+ *   RS             Antrieb fortsetzen nach ST
+ *   SP{x};{y};{t}  Odometrie-Position setzen (nur Raspi-intern, ESP echot)
+ *
+ * ESP32 → Raspi:
+ *   OK             Fahrbefehl (DD/TA) abgeschlossen
+ *   ERR            Ungültiger Befehl
+ *
+ * Hinweis: SL, SH, ST, RS, SP senden KEIN OK (Raspi wartet nicht darauf).
+ */
+
 #include <Arduino.h>
 
-// --- Pins ---
-#define STEP_L  25
-#define DIR_L   26
-#define STEP_R  32
-#define DIR_R   33
+// ═══════════════════════════════════════════════════════════════
+//  PINOUT  (!!  AN ECHTE HARDWARE ANPASSEN  !!)
+// ═══════════════════════════════════════════════════════════════
 
-// --- Geometrie ---
-#define STEPS_PER_REV   200
-#define WHEEL_DIAM_CM   6.5f
-#define WHEELBASE_CM    15.0f
-static const float STEPS_PER_CM = STEPS_PER_REV / (PI * WHEEL_DIAM_CM);
+// Antrieb – Stepper-Treiber (A4988 / DRV8825 / TMC2208)
+#define PIN_DRV_EN      27    // Enable, aktiv LOW (shared)
+#define PIN_L_STEP      25    // Linker Motor STEP
+#define PIN_L_DIR       26    // Linker Motor DIR
+#define PIN_R_STEP      32    // Rechter Motor STEP
+#define PIN_R_DIR       33    // Rechter Motor DIR  (Motor physisch gespiegelt montiert)
 
-// --- Shared State ---
-portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-volatile bool  stopFlag = false;
-volatile long  posL = 0, posR = 0;   // steps (vorwärts positiv)
-volatile float spdL = 10.0f;          // cm/s
-volatile float spdR = 10.0f;
+// Lift-Stepper (Greifer, 3×) – gleicher Treibertyp
+#define PIN_LIFT_EN      4    // Enable, aktiv LOW (shared)
+#define PIN_LFT_R_STEP  18
+#define PIN_LFT_R_DIR   19
+#define PIN_LFT_M_STEP  21
+#define PIN_LFT_M_DIR   22
+#define PIN_LFT_L_STEP  23
+#define PIN_LFT_L_DIR    5
 
-// --- Command Queue ---
-enum CmdType { CMD_DRIVE, CMD_TURN, CMD_SPEED };
-struct Cmd { CmdType type; float p1, p2; };
-QueueHandle_t cmdQueue;
+// Endstops Lift – aktiv LOW, extern 10 kΩ nach 3.3 V (GPIO 34-36 kein internen Pull-up!)
+#define PIN_HOME_R      34
+#define PIN_HOME_M      35
+#define PIN_HOME_L      36
 
-// cm/s → halbe Periodendauer in µs
-static int toDelayUs(float cmS) {
-    if (cmS <= 0.0f) return 5000;
-    int d = (int)(500000.0f / (cmS * STEPS_PER_CM));
-    return max(d, 100);
+// ═══════════════════════════════════════════════════════════════
+//  MECHANIK  (!!  AN ECHTE HARDWARE ANPASSEN  !!)
+// ═══════════════════════════════════════════════════════════════
+
+// Antrieb
+#define STEPS_PER_REV        3200      // Schritte/Umdrehung inkl. Microstepping (z.B. 200 × 16)
+#define WHEEL_DIAM_MM        65.0f     // Raddurchmesser in mm
+#define WHEELBASE_MM        220.0f     // Radabstand (Kontaktpunkte) in mm
+#define DRIVE_SPEED_MM_S    150.0f     // Fahrgeschwindigkeit mm/s
+#define TURN_SPEED_MM_S     100.0f     // Drehgeschwindigkeit (Rad-Tangential) mm/s
+
+// Lift
+#define LIFT_STEPS_PER_MM    40.0f     // Schritte/mm Gewindestange (z.B. M5 × 1 mm Steigung × 40 MS)
+#define LIFT_SPEED_MM_S      25.0f     // Normalbetrieb mm/s
+#define LIFT_HOME_SPEED_MM_S  8.0f     // Homing-Geschwindigkeit mm/s
+
+// ═══════════════════════════════════════════════════════════════
+//  ABGELEITETE KONSTANTEN
+// ═══════════════════════════════════════════════════════════════
+static const float STEPS_PER_MM  = STEPS_PER_REV / (PI * WHEEL_DIAM_MM);
+// Schritte pro Grad beim In-Place-Drehen (jedes Rad dreht einen Bogen = Radabstand × π × deg / 360)
+static const float STEPS_PER_DEG = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
+
+static uint32_t mmPerSToIntervalUs(float mmS, float stepsPerMm) {
+    if (mmS <= 0.0f) return 5000;
+    return (uint32_t)(1000000.0f / (mmS * stepsPerMm));
 }
 
-// Beide Motoren gleichzeitig schrittweise fahren, jeder mit eigener Geschwindigkeit.
-// dirL/dirR: HIGH oder LOW (Hardwarepegel, Motor R ist gespiegelt montiert)
-// Rückgabe: false wenn durch STOP unterbrochen
-bool doSteps(uint8_t dirL, uint8_t dirR, long stepsL, long stepsR) {
-    digitalWrite(DIR_L, dirL);
-    digitalWrite(DIR_R, dirR);
+// ═══════════════════════════════════════════════════════════════
+//  STEPPER-HILFSSTRUKTUR
+// ═══════════════════════════════════════════════════════════════
+struct Stepper {
+    uint8_t  stepPin, dirPin;
+    volatile long    pos    = 0;       // aktuelle Position in Schritten
+    volatile long    target = 0;       // Zielposition in Schritten
+    uint32_t intervalUs     = 1000;    // Schrittperiode
+    uint32_t nextUs         = 0;
 
-    int dL = toDelayUs(spdL), dR = toDelayUs(spdR);
-    long doneL = 0, doneR = 0;
-    unsigned long nextL = micros(), nextR = micros();
-
-    while (doneL < stepsL || doneR < stepsR) {
-        if (stopFlag) return false;
-        unsigned long now = micros();
-
-        if (doneL < stepsL && (long)(now - nextL) >= 0) {
-            digitalWrite(STEP_L, HIGH);
-            delayMicroseconds(5);
-            digitalWrite(STEP_L, LOW);
-            nextL = now + (unsigned long)(dL * 2);
-            portENTER_CRITICAL(&mux);
-            posL += (dirL == HIGH) ? 1 : -1;
-            portEXIT_CRITICAL(&mux);
-            doneL++;
-        }
-        if (doneR < stepsR && (long)(now - nextR) >= 0) {
-            digitalWrite(STEP_R, HIGH);
-            delayMicroseconds(5);
-            digitalWrite(STEP_R, LOW);
-            nextR = now + (unsigned long)(dR * 2);
-            // R ist gespiegelt: LOW = vorwärts → posR += 1
-            portENTER_CRITICAL(&mux);
-            posR += (dirR == LOW) ? 1 : -1;
-            portEXIT_CRITICAL(&mux);
-            doneR++;
-        }
+    void setSpeed(float mmS, float stepsPerMm) {
+        intervalUs = mmPerSToIntervalUs(mmS, stepsPerMm);
     }
-    return true;
+
+    // Einen Schritt ausführen wenn fällig. Rückgabe true = Schritt gemacht.
+    bool runOnce() {
+        if (pos == target) return false;
+        uint32_t now = micros();
+        if ((int32_t)(now - nextUs) < 0) return false;
+        bool fwd = target > pos;
+        digitalWrite(dirPin, fwd ? HIGH : LOW);
+        delayMicroseconds(2);
+        digitalWrite(stepPin, HIGH);
+        delayMicroseconds(5);
+        digitalWrite(stepPin, LOW);
+        pos += fwd ? 1 : -1;
+        nextUs = now + intervalUs;
+        return true;
+    }
+
+    bool atTarget() const { return pos == target; }
+    void setPos(long p)   { pos = target = p; }
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  GLOBALER ZUSTAND
+// ═══════════════════════════════════════════════════════════════
+Stepper drvL = { PIN_L_STEP,      PIN_L_DIR };
+Stepper drvR = { PIN_R_STEP,      PIN_R_DIR };
+Stepper lftR = { PIN_LFT_R_STEP,  PIN_LFT_R_DIR };
+Stepper lftM = { PIN_LFT_M_STEP,  PIN_LFT_M_DIR };
+Stepper lftL = { PIN_LFT_L_STEP,  PIN_LFT_L_DIR };
+
+// Antriebszustand
+enum DriveState : uint8_t { DS_IDLE, DS_RUNNING, DS_PAUSED };
+volatile DriveState driveState = DS_IDLE;
+volatile bool       sendOK     = false;
+
+// ST/RS als Direktflags (zeitkritisch, bypassen Queue)
+volatile bool stFlag = false;
+volatile bool rsFlag = false;
+
+// Lift-Homing
+volatile bool liftHoming  = false;
+volatile bool homeRdone   = false, homeMdone = false, homeLdone = false;
+
+// Befehlsqueue (UART → Motor-Task)
+enum CmdType : uint8_t { C_DD, C_TA, C_SL, C_SH };
+struct Cmd { CmdType type; float a, b, c; };
+QueueHandle_t cmdQ;
+
+// ═══════════════════════════════════════════════════════════════
+//  MOTOR-TASK  (Core 0 – zeitkritisch)
+// ═══════════════════════════════════════════════════════════════
+
+static void runLifts() {
+    if (!liftHoming) {
+        lftR.runOnce(); lftM.runOnce(); lftL.runOnce();
+        return;
+    }
+    // Homing: nach unten fahren bis Endstop (aktiv LOW)
+    if (!homeRdone) {
+        if (digitalRead(PIN_HOME_R) == LOW) { lftR.setPos(0); homeRdone = true; }
+        else                                  lftR.runOnce();
+    }
+    if (!homeMdone) {
+        if (digitalRead(PIN_HOME_M) == LOW) { lftM.setPos(0); homeMdone = true; }
+        else                                  lftM.runOnce();
+    }
+    if (!homeLdone) {
+        if (digitalRead(PIN_HOME_L) == LOW) { lftL.setPos(0); homeLdone = true; }
+        else                                  lftL.runOnce();
+    }
+    if (homeRdone && homeMdone && homeLdone) liftHoming = false;
 }
 
-// --- Core 0: Stepper-Task ---
-void stepperTask(void *) {
-    pinMode(STEP_L, OUTPUT); pinMode(DIR_L, OUTPUT);
-    pinMode(STEP_R, OUTPUT); pinMode(DIR_R, OUTPUT);
+void motorTask(void *) {
+    // Output-Pins initialisieren
+    for (uint8_t p : { PIN_DRV_EN, PIN_L_STEP, PIN_L_DIR,
+                       PIN_R_STEP, PIN_R_DIR,
+                       PIN_LIFT_EN,
+                       PIN_LFT_R_STEP, PIN_LFT_R_DIR,
+                       PIN_LFT_M_STEP, PIN_LFT_M_DIR,
+                       PIN_LFT_L_STEP, PIN_LFT_L_DIR }) {
+        pinMode(p, OUTPUT);
+    }
+    digitalWrite(PIN_DRV_EN,  LOW);   // Antrieb immer aktiv
+    digitalWrite(PIN_LIFT_EN, LOW);   // Lift immer aktiv
+
+    // Endstop-Pins (Input-Only, kein interner Pull-up auf GPIO 34-36!)
+    pinMode(PIN_HOME_R, INPUT);
+    pinMode(PIN_HOME_M, INPUT);
+    pinMode(PIN_HOME_L, INPUT);
+
+    // Geschwindigkeiten initialisieren
+    drvL.setSpeed(DRIVE_SPEED_MM_S, STEPS_PER_MM);
+    drvR.setSpeed(DRIVE_SPEED_MM_S, STEPS_PER_MM);
+    lftR.setSpeed(LIFT_SPEED_MM_S,  LIFT_STEPS_PER_MM);
+    lftM.setSpeed(LIFT_SPEED_MM_S,  LIFT_STEPS_PER_MM);
+    lftL.setSpeed(LIFT_SPEED_MM_S,  LIFT_STEPS_PER_MM);
 
     Cmd cmd;
     while (true) {
-        if (xQueueReceive(cmdQueue, &cmd, portMAX_DELAY) != pdTRUE) continue;
-        stopFlag = false;
+        runLifts();
 
-        if (cmd.type == CMD_SPEED) {
-            spdL = cmd.p1;
-            spdR = cmd.p2;
+        // ST/RS direkt prüfen (höchste Priorität)
+        if (stFlag) {
+            stFlag = false;
+            if (driveState == DS_RUNNING) driveState = DS_PAUSED;
+            else if (driveState == DS_PAUSED) {
+                // Zweites ST = Befehl abbrechen
+                drvL.target = drvL.pos;
+                drvR.target = drvR.pos;
+                driveState = DS_IDLE;
+            }
+        }
+        if (rsFlag) {
+            rsFlag = false;
+            if (driveState == DS_PAUSED) driveState = DS_RUNNING;
+        }
+
+        switch (driveState) {
+            case DS_IDLE:
+                if (xQueueReceive(cmdQ, &cmd, 0) == pdTRUE) {
+                    if (cmd.type == C_DD) {
+                        long steps = (long)(fabsf(cmd.a) * STEPS_PER_MM);
+                        bool fwd = cmd.a >= 0;
+                        drvL.setSpeed(DRIVE_SPEED_MM_S, STEPS_PER_MM);
+                        drvR.setSpeed(DRIVE_SPEED_MM_S, STEPS_PER_MM);
+                        drvL.pos = 0; drvL.target = fwd ?  steps : -steps;
+                        drvR.pos = 0; drvR.target = fwd ? -steps :  steps; // R gespiegelt
+                        driveState = DS_RUNNING;
+
+                    } else if (cmd.type == C_TA) {
+                        long steps = (long)(fabsf(cmd.a) * STEPS_PER_DEG);
+                        bool cw = cmd.a >= 0;
+                        drvL.setSpeed(TURN_SPEED_MM_S, STEPS_PER_MM);
+                        drvR.setSpeed(TURN_SPEED_MM_S, STEPS_PER_MM);
+                        // CW: L=+, R=+ (R gespiegelt → physisch rückwärts)
+                        drvL.pos = 0; drvL.target = cw ?  steps : -steps;
+                        drvR.pos = 0; drvR.target = cw ?  steps : -steps;
+                        driveState = DS_RUNNING;
+
+                    } else if (cmd.type == C_SL) {
+                        lftR.target = (long)(cmd.a * LIFT_STEPS_PER_MM);
+                        lftM.target = (long)(cmd.b * LIFT_STEPS_PER_MM);
+                        lftL.target = (long)(cmd.c * LIFT_STEPS_PER_MM);
+                        lftR.setSpeed(LIFT_SPEED_MM_S,  LIFT_STEPS_PER_MM);
+                        lftM.setSpeed(LIFT_SPEED_MM_S,  LIFT_STEPS_PER_MM);
+                        lftL.setSpeed(LIFT_SPEED_MM_S,  LIFT_STEPS_PER_MM);
+
+                    } else if (cmd.type == C_SH) {
+                        lftR.target = -999999; lftR.setSpeed(LIFT_HOME_SPEED_MM_S, LIFT_STEPS_PER_MM);
+                        lftM.target = -999999; lftM.setSpeed(LIFT_HOME_SPEED_MM_S, LIFT_STEPS_PER_MM);
+                        lftL.target = -999999; lftL.setSpeed(LIFT_HOME_SPEED_MM_S, LIFT_STEPS_PER_MM);
+                        homeRdone = homeMdone = homeLdone = false;
+                        liftHoming = true;
+                    }
+                }
+                break;
+
+            case DS_RUNNING: {
+                bool lDone = drvL.atTarget();
+                bool rDone = drvR.atTarget();
+                if (!lDone) drvL.runOnce();
+                if (!rDone) drvR.runOnce();
+                if (lDone && rDone) {
+                    driveState = DS_IDLE;
+                    sendOK     = true;
+                }
+                break;
+            }
+
+            case DS_PAUSED:
+                // warten auf RS oder zweites ST (oben behandelt)
+                vTaskDelay(1);
+                break;
+        }
+
+        // OK senden wenn fällig (Serial ist thread-safe auf ESP32)
+        if (sendOK) {
+            sendOK = false;
             Serial.println("OK");
-            continue;
         }
-
-        bool ok;
-        if (cmd.type == CMD_DRIVE) {
-            long steps = (long)(fabsf(cmd.p1) * STEPS_PER_CM);
-            bool fwd = cmd.p1 >= 0;
-            // vorwärts: L=HIGH, R=LOW (gespiegelt)
-            ok = doSteps(fwd ? HIGH : LOW, fwd ? LOW : HIGH, steps, steps);
-        } else { // CMD_TURN
-            float arc = fabsf(cmd.p1) / 360.0f * PI * WHEELBASE_CM;
-            long steps = (long)(arc * STEPS_PER_CM);
-            bool cw = cmd.p1 >= 0;
-            // CW: L vorwärts, R vorwärts (gespiegelt → beide HIGH drehen auf der Stelle)
-            ok = doSteps(cw ? HIGH : LOW, cw ? HIGH : LOW, steps, steps);
-        }
-        Serial.println(ok ? "OK" : "INTERRUPTED");
     }
 }
 
-// --- Core 1: UART-Task ---
+// ═══════════════════════════════════════════════════════════════
+//  UART-TASK  (Core 1)
+// ═══════════════════════════════════════════════════════════════
+
 static void parseCmd(const String &s) {
     Cmd cmd = {};
-    if (s.startsWith("DRIVE ")) {
-        cmd.type = CMD_DRIVE;
-        cmd.p1   = s.substring(6).toFloat();
-        xQueueSend(cmdQueue, &cmd, 0);
 
-    } else if (s.startsWith("TURN ")) {
-        cmd.type = CMD_TURN;
-        cmd.p1   = s.substring(5).toFloat();
-        xQueueSend(cmdQueue, &cmd, 0);
+    if (s.startsWith("DD")) {
+        cmd.type = C_DD;
+        cmd.a    = s.substring(2).toFloat();
+        xQueueSend(cmdQ, &cmd, portMAX_DELAY);
 
-    } else if (s.startsWith("SPEED ")) {
-        // "SPEED <links_cm_s> <rechts_cm_s>"
-        String rest = s.substring(6);
-        int sp = rest.indexOf(' ');
-        cmd.type = CMD_SPEED;
-        cmd.p1   = (sp < 0) ? rest.toFloat() : rest.substring(0, sp).toFloat();
-        cmd.p2   = (sp < 0) ? cmd.p1         : rest.substring(sp + 1).toFloat();
-        xQueueSend(cmdQueue, &cmd, 0);
+    } else if (s.startsWith("TA")) {
+        cmd.type = C_TA;
+        cmd.a    = s.substring(2).toFloat();
+        xQueueSend(cmdQ, &cmd, portMAX_DELAY);
 
-    } else if (s == "STOP") {
-        stopFlag = true;
-        xQueueReset(cmdQueue);
-        Serial.println("OK");
+    } else if (s.startsWith("SL")) {
+        // SL{r};{m};{l}
+        int i1 = s.indexOf(';', 2);
+        int i2 = (i1 >= 0) ? s.indexOf(';', i1 + 1) : -1;
+        if (i1 < 0 || i2 < 0) { Serial.println("ERR"); return; }
+        cmd.type = C_SL;
+        cmd.a = s.substring(2,    i1).toFloat();
+        cmd.b = s.substring(i1+1, i2).toFloat();
+        cmd.c = s.substring(i2+1).toFloat();
+        xQueueSend(cmdQ, &cmd, portMAX_DELAY);
 
-    } else if (s == "POS") {
-        long l, r;
-        portENTER_CRITICAL(&mux); l = posL; r = posR; portEXIT_CRITICAL(&mux);
-        Serial.printf("POS %.2f %.2f\n", l / STEPS_PER_CM, r / STEPS_PER_CM);
+    } else if (s == "SH") {
+        cmd.type = C_SH;
+        xQueueSend(cmdQ, &cmd, portMAX_DELAY);
+
+    } else if (s == "ST") {
+        stFlag = true;   // direktes Flag, kein Queue
+
+    } else if (s == "RS") {
+        rsFlag = true;   // direktes Flag, kein Queue
+
+    } else if (s.startsWith("SP")) {
+        // Nur Odometrie-Reset; ESP32 trackt keine eigene Odometrie
+        // → kein OK senden (Raspi erwartet keines)
 
     } else {
-        Serial.println("ERR unknown command");
+        Serial.println("ERR");
     }
 }
 
@@ -159,13 +333,16 @@ void uartTask(void *) {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  SETUP & LOOP
+// ═══════════════════════════════════════════════════════════════
 void setup() {
-    Serial.begin(115200);
-    cmdQueue = xQueueCreate(16, sizeof(Cmd));
-    xTaskCreatePinnedToCore(stepperTask, "Stepper", 4096, NULL, 2, NULL, 0);
-    xTaskCreatePinnedToCore(uartTask,    "UART",    4096, NULL, 1, NULL, 1);
+    Serial.begin(115200);  // UART0 → USB → Raspberry Pi
+    cmdQ = xQueueCreate(32, sizeof(Cmd));
+    xTaskCreatePinnedToCore(motorTask, "Motor", 8192, NULL, 2, NULL, 0);  // Core 0, Prio 2
+    xTaskCreatePinnedToCore(uartTask,  "UART",  4096, NULL, 1, NULL, 1);  // Core 1, Prio 1
 }
 
 void loop() {
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);  // loop() wird nicht genutzt
 }

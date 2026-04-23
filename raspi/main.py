@@ -58,16 +58,18 @@ class RobotController:
         self.home_routine = Task(self.esp32, self.camera, self.gripper, [[]], self.color)
 
         # Startpositionen (Blau als Referenz – Task spiegelt für Gelb automatisch)
+        # Nur verwendet wenn kein autonomes Homing ('hm') in der Home-Routine ist
         self.start_positions = {
             1: [150,  1800, 180],   # Blau 1
             2: [600,  1800, 180],   # Blau 2
             3: [1050, 1800, 180],   # Blau 3
         }
 
+        # Home-Routinen: 'hm' = autonomes Wall-Homing (setzt Position selbst)
         self.home_routines = {
-            1: [['hg']],
-            2: [['hg']],
-            3: [['hg']],
+            1: [['hg', 'hm']],
+            2: [['hg', 'hm']],
+            3: [['hg', 'hm']],
         }
 
         # Taktiken (in Blau-Koordinaten – Task spiegelt für Gelb)
@@ -75,9 +77,11 @@ class RobotController:
             1: [['fd', 'dd400']],   # TODO: echte Taktik eintragen
             2: [['fd', 'dd400']],
             3: [['hg', 'fd', 'dd400']],
+            4: [['dd1000']],        # Test: 1 m geradeaus vorwärts
         }
 
         self.start_pos = 1
+        self.autonomous_homing = False  # True wenn home_routine 'hm' enthält
 
     def l(self, msg: str):
         print(msg)
@@ -110,11 +114,13 @@ class RobotController:
                     await self.home()
                     await self.send_message('h')
                     self.wait_for_pullcord()
-                    x, y, theta = self.start_positions[self.start_pos]
-                    if self.color == 'yellow':
-                        x = 3000 - x
-                        theta = int((180 - theta) % 360)
-                    self.esp32.set_pos(x, y, theta)
+                    # Position nur manuell setzen wenn kein autonomes Homing ('hm')
+                    if not self.autonomous_homing:
+                        x, y, theta = self.start_positions[self.start_pos]
+                        if self.color == 'yellow':
+                            x = 3000 - x
+                            theta = int((180 - theta) % 360)
+                        self.esp32.set_pos(x, y, theta)
                     asyncio.create_task(self.run_tactic())
                     sleep(0.5)
 
@@ -148,7 +154,9 @@ class RobotController:
         self.start_pos = start_pos_num
         tactic       = self.tactics[tactic_num]
         home_routine = self.home_routines[start_pos_num]
-        self.l(f"color={self.color}, tactic={tactic_num}, start={start_pos_num}")
+        # Prüfen ob autonomes Homing in der Home-Routine enthalten ist
+        self.autonomous_homing = any('hm' in step for step in home_routine[0])
+        self.l(f"color={self.color}, tactic={tactic_num}, start={start_pos_num}, auto_homing={self.autonomous_homing}")
         self.tactic       = Task(self.esp32, self.camera, self.gripper, tactic,       self.color)
         self.home_routine = Task(self.esp32, self.camera, self.gripper, home_routine, self.color)
 

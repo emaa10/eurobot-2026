@@ -25,6 +25,9 @@ from time import time
 
 
 class ESP32:
+    # Nach erstem Anschließen: ls /dev/serial/by-id/ → Pfad eintragen
+    # CP2102: usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_XXXX-if00
+    # CH340:  usb-1a86_USB2.0-Ser_-if00-port0
     PORT = '/dev/serial/by-id/usb-TODO_SET_ESP32_PORT'
 
     def __init__(self, port: str = PORT, baudrate: int = 115200):
