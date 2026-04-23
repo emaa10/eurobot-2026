@@ -1,232 +1,245 @@
 import asyncio
 import RPi.GPIO as GPIO
 import logging
-from time import time, sleep
 import signal
+from time import time, sleep
 
 from modules.task import Task
 from modules.camera import Camera
-from modules.motor_controller import MotorController
+from modules.esp32 import ESP32
+from modules.servos import Servos
 from modules.gripper import Gripper
+from modules.lidar import Lidar
+
+# --- GPIO Pins ---
+PIN_PULLCORD    = 22   # Zugschnur (active LOW, pullup)
+PIN_TEAM_SELECT = 17   # Team-Schalter: LOW = blau, HIGH = gelb
 
 HOST = '127.0.0.1'
 PORT = 5001
-pullcord = 22
+
 
 class RobotController:
     def __init__(self):
-        self.CAM = True
-
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(pullcord, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(PIN_PULLCORD,    GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(PIN_TEAM_SELECT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-        self.start_pos = 0
+        logging.basicConfig(
+            filename='/home/eurobot/main-bot/raspi/eurobot.log',
+            level=logging.INFO,
+        )
+        self.logger = logging.getLogger(__name__)
+
+        # Team-Farbe beim Start lesen
+        # Schalter geschlossen (LOW) = Blau, offen (HIGH) = Gelb
+        self.color = 'blue' if GPIO.input(PIN_TEAM_SELECT) == GPIO.LOW else 'yellow'
+        self.l(f"Team: {self.color}")
+
         self.points = 0
         self.client_writer: asyncio.StreamWriter | None = None
 
-        logging.basicConfig(filename='/home/eurobot/main-bot/raspi/eurobot.log', level=logging.INFO)
-        self.logger = logging.getLogger(__name__)
+        # Hardware
+        self.esp32   = ESP32()
+        self.servos  = Servos()
+        self.gripper = Gripper(self.servos, self.esp32)
+        self.lidar   = Lidar()
+        self.camera  = Camera()
 
-        self.motor_controller = MotorController()
-        self.camera = Camera() if self.CAM else None
-        self.gripper = Gripper()
+        # Lidar starten
+        if not self.lidar.start_scanning():
+            self.l("Warning: Lidar konnte nicht gestartet werden")
 
-        if self.CAM:
-            self.camera.start()
-            self.logger.info("Camera started")
+        # Kamera starten
+        self.camera.start()
+        self.l("Camera started")
 
-        self.tactic = Task(self.motor_controller, self.camera, self.gripper, [[]], 'blue')
-        self.home_routine = Task(self.motor_controller, self.camera, self.gripper, [[]], 'blue')
+        self.tactic      = Task(self.esp32, self.camera, self.gripper, [[]], self.color)
+        self.home_routine = Task(self.esp32, self.camera, self.gripper, [[]], self.color)
 
+        # Startpositionen (Blau als Referenz – Task spiegelt für Gelb automatisch)
         self.start_positions = {
-            # gelb
-            1: [200, 850, 90],
-            2: [1150, 200, 0],
-            3: [450, 1800, 180],
-            # blau
-            4: [1550, 1800, 180],
-            5: [1850, 200, 0],
-            6: [2800, 850, 270],
-            7: [100, 100, 0],
+            1: [150,  1800, 180],   # Blau 1
+            2: [600,  1800, 180],   # Blau 2
+            3: [1050, 1800, 180],   # Blau 3
         }
+
         self.home_routines = {
-            # yellow
-            1: [['hb', 'dd50', 'ta-90', 'hb', 'dd100']],
-            2: [['hb']],
-            # 2: [['hb', 'ta-90', 'hb', 'dd50']],
-            3: [['hb', 'dd100']],
-            # blau
-            4: [['hb', 'dd100']],
-            5: [['hb']],
-            6: [['hb', 'dd50', 'ta90', 'hb', 'dd100']],
+            1: [['hg']],
+            2: [['hg']],
+            3: [['hg']],
         }
-        self.tactix_yellow = {
-            1: [['hb', 'fd', 'dd400', 'ip20', 'a1', 'dp1100;650;0', 'dp1100;800;0', 'dd30','b2', 'dp1300;500;180', 'rg', 'ip12', 'dd-200', 'a0', 'dp775;650;180', 'dp775;300', 'ip4', 'b1', 'dp1275;650;180', 'l3', 'dd225', 'rg', 'ip16', 'dd-300', 'a0', 'dp600;365', 'dp400;365', 'dp260;365;270', 'b2', 'dd-200', 'dp775;550;180', 'gu', 'dd220', 'rg', 'ip24', 'dh', 'ip10']], # full tacitc
-            2: [['dd400', 'ta90', 'dd400', 'ta90', 'dd400', 'ta90', 'dd400', 'ta90']], # not in use
-            3: [['hb', 'fd', 'dd400', 'dp500;1400;0']], # not in use
-            4: [['hb', 'fd', 'dd400', 'dh']], # safe
+
+        # Taktiken (in Blau-Koordinaten – Task spiegelt für Gelb)
+        self.tactics = {
+            1: [['fd', 'dd400']],   # TODO: echte Taktik eintragen
+            2: [['fd', 'dd400']],
+            3: [['hg', 'fd', 'dd400']],
         }
-        self.tactix_blue = {
-            1: [['hb', 'fd', 'dd400', 'ip20', 'a1', 'dp1905;650;0', 'dp1905;800;0', 'dd30', 'b2', 'dp1650;400;180', 'rg', 'ip12', 'dd-200', 'a0', 'dp2225;650;180', 'dp2225;300;180', 'ip4', 'b1', 'dp1700;650;180', 'l3', 'dp1700;335;180', 'rg', 'ip16', 'dd-300', 'a0', 'dp2500;310', 'dp2600;320', 'dp2750;300', 'b2', 'dd-200', 'dp2250;600;187', 'gu', 'dd250', 'rg', 'ip24', 'dh', 'ip10']], # full tactic
-            2: [['hb', 'fd', 'dd400', 'ip20', 'a1', 'dp1905;650;0', 'dp1905;800;0', 'b2', 'dp1700;400;180', 'dp1700;400;180', 'rg', 'ip12', 'dd-200']], # not in use
-            3: [['hb', 'fd', 'dd400', 'ip20', 'dp2500;1400;0']], # not in use
-            4: [['hb', 'fd', 'dd400', 'ip20', 'dh']], # safe
-        }
+
+        self.start_pos = 1
 
     def l(self, msg: str):
         print(msg)
-        self.logger.info("MAIN - " + msg)
-        
+        self.logger.info("MAIN – " + msg)
+
     def wait_for_pullcord(self):
-        while GPIO.input(pullcord) == GPIO.LOW:
+        self.l("Warte auf Zugschnur …")
+        while GPIO.input(PIN_PULLCORD) == GPIO.LOW:
             sleep(0.1)
+        self.l("Zugschnur gezogen – Spiel startet")
+
+    # --- TCP Server (für Fernsteuerung / Taktikwahl) ---
 
     async def get_command(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         addr = writer.get_extra_info('peername')
-        self.l(f"Connected to client at {addr}")
+        self.l(f"Client verbunden: {addr}")
         self.client_writer = writer
         try:
             while True:
                 data = await reader.read(1024)
                 if not data:
-                    self.l(f"Client {addr} disconnected")
+                    self.l(f"Client {addr} getrennt")
                     break
                 msg = data.decode().strip()
-                self.l(f"Received from {addr}: {msg}")
-                if msg[:2] == 'st':  # set tactic
-                    start_pos, tactic = msg[2:].split(';')
-                    self.set_tactic(int(start_pos), int(tactic))
-                    self.logger.info(f"set tactic: pos:{start_pos} tactic:{tactic}")
+                self.l(f"Empfangen: {msg}")
+
+                if msg.startswith('st'):   # st{pos};{tactic}  – set tactic
+                    start_pos, tactic_num = msg[2:].split(';')
+                    self.set_tactic(int(start_pos), int(tactic_num))
                     await self.home()
                     await self.send_message('h')
                     self.wait_for_pullcord()
                     x, y, theta = self.start_positions[self.start_pos]
-                    self.tactic.motor_controller.set_pos(x, y, theta)
-                    await self.send_message('p')
+                    if self.color == 'yellow':
+                        x = 3000 - x
+                        theta = int((180 - theta) % 360)
+                    self.esp32.set_pos(x, y, theta)
                     asyncio.create_task(self.run_tactic())
                     sleep(0.5)
+
                 await self.tactic.perform_action(msg)
+
         except Exception as e:
-            self.l(f"Error {e} with client {addr}")
+            self.l(f"Client-Fehler: {e}")
         finally:
             writer.close()
             await writer.wait_closed()
             self.client_writer = None
 
-    # h: homing done
-    # p: pullcord pulled
-    # c<count>: set count points
     async def send_message(self, msg: str) -> bool:
-        if not self.client_writer: return False
+        if not self.client_writer:
+            return False
         try:
             self.client_writer.write(msg.encode())
             await self.client_writer.drain()
-            self.l(f"Sent: {msg}")
             return True
         except Exception as e:
-            self.l(f"Send error: {e}")
+            self.l(f"Send-Fehler: {e}")
             return False
 
     async def start_server(self):
         server = await asyncio.start_server(self.get_command, HOST, PORT)
-        self.l(f"Server running on {HOST}:{PORT}")
+        self.l(f"Server läuft auf {HOST}:{PORT}")
         async with server:
             await server.serve_forever()
 
     def set_tactic(self, start_pos_num: int, tactic_num: int):
-        color = 'yellow' if start_pos_num <= 3 else 'blue'
         self.start_pos = start_pos_num
-        
-        tactic = self.tactix_blue[tactic_num] if color == 'blue' else self.tactix_yellow[tactic_num]
-        
-        self.l(str(tactic))
+        tactic       = self.tactics[tactic_num]
         home_routine = self.home_routines[start_pos_num]
-        
-        self.l(f'color: {color}, tactic: {tactic}, home_routine: {home_routine}, startpos: {start_pos_num}')
-                
-        self.tactic = Task(self.motor_controller, self.camera, self.gripper, tactic, color)
-        self.home_routine = Task(self.motor_controller, self.camera, self.gripper, home_routine, color)
-        
+        self.l(f"color={self.color}, tactic={tactic_num}, start={start_pos_num}")
+        self.tactic       = Task(self.esp32, self.camera, self.gripper, tactic,       self.color)
+        self.home_routine = Task(self.esp32, self.camera, self.gripper, home_routine, self.color)
+
     async def home(self):
-        self.l('Homing routine started')
-        
+        self.l("Homing …")
         self.gripper.home()
-        
         while True:
             self.home_routine = await self.home_routine.run()
-            if not self.home_routine: break
-        
-        self.l('Homing done')
+            if not self.home_routine:
+                break
+        self.l("Homing fertig")
         await self.send_message('h')
 
-    def start(self):
-        self.tactic.motor_controller.time_started = time()
-        self.tactic.gripper.servos.time_started = time()
-        self.tactic.gripper.stepper.time_started = time()
-        self.l(f'Tactic started')
-        
+    def start_timer(self):
+        t = time()
+        self.esp32.time_started       = t
+        self.servos.time_started      = t
+        self.gripper.servos.time_started = t
+        self.l("Timer gestartet")
+
     async def run(self) -> int:
         if not self.tactic:
             return -1
-            
         self.tactic = await self.tactic.run()
-        if not self.tactic: 
-            self.l(f'Tactic complete')
+        if not self.tactic:
+            self.l("Taktik abgeschlossen")
             return -1
         return self.tactic.points
-    
+
     async def run_tactic(self):
-        self.start()
+        self.start_timer()
         while True:
             points = await self.run()
             await self.send_message(f"c{points}")
-            if points == -1: 
+            if points == -1:
                 break
-        await self.motor_controller.set_stop()
-        
-    async def cleanup(self):
-        """Clean up all resources before exit"""
-        self.logger.info("Starting cleanup...")
-        
-        # Stop the motor controller
-        await self.motor_controller.set_stop()
-        
-        # Stop the lidar
-        if self.motor_controller.lidar:
-            self.motor_controller.lidar.stop()
-            
-        # Clean up GPIO
-        GPIO.cleanup()
-        
-        self.logger.info("Cleanup completed")
+        await self.esp32.set_stop()
 
-# main bot loop now
+    # --- Hintergrund-Tasks ---
+
+    async def camera_loop(self):
+        """Gibt sichtbare ArUco-Tags alle 0.5 s aus."""
+        while True:
+            tags = self.camera.getTag()
+            if tags:
+                for tag in tags:
+                    self.l(f"Tag {tag.id}: {tag.horizontal_angle:.1f}° {tag.distance:.0f}mm")
+            await asyncio.sleep(0.5)
+
+    async def lidar_loop(self):
+        """Lidar-Status periodisch loggen (optionale Debugging-Hilfe)."""
+        while True:
+            if not self.lidar.is_running():
+                self.l("Warning: Lidar-Thread nicht aktiv")
+            await asyncio.sleep(5)
+
+    async def cleanup(self):
+        self.logger.info("Cleanup …")
+        await self.esp32.set_stop()
+        self.lidar.stop()
+        GPIO.cleanup()
+        self.logger.info("Cleanup fertig")
+
+
 async def main():
     controller = RobotController()
-    
-    # Set up signal handler
+
     loop = asyncio.get_running_loop()
-    loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(shutdown(controller)))
+    loop.add_signal_handler(signal.SIGINT,  lambda: asyncio.create_task(shutdown(controller)))
     loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(shutdown(controller)))
-    
+
     try:
+        asyncio.create_task(controller.camera_loop())
+        asyncio.create_task(controller.lidar_loop())
         await controller.start_server()
     except Exception as e:
-        controller.logger.error(f"Error in main loop: {e}")
+        controller.logger.error(f"Fehler im Main-Loop: {e}")
         await controller.cleanup()
 
-async def shutdown(controller):
-    """Handle shutdown gracefully"""
-    controller.logger.info("Shutdown initiated")
+
+async def shutdown(controller: RobotController):
+    controller.logger.info("Shutdown …")
     await controller.cleanup()
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
     [task.cancel() for task in tasks]
     await asyncio.gather(*tasks, return_exceptions=True)
-    loop = asyncio.get_running_loop()
-    loop.stop()
+    asyncio.get_running_loop().stop()
+
 
 if __name__ == '__main__':
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print('Shutting down')
+        print("Shutting down")
