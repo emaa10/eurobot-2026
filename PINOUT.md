@@ -38,26 +38,6 @@
 | **GPIO 33** | DIR  – Rechter Motor | LOW = vorwärts (Motor physisch gespiegelt!) |
 | **GPIO 27** | ENABLE (shared, aktiv LOW) | LOW = aktiv; beide Antriebsstepper |
 
-### Lift-Stepper Greifer (3× Stepper-Treiber)
-
-| ESP32 GPIO | Funktion | Anmerkung |
-|---|---|---|
-| **GPIO 18** | STEP – Lift Rechts | |
-| **GPIO 19** | DIR  – Lift Rechts | HIGH = aufwärts |
-| **GPIO 21** | STEP – Lift Mitte | |
-| **GPIO 22** | DIR  – Lift Mitte | HIGH = aufwärts |
-| **GPIO 23** | STEP – Lift Links | |
-| **GPIO  5** | DIR  – Lift Links | HIGH = aufwärts |
-| **GPIO  4** | ENABLE Lift (shared, aktiv LOW) | alle 3 Lift-Stepper |
-
-### Endstops Lift (aktiv LOW)
-
-| ESP32 GPIO | Funktion | Wichtig! |
-|---|---|---|
-| **GPIO 34** | Endstop Lift Rechts | **Input-Only**, **kein interner Pull-up** → extern 10 kΩ nach 3.3 V |
-| **GPIO 35** | Endstop Lift Mitte  | **Input-Only**, **kein interner Pull-up** → extern 10 kΩ nach 3.3 V |
-| **GPIO 36** | Endstop Lift Links  | **Input-Only**, **kein interner Pull-up** → extern 10 kΩ nach 3.3 V |
-
 ### Serielle Kommunikation ESP32 ↔ Raspberry Pi
 
 | ESP32 | Funktion |

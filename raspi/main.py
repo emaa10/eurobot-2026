@@ -42,7 +42,7 @@ class RobotController:
         # Hardware
         self.esp32   = ESP32()
         self.servos  = Servos()
-        self.gripper = Gripper(self.servos, self.esp32)
+        self.gripper = Gripper(self.servos)
         self.lidar   = Lidar()
         self.camera  = Camera()
 

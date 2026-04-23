@@ -1,20 +1,18 @@
 """
-Serial interface to ESP32 for drive (wheel steppers) and gripper stepper.
+Serial interface to ESP32 for differential drive (2 stepper motors).
 
 ESP32 Protocol (text, newline-terminated):
   Raspi → ESP32:
-    DD{mm}            drive distance in mm (+ forward, - backward)
-    TA{deg}           turn by relative angle in degrees
-    SL{r};{m};{l}     set stepper lift positions in mm
-    SH                home all steppers
-    ST                stop current drive motion immediately
-    RS                resume drive motion after stop
-    SP{x};{y};{t}     set odometry position
+    DD{mm}        drive distance in mm (+ forward, - backward)
+    TA{deg}       turn by relative angle in degrees
+    ST            stop current drive motion immediately
+    RS            resume drive motion after stop
+    SP{x};{y};{t} set odometry position
 
   ESP32 → Raspi:
-    OK                command completed
-    ERR               error
-    P{x};{y};{t}      position update (optional, ESP32 can send periodically)
+    OK            command completed (DD / TA)
+    ERR           error
+    P{x};{y};{t}  position update (optional, ESP32 can send periodically)
 """
 
 import serial
@@ -145,14 +143,3 @@ class ESP32:
 
     async def set_stop(self):
         self._write("ST")
-
-    # --- Stepper (gripper lift) ---
-
-    def stepper_home(self):
-        self._write("SH")
-
-    def stepper_set(self, r: int, m: int, l: int):
-        """Set gripper stepper positions in mm (right, middle, left)."""
-        if self.check_time():
-            return
-        self._write(f"SL{abs(r)};{abs(m)};{abs(l)}")

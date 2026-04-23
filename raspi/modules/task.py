@@ -186,15 +186,10 @@ class Task:
                 sleep(0.6)
                 self.gripper.servos.gripper_in()
                 sleep(0.2)
-                self.esp32.stepper_set(135, 0, 135)
 
             case 'ws':  # write servo manually
                 vals = msg[2:].split(';')
                 self.gripper.servos.write_servo(int(vals[0]), int(vals[1]))
-
-            case 'sl':  # stepper lift
-                vals = msg[2:].split(';')
-                self.esp32.stepper_set(int(vals[0]), int(vals[1]), int(vals[2]))
 
             case 'ip':  # increase points (fixed)
                 self.points += int(msg[2:])
