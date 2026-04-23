@@ -5,91 +5,66 @@ Differentialantrieb mit 2 Stepper-Motoren (ESP32 + TB6600), 8 STServos (Greifer 
 
 ---
 
-## Schnellstart
+## Workflow
 
-```bash
-# Status aller Hardware-Komponenten prüfen
-python3 raspi/status.py
-
-# Manuell starten (interaktives Menü)
-python3 raspi/main.py
-
-# Direkt mit Taktik und Startposition
-python3 raspi/main.py 2 1        # Taktik 2, Startposition 1
-
-# Taktik in Datei setzen (für Autostart)
-nano raspi/tactic.json
+```
+[Boot]  →  main.py startet automatisch (systemd)
+                    ↓
+[SSH]   →  python3 raspi/client.py   verbinden
+                    ↓
+           team blue          Team setzen
+           tactic 1           Taktik wählen
+           ready              Homing → warten auf Zugschnur → Spiel
+                    ↓
+[Zugschnur ziehen]  →  Spiel läuft 99 s  →  fertig
 ```
 
 ---
 
-## Taktik einstellen
+## client.py – Befehle
 
-Die Datei `raspi/tactic.json` enthält die Voreinstellung für den Autostart:
-
-```json
-{ "tactic": 1, "start_pos": 1 }
+```
+status / s              aktuellen Zustand anzeigen
+team blue|yellow        Team setzen
+tactic <n> / t <n>      Taktik wählen (1–4)
+ready / r               Homing + auf Zugschnur warten + Taktik starten
+home / h                nur Homing (kein Spielstart)
+stop                    Notfall-Stopp
+drive <mm> / d <mm>     Test: fahre mm vorwärts
+turn <deg>              Test: drehe deg Grad
+servo <id> <pos>        Test: Servo direkt setzen
+gripper open|close|home / g o|c|h
+help / ?                Befehlsübersicht
+exit / q                Verbindung trennen
 ```
 
-Beim manuellen Start per `python3 raspi/main.py` erscheint ein Menü, das die Auswahl speichert.
+Server-Ausgaben sind farbkodiert: **grün** = OK, **rot** = ERR, **grau** = LOG.
 
 ---
 
 ## Autostart (systemd)
 
-Der Bot startet automatisch beim Hochfahren des Raspberry Pi.
-
 ```bash
-# Service einrichten (einmalig)
+# Einmalig einrichten
 sudo cp raspi/eurobot.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable eurobot.service
+sudo systemctl enable eurobot
 
 # Steuerbefehle
-sudo systemctl start eurobot      # manuell starten
-sudo systemctl stop eurobot       # stoppen
-sudo systemctl restart eurobot    # neu starten
-sudo systemctl status eurobot     # Status anzeigen
-
-# Logs live verfolgen
-journalctl -u eurobot -f
-
-# Autostart deaktivieren
-sudo systemctl disable eurobot
+sudo systemctl start|stop|restart eurobot
+sudo systemctl status eurobot
+journalctl -u eurobot -f        # Live-Log
 ```
 
 ---
 
-## Ablauf nach dem Start
+## Hardware-Status prüfen
 
-1. Team-Farbe von GPIO 17 lesen (LOW = Blau, HIGH = Gelb)
-2. Taktik aus `tactic.json` oder Menü/Argument
-3. Homing: Greifer-Home → Wand-Kalibrierung (Odometrie gesetzt)
-4. Warten auf Zugschnur (GPIO 22, HIGH-Flanke)
-5. 99-Sekunden-Timer startet, Taktik läuft
-6. Fertig – ESP32 stoppt
+```bash
+python3 raspi/status.py
+```
 
----
-
-## Task-Aktionen (Kurzübersicht)
-
-Vollständige Doku: [`raspi/ACTIONS.md`](raspi/ACTIONS.md)
-
-| Kürzel | Bedeutung |
-|---|---|
-| `dd{mm}` | Fahre mm vorwärts/rückwärts |
-| `ta{deg}` | Drehe relativ (+ = Uhrzeigersinn) |
-| `tt{deg}` | Drehe auf absoluten Winkel |
-| `dp{x};{y}[;θ]` | Fahre zu Koordinate (Blau-KS) |
-| `sp{x};{y};{θ}` | Odometrie manuell setzen |
-| `hm` | Autonomes Wand-Homing |
-| `hg` | Greifer-Home |
-| `gr` / `go` | Alle Greifer zu / auf |
-| `gi` / `ga` | Innen / außen Greifer zu |
-| `ws{id};{pos}` | Einzelnen Servo setzen (Debug) |
-| `ip{n}` | +n Punkte |
-| `ic` | Punkte via Kamera zählen |
-| `es` | Notfall-Stopp |
+Prüft alle Komponenten (ESP32, Servos, Lidar, Kamera, GPIO) ohne etwas zu bewegen.
 
 ---
 
@@ -97,9 +72,18 @@ Vollständige Doku: [`raspi/ACTIONS.md`](raspi/ACTIONS.md)
 
 ```bash
 cd ESP
-pio run -t upload          # Port wird automatisch erkannt
-pio device monitor         # Seriellen Monitor öffnen
+pio run -t upload        # Port wird automatisch erkannt
+pio device monitor       # Seriellen Monitor öffnen (115200 Baud)
 ```
+
+---
+
+## Taktiken anpassen
+
+In `raspi/main.py` → `TACTICS`-Dict. Homing (`hg` + `hm`) wird automatisch
+von `ready` davor ausgeführt und muss nicht in die Taktik.
+
+Alle verfügbaren Aktionen: [`raspi/ACTIONS.md`](raspi/ACTIONS.md)
 
 ---
 
@@ -108,10 +92,9 @@ pio device monitor         # Seriellen Monitor öffnen
 ```
 ESP/                       ESP32 PlatformIO-Projekt (Stepper-Controller)
 raspi/
-  main.py                  Hauptprogramm (autonom)
-  status.py                Hardware-Status-Check
-  client.py                SSH-Remote (optional, Debug)
-  tactic.json              Aktive Taktik / Startposition
+  main.py                  Hauptprogramm (autonom, TCP-Server)
+  client.py                CLI-Client (per SSH verbinden)
+  status.py                Hardware-Status-Check (non-destructive)
   ACTIONS.md               Vollständige Aktions-Dokumentation
   eurobot.service          systemd-Unit-File
   eurobot.log              Laufzeit-Log
@@ -132,11 +115,11 @@ PINOUT.md                  Vollständiges Hardware-Pinout
 
 | Komponente | Verbindung |
 |---|---|
-| ESP32 (CP2102) | USB → `/dev/serial/by-id/usb-Silicon_Labs_CP2102_...-if00` |
-| STServo Adapter (CH340) | USB → `/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083062-if00` |
-| 2× TB6600 Stepper-Treiber | PUL+/DIR+ an ESP32 GPIO 25/26 (links), 32/33 (rechts) |
-| 4× Frontgreifer (STServo) | Bus-IDs 2, 1, 11, 9 (links → rechts) |
+| ESP32 (CP2102) | USB → Raspi |
+| 2× TB6600 Stepper | PUL+/DIR+ an ESP32 GPIO 25/26 (links), 32/33 (rechts) |
+| STServo Adapter (CH340) | USB → Raspi |
+| 4× Frontgreifer | STServo Bus-IDs 2, 1, 11, 9 (links → rechts) |
 | 2× Heben/Senken | Bus-IDs TODO |
 | 2× Thermometer | Bus-IDs TODO |
-| Zugschnur | GPIO 22 (Pull-Up) |
-| Team-Schalter | GPIO 17 (Pull-Up, LOW=Blau) |
+| Zugschnur | GPIO 22 (Pull-Up, LOW = drin) |
+| Team-Schalter | GPIO 17 (Pull-Up, LOW = Blau) |

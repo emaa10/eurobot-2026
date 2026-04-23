@@ -1,27 +1,17 @@
 """
 Eurobot 2026 – Hauptprogramm
 
-Starten:
-    python3 main.py              # interaktives Menü
-    python3 main.py 1            # Taktik 1, Startpos 1
-    python3 main.py 2 3          # Taktik 2, Startpos 3
-
-Ablauf:
-    1. Team-Farbe von GPIO lesen
-    2. Taktik wählen (Menü oder Argument)
-    3. Homing (Wand-Kalibrierung + Greifer-Home)
-    4. Auf Zugschnur warten (GPIO 22)
-    5. Taktik ausführen (99 s Spielzeit)
+Startet automatisch via systemd und wartet auf client.py.
+Alle Steuerung (Team, Taktik, Homing, Test-Befehle) läuft über die TCP-Verbindung.
 """
 
-import sys
-import json
-import os
 import asyncio
-import RPi.GPIO as GPIO
 import logging
 import signal
-from time import time, sleep
+import copy
+import RPi.GPIO as GPIO
+from enum import Enum
+from time import time
 
 from modules.task import Task
 from modules.camera import Camera
@@ -30,41 +20,71 @@ from modules.servos import Servos
 from modules.gripper import Gripper
 from modules.lidar import Lidar
 
-PIN_PULLCORD    = 22   # Pull-Up; LOW = Schnur drin, HIGH-Flanke = Start
-PIN_TEAM_SELECT = 17   # Pull-Up; LOW = Blau, HIGH = Gelb
+PIN_PULLCORD    = 22   # Pull-Up: LOW = Schnur drin, HIGH-Flanke = Start
+PIN_TEAM_SELECT = 17   # Pull-Up: LOW = Blau, HIGH = Gelb
 
+HOST     = '127.0.0.1'
+PORT     = 5001
 LOG_FILE = '/home/eurobot/eurobot-2026/raspi/eurobot.log'
 
-
-# ── Taktik-Bibliothek (Blau-Koordinaten; Task spiegelt für Gelb) ──────────
+# Taktiken in Blau-Koordinaten – Task spiegelt für Gelb.
+# Homing (hg + hm) wird von 'ready' automatisch davor ausgeführt.
 TACTICS = {
-    1: [['hg', 'hm', 'dd1000']],   # Test: Homing + 1 m vorwärts
-    2: [['hg', 'hm', 'dd1000']],
-    3: [['hg', 'hm', 'dd1000']],
-    4: [['hg', 'hm', 'dd1000']],
-}
-
-# Startpositionen – nur genutzt wenn 'hm' NICHT in der Taktik
-START_POSITIONS = {
-    1: [150,  1800, 180],
-    2: [600,  1800, 180],
-    3: [1050, 1800, 180],
+    1: [['dd1000']],          # Test: 1 m vorwärts
+    2: [['dd1000']],
+    3: [['dd1000']],
+    4: [['dd1000']],
 }
 
 
+class State(Enum):
+    IDLE    = 'idle'
+    HOMING  = 'homing'
+    READY   = 'ready'     # Homing fertig, wartet auf Zugschnur
+    RUNNING = 'running'
+    DONE    = 'done'
+
+
+# ── Log-Handler: schreibt Log-Zeilen in eine asyncio.Queue ────────────────
+class _QueueLogHandler(logging.Handler):
+    def __init__(self, queue: asyncio.Queue):
+        super().__init__()
+        self.queue = queue
+        self.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s',
+                                            datefmt='%H:%M:%S'))
+
+    def emit(self, record):
+        try:
+            self.queue.put_nowait(self.format(record))
+        except Exception:
+            pass
+
+
+# ── Haupt-Controller ──────────────────────────────────────────────────────
 class Robot:
-    def __init__(self, tactic_num: int, start_pos: int):
+    def __init__(self):
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(PIN_PULLCORD,    GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(PIN_TEAM_SELECT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-        logging.basicConfig(filename=LOG_FILE, level=logging.INFO,
-                            format='%(asctime)s %(levelname)s %(message)s')
-        self.logger = logging.getLogger(__name__)
+        logging.basicConfig(
+            filename=LOG_FILE, level=logging.INFO,
+            format='%(asctime)s %(levelname)s %(message)s',
+        )
+        self.logger = logging.getLogger('eurobot')
 
-        self.color = 'blue' if GPIO.input(PIN_TEAM_SELECT) == GPIO.LOW else 'yellow'
-        self.log(f"Team: {self.color}  Taktik: {tactic_num}  Startpos: {start_pos}")
+        # Log-Queue: Hintergrund-Task streamt Einträge zum Client
+        self._log_queue: asyncio.Queue = asyncio.Queue()
+        self.logger.addHandler(_QueueLogHandler(self._log_queue))
 
+        # Zustand
+        self.state      = State.IDLE
+        self.team       = 'blue' if GPIO.input(PIN_TEAM_SELECT) == GPIO.LOW else 'yellow'
+        self.tactic_num = 1
+        self._game_task: asyncio.Task | None = None
+        self._writer:    asyncio.StreamWriter | None = None
+
+        # Hardware
         self.esp32   = ESP32()
         self.servos  = Servos()
         self.gripper = Gripper(self.servos)
@@ -75,67 +95,258 @@ class Robot:
             self.log("Warning: Lidar nicht gestartet")
         self.camera.start()
 
-        tactic = TACTICS[tactic_num]
-        has_hm = any('hm' in step for step in tactic[0])
+        self.log(f"Bereit. Team (GPIO): {self.team}")
 
-        self.task = Task(self.esp32, self.camera, self.gripper, tactic, self.color)
-
-        if not has_hm:
-            x, y, theta = START_POSITIONS[start_pos]
-            if self.color == 'yellow':
-                x = 3000 - x
-                theta = int((180 - theta) % 360)
-            self.esp32.set_pos(x, y, theta)
+    # ── Logging ───────────────────────────────────────────────────────────
 
     def log(self, msg: str):
         print(msg)
         self.logger.info(msg)
 
-    def wait_for_pullcord(self):
-        self.log("Warte auf Zugschnur …")
-        while GPIO.input(PIN_PULLCORD) == GPIO.LOW:
-            sleep(0.05)
-        self.log("Zugschnur gezogen – Spiel startet!")
+    # ── Senden an Client ──────────────────────────────────────────────────
 
-    # ── Drive-Wrapper (direkt nutzbar aus Taktik-Code) ────────────────────
+    async def _send(self, line: str):
+        if self._writer and not self._writer.is_closing():
+            try:
+                self._writer.write((line.rstrip() + '\n').encode())
+                await self._writer.drain()
+            except Exception:
+                pass
 
-    async def drive(self, mm: int):
-        await self.esp32.drive_distance(mm)
+    async def _ok(self, msg: str = ''):
+        await self._send(f"OK  {msg}".rstrip())
 
-    async def turn(self, deg: float):
-        await self.esp32.turn_angle(deg)
+    async def _err(self, msg: str):
+        await self._send(f"ERR {msg}")
 
-    async def turn_to(self, deg: float):
-        await self.esp32.turn_to(deg)
+    async def _status(self):
+        lines = [
+            f"state   {self.state.value}",
+            f"team    {self.team}",
+            f"tactic  {self.tactic_num}",
+            f"pos     x={self.esp32.x:.0f} y={self.esp32.y:.0f} θ={self.esp32.theta:.1f}°",
+            f"lidar   {'ok' if self.lidar.is_running() else 'FEHLT'}",
+            f"pullcord {'gezogen' if GPIO.input(PIN_PULLCORD) == GPIO.HIGH else 'drin'}",
+        ]
+        await self._send("─── Status " + "─" * 30)
+        for l in lines:
+            await self._send("  " + l)
+        await self._send("─" * 41)
 
-    async def drive_to(self, x: float, y: float):
-        await self.esp32.drive_to(x, y)
+    # ── Befehls-Dispatcher ────────────────────────────────────────────────
 
-    async def drive_to_point(self, x: float, y: float, theta: float):
-        await self.esp32.drive_to_point(x, y, theta)
+    async def handle_cmd(self, raw: str):
+        parts = raw.strip().split()
+        if not parts:
+            return
+        cmd, args = parts[0].lower(), parts[1:]
 
-    async def stop(self):
-        await self.esp32.set_stop()
+        match cmd:
+
+            case 'status' | 's':
+                await self._status()
+
+            case 'team':
+                if not args or args[0] not in ('blue', 'yellow', 'blau', 'gelb'):
+                    await self._err("Verwendung: team blue|yellow")
+                    return
+                self.team = 'blue' if args[0] in ('blue', 'blau') else 'yellow'
+                self.log(f"Team: {self.team}")
+                await self._ok(f"team={self.team}")
+
+            case 'tactic' | 't':
+                if not args or not args[0].isdigit():
+                    await self._err(f"Verwendung: tactic <n>  (verfügbar: {list(TACTICS)})")
+                    return
+                n = int(args[0])
+                if n not in TACTICS:
+                    await self._err(f"Taktik {n} nicht vorhanden. Verfügbar: {list(TACTICS)}")
+                    return
+                self.tactic_num = n
+                self.log(f"Taktik: {self.tactic_num}")
+                await self._ok(f"tactic={self.tactic_num}")
+
+            case 'ready' | 'r':
+                if self.state not in (State.IDLE, State.DONE):
+                    await self._err(f"Nur im IDLE/DONE möglich (aktuell: {self.state.value})")
+                    return
+                self._game_task = asyncio.create_task(self._flow_ready())
+
+            case 'home' | 'h':
+                if self.state not in (State.IDLE, State.DONE):
+                    await self._err(f"Nur im IDLE/DONE möglich (aktuell: {self.state.value})")
+                    return
+                asyncio.create_task(self._flow_home_only())
+
+            case 'stop':
+                await self.esp32.set_stop()
+                if self._game_task and not self._game_task.done():
+                    self._game_task.cancel()
+                self.state = State.IDLE
+                await self._ok("gestoppt – zurück auf IDLE")
+
+            case 'drive' | 'd':
+                if not args:
+                    await self._err("Verwendung: drive <mm>")
+                    return
+                asyncio.create_task(self._test_drive(int(args[0])))
+
+            case 'turn':
+                if not args:
+                    await self._err("Verwendung: turn <deg>")
+                    return
+                asyncio.create_task(self._test_turn(float(args[0])))
+
+            case 'servo':
+                if len(args) < 2:
+                    await self._err("Verwendung: servo <id> <pos>")
+                    return
+                self.servos.write_servo(int(args[0]), int(args[1]))
+                await self._ok(f"servo {args[0]} → {args[1]}")
+
+            case 'gripper' | 'g':
+                sub = args[0].lower() if args else ''
+                match sub:
+                    case 'open'  | 'o': self.gripper.loslassen()
+                    case 'close' | 'c': self.gripper.greifen()
+                    case 'home'  | 'h': self.gripper.home()
+                    case _:
+                        await self._err("Verwendung: gripper open|close|home")
+                        return
+                await self._ok(f"gripper {sub}")
+
+            case 'help' | '?':
+                await self._help()
+
+            case _:
+                await self._err(f"Unbekannt: '{cmd}'  –  'help' für Übersicht")
+
+    async def _help(self):
+        lines = [
+            "─── Befehle " + "─" * 29,
+            "  status / s              aktuellen Zustand anzeigen",
+            "  team blue|yellow        Team setzen",
+            "  tactic <n> / t <n>      Taktik wählen",
+            "  ready / r               Homing + Zugschnur + Taktik starten",
+            "  home / h                nur Homing (kein Spielstart)",
+            "  stop                    Notfall-Stopp",
+            "  drive <mm> / d <mm>     Test: fahre mm",
+            "  turn <deg>              Test: drehe deg°",
+            "  servo <id> <pos>        Test: Servo direkt setzen",
+            "  gripper open|close|home / g o|c|h",
+            "─" * 41,
+        ]
+        for l in lines:
+            await self._send(l)
 
     # ── Spielablauf ───────────────────────────────────────────────────────
 
-    async def run(self):
-        asyncio.create_task(self._camera_loop())
-        asyncio.create_task(self._lidar_loop())
+    async def _flow_home_only(self):
+        self.state = State.HOMING
+        self.log("Homing gestartet …")
+        await self._do_homing()
+        self.state = State.IDLE
+        self.log("Homing fertig")
+        await self._ok("Homing fertig – zurück auf IDLE")
 
-        # Taktik ausführen (Schritt für Schritt)
+    async def _flow_ready(self):
+        # 1. Homing
+        self.state = State.HOMING
+        self.log(f"Homing gestartet (team={self.team} tactic={self.tactic_num})")
+        await self._do_homing()
+
+        # 2. Warten auf Zugschnur
+        self.state = State.READY
+        self.log("Homing fertig – warte auf Zugschnur …")
+        while GPIO.input(PIN_PULLCORD) == GPIO.LOW:
+            await asyncio.sleep(0.05)
+
+        # 3. Taktik ausführen
+        self.log("Zugschnur – Spiel startet!")
+        self.state = State.RUNNING
+        await self._run_tactic()
+        self.state = State.DONE
+        self.log("Spiel fertig")
+
+    async def _do_homing(self):
+        homing = Task(self.esp32, self.camera, self.gripper,
+                      [['hg', 'hm']], self.team)
+        while True:
+            homing = await homing.run()
+            if not homing:
+                break
+
+    async def _run_tactic(self):
         t = time()
         self.esp32.time_started  = t
         self.servos.time_started = t
 
+        actions = copy.deepcopy(TACTICS[self.tactic_num])
+        task = Task(self.esp32, self.camera, self.gripper, actions, self.team)
         while True:
-            self.task = await self.task.run()
-            if not self.task:
-                self.log("Taktik abgeschlossen")
+            task = await task.run()
+            if not task:
                 break
+        await self.esp32.set_stop()
 
-        await self.stop()
-        self.log("Fertig.")
+    async def _test_drive(self, mm: int):
+        await self.esp32.drive_distance(mm)
+        await self._ok(f"drive {mm} mm fertig")
+
+    async def _test_turn(self, deg: float):
+        await self.esp32.turn_angle(deg)
+        await self._ok(f"turn {deg}° fertig")
+
+    # ── TCP-Server ────────────────────────────────────────────────────────
+
+    async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        addr = writer.get_extra_info('peername')
+
+        # Vorherige Verbindung schließen wenn noch offen
+        if self._writer and not self._writer.is_closing():
+            self._writer.close()
+        self._writer = writer
+
+        self.log(f"Client verbunden: {addr}")
+        await self._send("── Eurobot 2026 ── verbunden. 'help' für Befehle, 'status' für Zustand.")
+        await self._status()
+
+        try:
+            while True:
+                data = await reader.readline()
+                if not data:
+                    break
+                await self.handle_cmd(data.decode())
+        except (asyncio.CancelledError, ConnectionResetError):
+            pass
+        except Exception as e:
+            self.log(f"Client-Fehler: {e}")
+        finally:
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                pass
+            if self._writer is writer:
+                self._writer = None
+            self.log(f"Client getrennt: {addr}")
+
+    async def _log_stream_loop(self):
+        """Schickt neue Log-Einträge aus der Queue zum Client."""
+        while True:
+            msg = await self._log_queue.get()
+            await self._send(f"LOG {msg}")
+
+    async def start(self):
+        server = await asyncio.start_server(self.handle_client, HOST, PORT)
+        self.log(f"Server bereit auf {HOST}:{PORT}")
+        asyncio.create_task(self._log_stream_loop())
+        asyncio.create_task(self._camera_loop())
+        asyncio.create_task(self._lidar_loop())
+        async with server:
+            await server.serve_forever()
+
+    # ── Hintergrund-Tasks ─────────────────────────────────────────────────
 
     async def _camera_loop(self):
         while True:
@@ -156,75 +367,21 @@ class Robot:
         GPIO.cleanup()
 
 
-# ── Taktik-Auswahl ────────────────────────────────────────────────────────
-
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'tactic.json')
-
-
-def load_config() -> tuple[int, int]:
-    """Liest Taktik und Startposition aus tactic.json."""
-    try:
-        with open(CONFIG_FILE) as f:
-            cfg = json.load(f)
-        return int(cfg.get('tactic', 1)), int(cfg.get('start_pos', 1))
-    except Exception:
-        return 1, 1
-
-
-def save_config(tactic: int, start_pos: int):
-    with open(CONFIG_FILE, 'w') as f:
-        json.dump({'tactic': tactic, 'start_pos': start_pos}, f, indent=2)
-
-
-def select_tactic() -> tuple[int, int]:
-    """Interaktives Menü (nur wenn TTY vorhanden)."""
-    t_cur, p_cur = load_config()
-    print(f"\n── Eurobot 2026 ──  (aktuell: Taktik {t_cur}, Pos {p_cur})")
-    print("Taktiken:")
-    for k in TACTICS:
-        print(f"  {k}: {TACTICS[k]}")
-    print()
-    try:
-        t_in = input(f"Taktik-Nummer [{t_cur}]: ").strip()
-        p_in = input(f"Startposition  [{p_cur}]: ").strip()
-        t = int(t_in) if t_in else t_cur
-        p = int(p_in) if p_in else p_cur
-    except (ValueError, EOFError):
-        print(f"Ungültige Eingabe – Taktik {t_cur}, Pos {p_cur} wird verwendet")
-        return t_cur, p_cur
-    save_config(t, p)
-    return t, p
-
+# ── Entry point ───────────────────────────────────────────────────────────
 
 async def main():
-    # Priorität: CLI-Arg > interaktives Menü (TTY) > tactic.json
-    if len(sys.argv) >= 3:
-        tactic_num, start_pos = int(sys.argv[1]), int(sys.argv[2])
-    elif len(sys.argv) == 2:
-        tactic_num, start_pos = int(sys.argv[1]), 1
-    elif sys.stdin.isatty():
-        tactic_num, start_pos = select_tactic()
-    else:
-        # Autostart ohne Terminal → tactic.json
-        tactic_num, start_pos = load_config()
-        print(f"Autostart: Taktik {tactic_num}, Startpos {start_pos}")
+    robot = Robot()
+    loop  = asyncio.get_running_loop()
 
-    robot = Robot(tactic_num, start_pos)
-
-    loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGINT,  lambda: asyncio.create_task(_shutdown(robot, loop)))
     loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(_shutdown(robot, loop)))
 
-    try:
-        robot.wait_for_pullcord()
-        await robot.run()
-    finally:
-        robot.cleanup()
+    await robot.start()
 
 
 async def _shutdown(robot: Robot, loop: asyncio.AbstractEventLoop):
     robot.log("Shutdown …")
-    await robot.stop()
+    await robot.esp32.set_stop()
     robot.cleanup()
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
     [t.cancel() for t in tasks]
