@@ -67,24 +67,24 @@ GND          ──► DIR-  ┘
 Halbduplex UART, 1 MBaud. Alle Servos auf einem Bus.
 
 ### Frontgreifer (von links nach rechts)
-| Servo-ID | Funktion | Positionen (raw) |
-|---|---|---|
-| **2** | Greifer links außen | 100 = auf, 630 = zu |
-| **1** | Greifer links innen | 4000 = auf, 3450 = zu, 3000 = home |
-| **11** | Greifer rechts innen | 3825 = auf, 2500 = zu  ← **TODO kalibrieren** |
-| **9** | Greifer rechts außen | 1800 = auf, 2800 = zu  ← **TODO kalibrieren** |
+| Servo-ID | Funktion | pos hoch/auf | pos runter/zu |
+|---|---|---|---|
+| **2** | Greifer links außen | 100 | 630 |
+| **1** | Greifer links innen | 4000 | 3450 (home: 3000) |
+| **11** | Greifer rechts innen | 3825 ← TODO | 2500 ← TODO |
+| **9** | Greifer rechts außen | 1800 ← TODO | 2800 ← TODO |
 
-### Greifer Heben/Senken
-| Servo-ID | Funktion | Positionen (raw) |
-|---|---|---|
-| **?** | Greifer hoch/runter links | TODO |
-| **?** | Greifer hoch/runter rechts | TODO |
+### Lift-Modul (2 Servos, gegenläufig, werden immer gleichzeitig angesteuert)
+| Servo-ID | Funktion | pos hoch | pos runter |
+|---|---|---|---|
+| **TODO** | Lift Servo A | TODO | TODO |
+| **TODO** | Lift Servo B (gegenläufig) | TODO | TODO |
 
-### Thermometer
-| Servo-ID | Funktion | Positionen (raw) |
-|---|---|---|
-| **?** | Thermometer 1 | TODO |
-| **?** | Thermometer 2 | TODO |
+### Winker (2 unabhängige Servos)
+| Servo-ID | Funktion | pos hoch | pos runter |
+|---|---|---|---|
+| **TODO** | Winker 1 | TODO | TODO |
+| **TODO** | Winker 2 | TODO | TODO |
 
 ---
 
@@ -129,10 +129,8 @@ Nach Wall-Homing:
 ## Startablauf
 
 ```
-python3 raspi/main.py [taktik] [startpos]
-
-  1. Team-Farbe von GPIO 17 lesen
-  2. Homing (Wand-Kalibrierung + Greifer-Home)
-  3. Warten auf Zugschnur (GPIO 22)
-  4. Taktik ausführen (99 s)
+python3 raspi/client.py   →  team blue/yellow  →  tactic N  →  ready
+  1. Homing (Greifer-Home + Wand-Kalibrierung)
+  2. Warten auf Zugschnur (GPIO 22)
+  3. Taktik ausführen (99 s)
 ```

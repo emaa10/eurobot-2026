@@ -10,12 +10,12 @@ class Gripper:
         self.servos.home()
         sleep(1)
 
+    # ── Greifer ───────────────────────────────────────────────────────────
+
     def greifen(self):
-        """Alle 4 Greifer schließen."""
         self.servos.alle_zu()
 
     def loslassen(self):
-        """Alle 4 Greifer öffnen."""
         self.servos.alle_auf()
 
     def innen_greifen(self):
@@ -23,3 +23,20 @@ class Gripper:
 
     def aussen_greifen(self):
         self.servos.aussen_zu()
+
+    # ── Lift ──────────────────────────────────────────────────────────────
+
+    def lift_hoch(self):
+        self.servos.lift_hoch()
+
+    def lift_runter(self):
+        self.servos.lift_runter()
+
+    # ── Winker ────────────────────────────────────────────────────────────
+
+    def winker(self, n: int, hoch: bool):
+        """n=1 oder n=2, hoch=True/False."""
+        if n == 1:
+            self.servos.winker1_hoch() if hoch else self.servos.winker1_runter()
+        else:
+            self.servos.winker2_hoch() if hoch else self.servos.winker2_runter()

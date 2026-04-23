@@ -122,6 +122,24 @@ class Task:
             case 'ga':  # außen greifer zu
                 self.gripper.aussen_greifen()
 
+            case 'lh':  # lift hoch
+                self.gripper.lift_hoch()
+
+            case 'lr':  # lift runter
+                self.gripper.lift_runter()
+
+            case 'w1h':  # winker 1 hoch
+                self.gripper.winker(1, True)
+
+            case 'w1r':  # winker 1 runter
+                self.gripper.winker(1, False)
+
+            case 'w2h':  # winker 2 hoch
+                self.gripper.winker(2, True)
+
+            case 'w2r':  # winker 2 runter
+                self.gripper.winker(2, False)
+
             case 'ws':  # write servo manually  id;pos
                 vals = msg[2:].split(';')
                 self.gripper.servos.write_servo(int(vals[0]), int(vals[1]))

@@ -122,6 +122,19 @@ Schließt nur die beiden inneren Greifer (ID 1 und ID 11).
 ### `ga` – Außen greifen
 Schließt nur die beiden äußeren Greifer (ID 2 und ID 9).
 
+### `lh` – Lift hoch
+Fährt das Lift-Modul nach oben. Beide Lift-Servos werden gleichzeitig angesteuert,
+Servo A und B laufen gegenläufig (einer dreht vorwärts, der andere rückwärts).
+
+### `lr` – Lift runter
+Fährt das Lift-Modul nach unten (beide Servos gleichzeitig).
+
+### `w1h` / `w1r` – Winker 1 hoch / runter
+Bewegt Winker 1 unabhängig nach oben oder unten.
+
+### `w2h` / `w2r` – Winker 2 hoch / runter
+Bewegt Winker 2 unabhängig nach oben oder unten.
+
 ### `ws{id};{pos}` – Write Servo (manuell)
 Setzt einen einzelnen Servo auf eine raw-Position. Nur für Kalibrierung / Debugging.
 

@@ -1,9 +1,25 @@
 from modules.STservo_sdk import *
-from time import time, sleep
+from time import time
 
 BAUDRATE         = 1000000
 STS_MOVING_SPEED = 3000
 STS_MOVING_ACC   = 80
+
+# TODO: IDs und Positionen für Lift und Winker eintragen
+LIFT_ID_A   = 0    # TODO – Servo A des Lift-Moduls
+LIFT_ID_B   = 0    # TODO – Servo B des Lift-Moduls (gegenläufig zu A)
+WINKER_ID_1 = 0    # TODO – Winker links
+WINKER_ID_2 = 0    # TODO – Winker rechts
+
+LIFT_A_HOCH   = 0  # TODO
+LIFT_A_RUNTER = 0  # TODO
+LIFT_B_HOCH   = 0  # TODO  (entgegengesetzt zu A)
+LIFT_B_RUNTER = 0  # TODO
+
+WINKER_1_HOCH   = 0  # TODO
+WINKER_1_RUNTER = 0  # TODO
+WINKER_2_HOCH   = 0  # TODO
+WINKER_2_RUNTER = 0  # TODO
 
 
 class Servos:
@@ -43,18 +59,16 @@ class Servos:
             case 3: self.write_servo(1, 3000)
 
     def grip_rechts_innen(self, pos: int):
-        """ID 11 – zweiter von rechts. 1: auf, 2: zu (TODO: Positionen kalibrieren)"""
+        """ID 11 – zweiter von rechts. 1: auf, 2: zu  (TODO: kalibrieren)"""
         match pos:
             case 1: self.write_servo(11, 3825)
             case 2: self.write_servo(11, 2500)
 
     def grip_rechts_aussen(self, pos: int):
-        """ID 9 – ganz rechts. 1: auf, 2: zu (TODO: Positionen kalibrieren)"""
+        """ID 9 – ganz rechts. 1: auf, 2: zu  (TODO: kalibrieren)"""
         match pos:
             case 1: self.write_servo(9, 1800)
             case 2: self.write_servo(9, 2800)
-
-    # ── Kombinierte Greif-Aktionen ─────────────────────────────────────────
 
     def alle_auf(self):
         self.grip_links_aussen(1)
@@ -76,33 +90,36 @@ class Servos:
         self.grip_links_aussen(2)
         self.grip_rechts_aussen(2)
 
-    # ── Weiterer Mechanismus (IDs 3, 7, 10 – anpassen falls nötig) ────────
+    # ── Lift-Modul (2 Servos, gegenläufig, gleichzeitig) ──────────────────
 
-    def servo_mitte_lift(self, pos: int):
-        """ID 3. 1: unten, 2: oben"""
-        match pos:
-            case 1: self.write_servo(3, 2850)
-            case 2: self.write_servo(3, 3030)
+    def lift_hoch(self):
+        """Beide Lift-Servos gleichzeitig nach oben."""
+        self.write_servo(LIFT_ID_A, LIFT_A_HOCH)
+        self.write_servo(LIFT_ID_B, LIFT_B_HOCH)
 
-    def servo_mitte_grip(self, pos: int):
-        """ID 7. 1: auf, 2: zu"""
-        match pos:
-            case 1: self.write_servo(7, 3700)
-            case 2: self.write_servo(7, 3200)
+    def lift_runter(self):
+        """Beide Lift-Servos gleichzeitig nach unten."""
+        self.write_servo(LIFT_ID_A, LIFT_A_RUNTER)
+        self.write_servo(LIFT_ID_B, LIFT_B_RUNTER)
 
-    def servo_arm_rotation(self, pos: int):
-        """ID 10. 1: außen, 2: mitte, 3: innen, 4: unten, 5: home"""
-        match pos:
-            case 1: self.write_servo(10, 470)
-            case 2: self.write_servo(10, 1300)
-            case 3: self.write_servo(10, 1775)
-            case 4: self.write_servo(10, 1825)
-            case 5: self.write_servo(10, 2220)
+    # ── Winker (2 unabhängige Servos) ─────────────────────────────────────
+
+    def winker1_hoch(self):
+        self.write_servo(WINKER_ID_1, WINKER_1_HOCH)
+
+    def winker1_runter(self):
+        self.write_servo(WINKER_ID_1, WINKER_1_RUNTER)
+
+    def winker2_hoch(self):
+        self.write_servo(WINKER_ID_2, WINKER_2_HOCH)
+
+    def winker2_runter(self):
+        self.write_servo(WINKER_ID_2, WINKER_2_RUNTER)
 
     # ── Home-Position ──────────────────────────────────────────────────────
 
     def home(self):
         self.alle_auf()
-        self.servo_mitte_lift(1)
-        self.servo_mitte_grip(1)
-        self.servo_arm_rotation(5)
+        self.lift_runter()
+        self.winker1_runter()
+        self.winker2_runter()
