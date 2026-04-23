@@ -7,8 +7,6 @@ from time import time, sleep
 from modules.task import Task
 from modules.camera import Camera
 from modules.esp32 import ESP32
-from modules.servos import Servos
-from modules.gripper import Gripper
 from modules.lidar import Lidar
 
 # --- GPIO Pins ---
@@ -26,7 +24,7 @@ class RobotController:
         GPIO.setup(PIN_TEAM_SELECT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
         logging.basicConfig(
-            filename='/home/eurobot/main-bot/raspi/eurobot.log',
+            filename='/home/eurobot/eurobot-2026/raspi/eurobot.log',
             level=logging.INFO,
         )
         self.logger = logging.getLogger(__name__)
@@ -40,11 +38,9 @@ class RobotController:
         self.client_writer: asyncio.StreamWriter | None = None
 
         # Hardware
-        self.esp32   = ESP32()
-        self.servos  = Servos()
-        self.gripper = Gripper(self.servos)
-        self.lidar   = Lidar()
-        self.camera  = Camera()
+        self.esp32  = ESP32()
+        self.lidar  = Lidar()
+        self.camera = Camera()
 
         # Lidar starten
         if not self.lidar.start_scanning():
@@ -54,8 +50,8 @@ class RobotController:
         self.camera.start()
         self.l("Camera started")
 
-        self.tactic      = Task(self.esp32, self.camera, self.gripper, [[]], self.color)
-        self.home_routine = Task(self.esp32, self.camera, self.gripper, [[]], self.color)
+        self.tactic       = Task(self.esp32, self.camera, [[]], self.color)
+        self.home_routine = Task(self.esp32, self.camera, [[]], self.color)
 
         # Startpositionen (Blau als Referenz – Task spiegelt für Gelb automatisch)
         # Nur verwendet wenn kein autonomes Homing ('hm') in der Home-Routine ist
@@ -67,17 +63,17 @@ class RobotController:
 
         # Home-Routinen: 'hm' = autonomes Wall-Homing (setzt Position selbst)
         self.home_routines = {
-            1: [['hg', 'hm']],
-            2: [['hg', 'hm']],
-            3: [['hg', 'hm']],
+            1: [['hm']],
+            2: [['hm']],
+            3: [['hm']],
         }
 
         # Taktiken (in Blau-Koordinaten – Task spiegelt für Gelb)
         self.tactics = {
-            1: [['fd', 'dd400']],   # TODO: echte Taktik eintragen
-            2: [['fd', 'dd400']],
-            3: [['hg', 'fd', 'dd400']],
-            4: [['dd1000']],        # Test: 1 m geradeaus vorwärts
+            1: [['dd1000']],   # Test: 1 m geradeaus vorwärts
+            2: [['dd1000']],
+            3: [['dd1000']],
+            4: [['dd1000']],
         }
 
         self.start_pos = 1
@@ -157,12 +153,11 @@ class RobotController:
         # Prüfen ob autonomes Homing in der Home-Routine enthalten ist
         self.autonomous_homing = any('hm' in step for step in home_routine[0])
         self.l(f"color={self.color}, tactic={tactic_num}, start={start_pos_num}, auto_homing={self.autonomous_homing}")
-        self.tactic       = Task(self.esp32, self.camera, self.gripper, tactic,       self.color)
-        self.home_routine = Task(self.esp32, self.camera, self.gripper, home_routine, self.color)
+        self.tactic       = Task(self.esp32, self.camera, tactic,       self.color)
+        self.home_routine = Task(self.esp32, self.camera, home_routine, self.color)
 
     async def home(self):
         self.l("Homing …")
-        self.gripper.home()
         while True:
             self.home_routine = await self.home_routine.run()
             if not self.home_routine:
@@ -172,9 +167,7 @@ class RobotController:
 
     def start_timer(self):
         t = time()
-        self.esp32.time_started       = t
-        self.servos.time_started      = t
-        self.gripper.servos.time_started = t
+        self.esp32.time_started = t
         self.l("Timer gestartet")
 
     async def run(self) -> int:

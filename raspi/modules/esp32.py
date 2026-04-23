@@ -78,7 +78,7 @@ class ESP32:
                 return
 
             line = self._read_line()
-            if line == 'OK':
+            if line in ('OK', 'INTERRUPTED'):
                 return
             elif line and line.startswith('P'):
                 self._parse_position(line)

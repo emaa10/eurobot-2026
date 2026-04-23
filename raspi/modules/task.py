@@ -5,7 +5,6 @@ from typing import Self
 
 from modules.esp32 import ESP32
 from modules.camera import Camera
-from modules.gripper import Gripper
 
 
 def _mirror(x: int, y: int, theta: int | None = None):
@@ -18,11 +17,10 @@ def _mirror(x: int, y: int, theta: int | None = None):
 
 
 class Task:
-    def __init__(self, esp32: ESP32, camera: Camera, gripper: Gripper,
+    def __init__(self, esp32: ESP32, camera: Camera,
                  action_set: list[list[str]], color: str):
         self.esp32   = esp32
         self.camera  = camera
-        self.gripper = gripper
         self.color   = color  # 'blue' | 'yellow'
 
         self.action_set      = action_set
@@ -55,7 +53,6 @@ class Task:
 
     async def perform_action(self, msg: str):
         cmd = msg[:2]
-        lidar = getattr(self.esp32, '_lidar', None)  # optional lidar ref
 
         match cmd:
             case 'dd':  # drive distance
@@ -102,94 +99,39 @@ class Task:
                 self.logger.info("emergency stop")
                 await self.esp32.set_stop()
 
-            case 'hb':  # home bot (drive motors)
-                self.logger.info("home bot")
-                # TODO: implement homing routine for ESP32
-
             case 'hm':  # autonomous wall homing + position calibration
                 self.logger.info(f"autonomous homing ({self.color})")
-                # Drehachse: 55mm von hinten, 135mm von links (Zuschauerperspektive)
 
-                # Schritt 1: rückwärts an Hinterwand (y=2000)
-                # Blue (theta≈180): drive_distance(-300) → y steigt → trifft y=2000
-                # Yellow (theta≈0): drive_distance(+300) → y steigt → trifft y=2000
+                # Step 1: back into rear wall (y=2000)
                 back_dist = -300 if self.color == 'blue' else 300
                 await self.esp32.drive_distance(back_dist)
                 await asyncio.sleep(0.5)
 
-                # Schritt 2: etwas von Hinterwand wegfahren
+                # Step 2: pull away from rear wall a bit
                 await self.esp32.drive_distance(-back_dist // 6)
 
-                # Schritt 3: +90° drehen → blaue Seite zu Linker Wand (x=0),
-                #             gelbe Seite zu Rechter Wand (x=3000)
-                # Blue:   theta 180→270 (Richtung -x)
-                # Yellow: theta   0→90  (Richtung +x)
+                # Step 3: +90° turn → face side wall
+                # Blue (theta=180→270): faces x=0 (left wall)
+                # Yellow (theta=0→90): faces x=3000 (right wall)
                 await self.esp32.turn_angle(90)
 
-                # Schritt 4: vorwärts in Seitenwand fahren
+                # Step 4: drive into side wall
                 await self.esp32.drive_distance(300)
                 await asyncio.sleep(0.5)
 
-                # Schritt 5: etwas von Seitenwand wegfahren
+                # Step 5: pull away from side wall
                 await self.esp32.drive_distance(-50)
 
-                # Schritt 6: -90° zurückdrehen → Roboter schaut wieder aufs Feld
-                # Blue:   theta 270→180  Yellow: theta 90→0
+                # Step 6: -90° turn back → face field
                 await self.esp32.turn_angle(-90)
 
-                # Schritt 7: kalibrierte Position setzen
-                # Drehachse_y = 2000 - 55 = 1945
-                # Drehachse_x = 135 (blau) | 2865 (gelb, da 3000-135)
+                # Step 7: set calibrated position
+                # Rotation axis: 55mm from rear → y=1945, 135mm from left → x=135 (blue) / x=2865 (yellow)
                 if self.color == 'blue':
                     self.esp32.set_pos(135, 1945, 180)
                 else:
                     self.esp32.set_pos(2865, 1945, 0)
-                self.logger.info(f"homing done → pos set")
-
-            case 'hg':  # home gripper
-                self.logger.info("home gripper")
-                self.gripper.home()
-
-            case 'fd':  # flag down
-                self.gripper.servos.servo_flag(2)
-                sleep(0.3)
-
-            case 'fu':  # flag up
-                self.gripper.servos.servo_flag(1)
-
-            case 'a0':  # anfahren
-                self.gripper.anfahren()
-
-            case 'a1':  # anfahren (first time)
-                self.gripper.anfahren(True)
-
-            case 'b2':  # build 2er
-                self.gripper.build_2er()
-
-            case 'b1':  # build 1er from stack
-                self.gripper.grip_one_layer()
-                await self.esp32.drive_distance(-300)
-                self.gripper.build_one_layer()
-
-            case 'l3':  # lift 3er
-                self.gripper.lift_3er()
-
-            case 'rg':  # release gripper
-                self.gripper.release()
-
-            case 'gu':  # umgreifen
-                self.gripper.release()
-                await self.esp32.drive_distance(-200)
-                self.gripper.grip_unten()
-                await self.esp32.drive_distance(250)
-                self.gripper.servos.grip_außen()
-                sleep(0.6)
-                self.gripper.servos.gripper_in()
-                sleep(0.2)
-
-            case 'ws':  # write servo manually
-                vals = msg[2:].split(';')
-                self.gripper.servos.write_servo(int(vals[0]), int(vals[1]))
+                self.logger.info("homing done → pos set")
 
             case 'ip':  # increase points (fixed)
                 self.points += int(msg[2:])
@@ -201,16 +143,6 @@ class Task:
                     case 1: self.points += 4
                     case 2: self.points += 12
                     case 3: self.points += 28
-
-            case 'dh':  # drive home
-                if self.color == 'blue':
-                    await self.esp32.drive_distance(-200)
-                    await self.esp32.turn_to(210)
-                    await self.esp32.drive_distance(-1100)
-                else:
-                    await self.esp32.drive_distance(-200)
-                    await self.esp32.turn_to(150)
-                    await self.esp32.drive_distance(-1100)
 
             case _:
                 self.logger.info(f"Unknown action: {msg}")
