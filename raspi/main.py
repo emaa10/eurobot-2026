@@ -15,6 +15,8 @@ Ablauf:
 """
 
 import sys
+import json
+import os
 import asyncio
 import RPi.GPIO as GPIO
 import logging
@@ -156,30 +158,56 @@ class Robot:
 
 # ── Taktik-Auswahl ────────────────────────────────────────────────────────
 
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'tactic.json')
+
+
+def load_config() -> tuple[int, int]:
+    """Liest Taktik und Startposition aus tactic.json."""
+    try:
+        with open(CONFIG_FILE) as f:
+            cfg = json.load(f)
+        return int(cfg.get('tactic', 1)), int(cfg.get('start_pos', 1))
+    except Exception:
+        return 1, 1
+
+
+def save_config(tactic: int, start_pos: int):
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump({'tactic': tactic, 'start_pos': start_pos}, f, indent=2)
+
+
 def select_tactic() -> tuple[int, int]:
-    """Interaktives Menü wenn keine CLI-Argumente übergeben."""
-    print("\n── Eurobot 2026 ──────────────────────────────")
+    """Interaktives Menü (nur wenn TTY vorhanden)."""
+    t_cur, p_cur = load_config()
+    print(f"\n── Eurobot 2026 ──  (aktuell: Taktik {t_cur}, Pos {p_cur})")
     print("Taktiken:")
     for k in TACTICS:
         print(f"  {k}: {TACTICS[k]}")
     print()
     try:
-        t = int(input("Taktik-Nummer: ").strip())
-        p = int(input("Startposition (1-3): ").strip())
+        t_in = input(f"Taktik-Nummer [{t_cur}]: ").strip()
+        p_in = input(f"Startposition  [{p_cur}]: ").strip()
+        t = int(t_in) if t_in else t_cur
+        p = int(p_in) if p_in else p_cur
     except (ValueError, EOFError):
-        print("Ungültige Eingabe – Taktik 1, Pos 1 wird verwendet")
-        return 1, 1
+        print(f"Ungültige Eingabe – Taktik {t_cur}, Pos {p_cur} wird verwendet")
+        return t_cur, p_cur
+    save_config(t, p)
     return t, p
 
 
 async def main():
-    # Taktik aus CLI-Argument oder Menü
+    # Priorität: CLI-Arg > interaktives Menü (TTY) > tactic.json
     if len(sys.argv) >= 3:
         tactic_num, start_pos = int(sys.argv[1]), int(sys.argv[2])
     elif len(sys.argv) == 2:
         tactic_num, start_pos = int(sys.argv[1]), 1
-    else:
+    elif sys.stdin.isatty():
         tactic_num, start_pos = select_tactic()
+    else:
+        # Autostart ohne Terminal → tactic.json
+        tactic_num, start_pos = load_config()
+        print(f"Autostart: Taktik {tactic_num}, Startpos {start_pos}")
 
     robot = Robot(tactic_num, start_pos)
 

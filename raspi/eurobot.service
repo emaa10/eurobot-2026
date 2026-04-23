@@ -1,0 +1,25 @@
+[Unit]
+Description=Eurobot 2026 Main Controller
+# Warten bis USB-Geräte bereit sind
+After=local-fs.target sysinit.target
+
+[Service]
+Type=simple
+User=eurobot
+WorkingDirectory=/home/eurobot/eurobot-2026/raspi
+
+# 5 Sekunden warten damit USB-Geräte (ESP32, Servos) nach Boot bereit sind
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/bin/python3 -u main.py
+
+# Bei Fehler (z.B. USB noch nicht bereit) nach 10 s neu starten
+Restart=on-failure
+RestartSec=10s
+
+# Logs nach journalctl
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=eurobot
+
+[Install]
+WantedBy=multi-user.target

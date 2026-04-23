@@ -15,11 +15,9 @@ class Servos:
         self.time_started   = 9999999999999999
 
         if not self.port_handler.openPort():
-            print("Failed to open servo port")
-            quit()
+            raise RuntimeError(f"Servo port nicht gefunden: {port}")
         if not self.port_handler.setBaudRate(BAUDRATE):
-            print("Failed to set servo baudrate")
-            quit()
+            raise RuntimeError("Servo baudrate konnte nicht gesetzt werden")
 
     def check_time(self) -> bool:
         return self.time_started + 99 < time()
