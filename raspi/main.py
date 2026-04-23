@@ -7,6 +7,8 @@ from time import time, sleep
 from modules.task import Task
 from modules.camera import Camera
 from modules.esp32 import ESP32
+from modules.servos import Servos
+from modules.gripper import Gripper
 from modules.lidar import Lidar
 
 # --- GPIO Pins ---
@@ -29,8 +31,6 @@ class RobotController:
         )
         self.logger = logging.getLogger(__name__)
 
-        # Team-Farbe beim Start lesen
-        # Schalter geschlossen (LOW) = Blau, offen (HIGH) = Gelb
         self.color = 'blue' if GPIO.input(PIN_TEAM_SELECT) == GPIO.LOW else 'yellow'
         self.l(f"Team: {self.color}")
 
@@ -38,50 +38,76 @@ class RobotController:
         self.client_writer: asyncio.StreamWriter | None = None
 
         # Hardware
-        self.esp32  = ESP32()
-        self.lidar  = Lidar()
-        self.camera = Camera()
+        self.esp32   = ESP32()
+        self.servos  = Servos()
+        self.gripper = Gripper(self.servos)
+        self.lidar   = Lidar()
+        self.camera  = Camera()
 
-        # Lidar starten
         if not self.lidar.start_scanning():
             self.l("Warning: Lidar konnte nicht gestartet werden")
 
-        # Kamera starten
         self.camera.start()
         self.l("Camera started")
 
-        self.tactic       = Task(self.esp32, self.camera, [[]], self.color)
-        self.home_routine = Task(self.esp32, self.camera, [[]], self.color)
+        self.tactic       = Task(self.esp32, self.camera, self.gripper, [[]], self.color)
+        self.home_routine = Task(self.esp32, self.camera, self.gripper, [[]], self.color)
 
-        # Startpositionen (Blau als Referenz – Task spiegelt für Gelb automatisch)
-        # Nur verwendet wenn kein autonomes Homing ('hm') in der Home-Routine ist
+        # Startpositionen (Blau) – nur wenn kein 'hm' in der Home-Routine
         self.start_positions = {
-            1: [150,  1800, 180],   # Blau 1
-            2: [600,  1800, 180],   # Blau 2
-            3: [1050, 1800, 180],   # Blau 3
+            1: [150,  1800, 180],
+            2: [600,  1800, 180],
+            3: [1050, 1800, 180],
         }
 
         # Home-Routinen: 'hm' = autonomes Wall-Homing (setzt Position selbst)
         self.home_routines = {
-            1: [['hm']],
-            2: [['hm']],
-            3: [['hm']],
+            1: [['hg', 'hm']],
+            2: [['hg', 'hm']],
+            3: [['hg', 'hm']],
         }
 
-        # Taktiken (in Blau-Koordinaten – Task spiegelt für Gelb)
+        # Taktiken (Blau-Koordinaten – Task spiegelt für Gelb)
         self.tactics = {
-            1: [['dd1000']],   # Test: 1 m geradeaus vorwärts
+            1: [['dd1000']],   # Test: 1 m geradeaus
             2: [['dd1000']],
             3: [['dd1000']],
             4: [['dd1000']],
         }
 
         self.start_pos = 1
-        self.autonomous_homing = False  # True wenn home_routine 'hm' enthält
+        self.autonomous_homing = False
 
     def l(self, msg: str):
         print(msg)
         self.logger.info("MAIN – " + msg)
+
+    # ── Drive helpers (thin wrappers so main.py can call them directly) ────
+
+    async def drive(self, mm: int):
+        """Fahre mm Millimeter vorwärts (negativ = rückwärts)."""
+        await self.esp32.drive_distance(mm)
+
+    async def turn(self, deg: float):
+        """Drehe deg Grad relativ (positiv = im Uhrzeigersinn)."""
+        await self.esp32.turn_angle(deg)
+
+    async def turn_to(self, deg: float):
+        """Drehe auf absoluten Winkel deg (0–360, Blau-Koordinaten)."""
+        await self.esp32.turn_to(deg)
+
+    async def drive_to(self, x: float, y: float):
+        """Drehe Richtung (x,y) und fahre hin."""
+        await self.esp32.drive_to(x, y)
+
+    async def drive_to_point(self, x: float, y: float, theta: float):
+        """Fahre zu (x,y) und richte auf theta aus."""
+        await self.esp32.drive_to_point(x, y, theta)
+
+    async def stop(self):
+        await self.esp32.set_stop()
+
+    # ── Pullcord ───────────────────────────────────────────────────────────
 
     def wait_for_pullcord(self):
         self.l("Warte auf Zugschnur …")
@@ -89,7 +115,7 @@ class RobotController:
             sleep(0.1)
         self.l("Zugschnur gezogen – Spiel startet")
 
-    # --- TCP Server (für Fernsteuerung / Taktikwahl) ---
+    # ── TCP Server ─────────────────────────────────────────────────────────
 
     async def get_command(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         addr = writer.get_extra_info('peername')
@@ -104,13 +130,12 @@ class RobotController:
                 msg = data.decode().strip()
                 self.l(f"Empfangen: {msg}")
 
-                if msg.startswith('st'):   # st{pos};{tactic}  – set tactic
+                if msg.startswith('st'):   # st{pos};{tactic}
                     start_pos, tactic_num = msg[2:].split(';')
                     self.set_tactic(int(start_pos), int(tactic_num))
                     await self.home()
                     await self.send_message('h')
                     self.wait_for_pullcord()
-                    # Position nur manuell setzen wenn kein autonomes Homing ('hm')
                     if not self.autonomous_homing:
                         x, y, theta = self.start_positions[self.start_pos]
                         if self.color == 'yellow':
@@ -148,13 +173,12 @@ class RobotController:
 
     def set_tactic(self, start_pos_num: int, tactic_num: int):
         self.start_pos = start_pos_num
-        tactic       = self.tactics[tactic_num]
-        home_routine = self.home_routines[start_pos_num]
-        # Prüfen ob autonomes Homing in der Home-Routine enthalten ist
+        tactic         = self.tactics[tactic_num]
+        home_routine   = self.home_routines[start_pos_num]
         self.autonomous_homing = any('hm' in step for step in home_routine[0])
         self.l(f"color={self.color}, tactic={tactic_num}, start={start_pos_num}, auto_homing={self.autonomous_homing}")
-        self.tactic       = Task(self.esp32, self.camera, tactic,       self.color)
-        self.home_routine = Task(self.esp32, self.camera, home_routine, self.color)
+        self.tactic       = Task(self.esp32, self.camera, self.gripper, tactic,       self.color)
+        self.home_routine = Task(self.esp32, self.camera, self.gripper, home_routine, self.color)
 
     async def home(self):
         self.l("Homing …")
@@ -167,7 +191,8 @@ class RobotController:
 
     def start_timer(self):
         t = time()
-        self.esp32.time_started = t
+        self.esp32.time_started  = t
+        self.servos.time_started = t
         self.l("Timer gestartet")
 
     async def run(self) -> int:
@@ -186,12 +211,11 @@ class RobotController:
             await self.send_message(f"c{points}")
             if points == -1:
                 break
-        await self.esp32.set_stop()
+        await self.stop()
 
-    # --- Hintergrund-Tasks ---
+    # ── Background tasks ───────────────────────────────────────────────────
 
     async def camera_loop(self):
-        """Gibt sichtbare ArUco-Tags alle 0.5 s aus."""
         while True:
             tags = self.camera.getTag()
             if tags:
@@ -200,7 +224,6 @@ class RobotController:
             await asyncio.sleep(0.5)
 
     async def lidar_loop(self):
-        """Lidar-Status periodisch loggen (optionale Debugging-Hilfe)."""
         while True:
             if not self.lidar.is_running():
                 self.l("Warning: Lidar-Thread nicht aktiv")
@@ -208,7 +231,7 @@ class RobotController:
 
     async def cleanup(self):
         self.logger.info("Cleanup …")
-        await self.esp32.set_stop()
+        await self.stop()
         self.lidar.stop()
         GPIO.cleanup()
         self.logger.info("Cleanup fertig")
