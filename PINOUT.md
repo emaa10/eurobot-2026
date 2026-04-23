@@ -40,19 +40,25 @@ UART0 (GPIO 1 TX / GPIO 3 RX) über USB (CP2102). Kein separates Kabel nötig.
 
 ---
 
-## Stepper-Treiber Verdrahtung (A4988 / DRV8825)
+## Stepper-Treiber Verdrahtung (TB6600)
 
 ```
-ESP32 GPIO25 ──► STEP  ┐
-ESP32 GPIO26 ──► DIR   │  Treiber Linker Motor
-GND          ──► GND   │
-3.3V / 5V    ──► VDD   │  Logikspannung
-Vmotor       ──► VMOT  ┘  Motorspannung (12–24V)
-Motor A1/A2/B1/B2 ──► Spulen
+ESP32 GPIO25 ──► PUL+  ┐
+ESP32 GPIO26 ──► DIR+  │  TB6600 Linker Motor
+GND          ──► PUL-  │  (PUL-/DIR- auf GND)
+GND          ──► DIR-  │
+Vmotor       ──► VCC   ┘  Motorspannung 9–42 V
+Motor A+/A-/B+/B- ──► Spulen
 
-ESP32 GPIO32 ──► STEP  ┐
-ESP32 GPIO33 ──► DIR   │  Treiber Rechter Motor (gespiegelt montiert!)
+ESP32 GPIO32 ──► PUL+  ┐
+ESP32 GPIO33 ──► DIR+  │  TB6600 Rechter Motor (gespiegelt montiert!)
+GND          ──► PUL-  │
+GND          ──► DIR-  ┘
 ```
+
+> TB6600 Microstepping per DIP-Schalter einstellen.
+> Bei STEPS_PER_REV=200 im ESP32-Code → SW auf 1/1 (Vollschritt).
+> Für ruhigeren Lauf: 1/8 Microstepping → STEPS_PER_REV auf 1600 setzen.
 
 ---
 
@@ -68,13 +74,17 @@ Halbduplex UART, 1 MBaud. Alle Servos auf einem Bus.
 | **11** | Greifer rechts innen | 3825 = auf, 2500 = zu  ← **TODO kalibrieren** |
 | **9** | Greifer rechts außen | 1800 = auf, 2800 = zu  ← **TODO kalibrieren** |
 
-### Weitere Servos
+### Greifer Heben/Senken
 | Servo-ID | Funktion | Positionen (raw) |
 |---|---|---|
-| **3** | Mitte Lift | 2850 = unten, 3030 = oben |
-| **7** | Mitte Grip | 3700 = auf, 3200 = zu |
-| **10** | Arm Rotation | 470=außen, 1300=mitte, 1775=innen, 1825=unten, 2220=home |
-| **?** | (8. Servo – ID eintragen) | |
+| **?** | Greifer hoch/runter links | TODO |
+| **?** | Greifer hoch/runter rechts | TODO |
+
+### Thermometer
+| Servo-ID | Funktion | Positionen (raw) |
+|---|---|---|
+| **?** | Thermometer 1 | TODO |
+| **?** | Thermometer 2 | TODO |
 
 ---
 
