@@ -45,27 +45,29 @@ void ledYellowOf()
 bool teamswitchRead()
 {
     switchState = false;
-    int counterBlue = 5;
-    int counterYellow = 5;
+    static int counterBlue = 5;    // static: bleibt zwischen Aufrufen erhalten
+    static int counterYellow = 5;
     switchState = gpio_get(teamswitch);  //Teamswitch auslesen
     if(switchState == 0)
     {
+        counterBlue = 5;  // Gegenseite zurücksetzen
         if(counterYellow != 0)
         {
-            counterYellow = counterYellow --;
+            counterYellow--;
         }
         if(counterYellow == 0)
         {
             ledYellowOn();      //Filterung der Werte um Prellung des Schalters zu vermeiden
             ledBlueOf();        //erst nach 5 entsprechenden Werten
-            return switchState; //LEDs an/aus        
+            return switchState; //LEDs an/aus
         }
     }
     if(switchState == 1)
     {
+        counterYellow = 5;  // Gegenseite zurücksetzen
         if(counterBlue != 0)
         {
-            counterBlue = counterBlue --;
+            counterBlue--;
         }
         if(counterBlue == 0)
         {
@@ -74,4 +76,5 @@ bool teamswitchRead()
             return switchState;
         }
     }
+    return switchState;
 }

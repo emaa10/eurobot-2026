@@ -16,18 +16,23 @@ void pullcordInit(void)
 bool pullcordRead()
 {
     pullcordWert = false;
-    int counter = 5;
+    static int counter = 5;  // static: bleibt zwischen Aufrufen erhalten
     pullcordWert = gpio_get(pullcordPin);
-    
+
     if(pullcordWert == 0)   // 0 = Pullcord gezogen
     {
         if(counter != 0)
         {
-            counter = counter--;
+            counter--;
         }
-        if(counter = 0)
+        if(counter == 0)    // fix: war = statt ==
         {
             return pullcordWert; //Selbes Prinzip wie bei Teamswitch -> Filterung der Werte um Prellung zu vermeiden
         }
     }
+    else
+    {
+        counter = 5;  // zurücksetzen wenn Pullcord nicht gezogen
+    }
+    return pullcordWert;
 }
