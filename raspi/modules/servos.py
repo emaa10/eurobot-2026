@@ -1,9 +1,12 @@
 from modules.STservo_sdk import *
+from modules.STservo_sdk.sts import STS_TORQUE_ENABLE, STS_MODE
 from time import time
 
 BAUDRATE         = 1000000
 STS_MOVING_SPEED = 3000
 STS_MOVING_ACC   = 80
+
+WINKER_STEPS = 1707  # 150° in Schritten (150/360 * 4096)
 
 
 class Servos:
@@ -26,6 +29,17 @@ class Servos:
         if self.check_time():
             return
         self.packet_handler.WritePosEx(id, goal_position, STS_MOVING_SPEED, STS_MOVING_ACC)
+
+    def write_servo_relative(self, id: int, delta: int):
+        """Fährt relativ zur aktuellen Position um delta Schritte."""
+        if self.check_time():
+            return
+        self.packet_handler.write1ByteTxRx(id, STS_MODE, 0)
+        self.packet_handler.write1ByteTxRx(id, STS_TORQUE_ENABLE, 1)
+        pos, result, _ = self.packet_handler.ReadPos(id)
+        if result != 0:
+            return
+        self.packet_handler.WritePosEx(id, pos + delta, STS_MOVING_SPEED, STS_MOVING_ACC)
 
     # ── 4 Frontgreifer (von links nach rechts: ID 2, 1, 11, 9) ────────────
 
@@ -88,18 +102,19 @@ class Servos:
     # ── Winker (2 unabhängige Servos) ─────────────────────────────────────
     # Winker 1 = ID 7 = linker Winker  (bestätigt)
     # Winker 2 = ID 8 = rechter Winker (bestätigt)
-
-    def winker1_hoch(self):
-        self.write_servo(7, WINKER_1_HOCH)  # ID 7 = linker Winker
+    # Beide drehen relativ ±150° (WINKER_STEPS), keine absoluten Positionen
 
     def winker1_runter(self):
-        self.write_servo(7, WINKER_1_RUNTER)  # ID 7 = linker Winker
+        self.write_servo_relative(7, -WINKER_STEPS)  # 150° nach rechts/unten
 
-    def winker2_hoch(self):
-        self.write_servo(8, WINKER_2_HOCH)  # ID 8 = rechter Winker
+    def winker1_hoch(self):
+        self.write_servo_relative(7, +WINKER_STEPS)  # 150° zurück
 
     def winker2_runter(self):
-        self.write_servo(8, WINKER_2_RUNTER)  # ID 8 = rechter Winker
+        self.write_servo_relative(8, -WINKER_STEPS)  # 150° nach rechts/unten
+
+    def winker2_hoch(self):
+        self.write_servo_relative(8, +WINKER_STEPS)  # 150° zurück
 
     # ── Home-Position ──────────────────────────────────────────────────────
 
