@@ -39,12 +39,12 @@ class Task:
         self.actions         = self.action_set.pop(0)
 
     def _pt(self, x: int, y: int, theta: int | None = None):
-        if self.color == 'yellow':
+        if self.color == 'blue':
             return _mirror(x, y, theta)
         return (x, y, theta) if theta is not None else (x, y)
 
     def _angle(self, deg: int) -> int:
-        return -deg if self.color == 'yellow' else deg
+        return -deg if self.color == 'blue' else deg
 
     # ------------------------------------------------------------------
     # Action dispatch
@@ -56,7 +56,7 @@ class Task:
         match cmd:
             case 'dd':  # drive distance mm
                 dist = int(msg[2:])
-                await self.esp32.drive_distance(dist, self.lidar)
+                await self.esp32.drive_distance(-dist if self.color == 'blue' else dist, self.lidar)
 
             case 'dp':  # drive to point  x;y[;theta]
                 vals = msg[2:].split(';')
@@ -75,14 +75,14 @@ class Task:
 
             case 'tt':  # turn to absolute degrees
                 theta = int(msg[2:])
-                if self.color == 'yellow':
+                if self.color == 'blue':
                     _, __, theta = _mirror(0, 0, theta)
                 await self.esp32.turn_to(theta, self.lidar)
 
             case 'sp':  # set odometry  x;y;theta
                 vals = msg[2:].split(';')
                 x, y, t = int(vals[0]), int(vals[1]), int(vals[2])
-                if self.color == 'yellow':
+                if self.color == 'blue':
                     x, y, t = _mirror(x, y, t)
                 self.esp32.set_pos(x, y, t)
 
@@ -112,6 +112,7 @@ class Task:
                     await self.esp32.drive_distance(-250, self.lidar)
                     await asyncio.sleep(0.5)
                     self.esp32.set_pos(2625, 55, 0)
+                self.gripper.greifen()
                 self.logger.info("homing done")
 
             case 'hg':  # home gripper
