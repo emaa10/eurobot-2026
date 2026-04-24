@@ -87,17 +87,21 @@ class Servos:
         self.grip_links_aussen(2)
         self.grip_rechts_aussen(2)
 
-    # ── Lift-Modul (2 Servos, gegenläufig, gleichzeitig) ──────────────────
+    # ── Lift-Modul (ID 3 = Lift A, ID 6 = Lift B) ────────────────────────
+    LIFT_A = 3
+    LIFT_B = 6
+    LIFT_A_HOCH   = 0    # TODO: kalibrieren
+    LIFT_A_RUNTER = 0    # TODO: kalibrieren
+    LIFT_B_HOCH   = 0    # TODO: kalibrieren
+    LIFT_B_RUNTER = 0    # TODO: kalibrieren
 
     def lift_hoch(self):
-        """Beide Lift-Servos gleichzeitig nach oben."""
-        self.write_servo(LIFT_ID_A, LIFT_A_HOCH)
-        self.write_servo(LIFT_ID_B, LIFT_B_HOCH)
+        self.write_servo(self.LIFT_A, self.LIFT_A_HOCH)
+        self.write_servo(self.LIFT_B, self.LIFT_B_HOCH)
 
     def lift_runter(self):
-        """Beide Lift-Servos gleichzeitig nach unten."""
-        self.write_servo(LIFT_ID_A, LIFT_A_RUNTER)
-        self.write_servo(LIFT_ID_B, LIFT_B_RUNTER)
+        self.write_servo(self.LIFT_A, self.LIFT_A_RUNTER)
+        self.write_servo(self.LIFT_B, self.LIFT_B_RUNTER)
 
     # ── Winker (2 unabhängige Servos) ─────────────────────────────────────
     # Winker 1 = ID 7 = linker Winker  (bestätigt)
@@ -121,5 +125,3 @@ class Servos:
     def home(self):
         self.alle_auf()
         self.lift_runter()
-        self.winker1_runter()
-        self.winker2_runter()
