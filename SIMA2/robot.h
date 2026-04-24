@@ -8,6 +8,9 @@ void driveMM(int mm);
 // Blockiert bis fertig. Pausiert automatisch bei Gegner.
 void turnDeg(int deg);
 
+// Taktik — von main.cpp (loop1) aufgerufen
+void runTactic();
+
 // Interna — von main.cpp aufgerufen
 void robotInitMotors();
 void robotInitTof();

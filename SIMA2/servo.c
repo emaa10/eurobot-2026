@@ -2,47 +2,22 @@
 #include "hardware/pwm.h"
 #include "servo.h"
 
-static int counter = 0; 
-static int timer = 10;
+#define SERVO_PIN 22
 
-void servoInit()
-{
-    #define ServoPin 22  //Initialisierung Servo
-
-    gpio_set_function(ServoPin, GPIO_FUNC_PWM);     
-    uint slice = pwm_gpio_to_slice_num(ServoPin);
-
-    //50 Hz PWM: 20 ms Periode 
+void servoInit() {
+    gpio_set_function(SERVO_PIN, GPIO_FUNC_PWM);
+    uint slice = pwm_gpio_to_slice_num(SERVO_PIN);
+    // 50 Hz PWM: 125 MHz / 64 / 39063 ≈ 50 Hz
     pwm_set_clkdiv(slice, 64.0f);
-    pwm_set_wrap(slice, 39062); // 125 MHz / 64 = 1.953 MHz
-
+    pwm_set_wrap(slice, 39062);
     pwm_set_enabled(slice, true);
 }
 
-void setServoCounter()
-{
-    counter = counter ++;
-}
-
-void servoTurn()
-{
-    if(counter != 15)
-    {
-        return;
+void servoSpinForever() {
+    while (true) {
+        pwm_set_gpio_level(SERVO_PIN, 1953); // 1000 µs — eine Endlage
+        sleep_ms(600);
+        pwm_set_gpio_level(SERVO_PIN, 3906); // 2000 µs — andere Endlage
+        sleep_ms(600);
     }
-    if(counter == 15)
-    {
-        while(true)
-        {
-            pwm_set_gpio_level(ServoPin, 2929); // 1500 µs
-            sleep_ms(500);
-
-            pwm_set_gpio_level(ServoPin, 3906); // 2000 µs
-            sleep_ms(500);
-
-            pwm_set_gpio_level(ServoPin, 1953); // 1000 µs
-            sleep_ms(500);
-        }
-    }
-
 }

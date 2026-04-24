@@ -1,4 +1,13 @@
-// Taktik-Platzhalter – aktuell übernimmt loop1() in main.cpp die Sequenz.
-// Komplexere Manöver hier eintragen und aus loop1() aufrufen.
-
 #include "robot.h"
+#include "servo.h"
+#include <Arduino.h>
+
+void runTactic() {
+    servoInit();
+
+    // 1 m vorwärts mit Gegnererkennung (pausiert automatisch bei Hindernis)
+    driveMM(1000);
+
+    // Servo dreht unbegrenzt
+    servoSpinForever();
+}
