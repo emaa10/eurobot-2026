@@ -12,7 +12,7 @@
 
 | Gerät | Chip | Device-Pfad |
 |---|---|---|
-| ESP32 | CP2102 | `/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_...-if00` |
+| ESP32 | CH340 | `/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0` |
 | STServo-Adapter (Seriennr. 5A46083059) | CH340 | `/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083059-if00` |
 | RPLIDAR A1 | CP2102N | `/dev/serial/by-id/usb-Silicon_Labs_CP2102N_USB_to_UART_Bridge_Controller_ee5a3b581464ef1196f5daa9c169b110-if00-port0` |
 

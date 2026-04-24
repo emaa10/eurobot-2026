@@ -105,9 +105,9 @@ Erkannte Hindernisse werden gegen die Arena-Grenzen (0–3000 mm × 0–2000 mm)
 ### USB-Gerätepfade
 
 ```
-ESP32 (CP2102):
-  /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_...-if00
-  → in raspi/modules/esp32.py → PORT anpassen
+ESP32 (CH340):
+  /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0
+  → bereits in raspi/modules/esp32.py → PORT eingetragen
 
 STServo-Adapter (CH340, Seriennr. 5A46083059):
   /dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083059-if00
@@ -404,7 +404,7 @@ eurobot-2026/
 
 ## Offene Punkte (TODO)
 
-- [ ] ESP32 USB-Pfad in `raspi/modules/esp32.py` → `PORT` eintragen (aktuell `TODO_SET_ESP32_PORT`)
+- [x] ESP32 USB-Pfad in `raspi/modules/esp32.py` → `usb-1a86_USB_Serial-if00-port0` (CH340, getestet)
 - [ ] Lift-Positionen kalibrieren: Servo ID 3 (Lift A) und ID 6 (Lift B) – alle 4 Positionen in `servos.py`
 - [ ] Taktiken in `raspi/main.py` → `TACTICS` mit echten Spielzügen befüllen
 - [ ] PINOUT.md aktualisieren (veraltete Servo-Positionen und GPIO-17-Eintrag entfernen)
