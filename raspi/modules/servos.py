@@ -7,7 +7,7 @@ STS_MOVING_ACC   = 80
 
 
 class Servos:
-    PORT = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083062-if00"
+    PORT = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083059-if00"
 
     def __init__(self, port: str = PORT):
         self.port_handler   = PortHandler(port)

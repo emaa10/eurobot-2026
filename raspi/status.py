@@ -67,7 +67,7 @@ def check_esp32():
 
 def check_servos():
     print("\n[STServo – 8 Greifer-Servos]")
-    port = serial_exists('/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083062*')
+    port = serial_exists('/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083059*')
     if port:
         ok(f"Port gefunden: {port}")
     else:
