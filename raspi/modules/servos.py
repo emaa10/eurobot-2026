@@ -32,27 +32,26 @@ class Servos:
     def grip_links_aussen(self, pos: int):
         """ID 2 – ganz links. 1: auf, 2: zu"""
         match pos:
-            case 1: self.write_servo(2, 100)
-            case 2: self.write_servo(2, 630)
+            case 1: self.write_servo(2, 1048)
+            case 2: self.write_servo(2, 2000)
 
     def grip_links_innen(self, pos: int):
-        """ID 1 – zweiter von links. 1: auf, 2: zu, 3: home"""
+        """ID 1 – zweiter von links. 1: auf, 2: zu"""
         match pos:
-            case 1: self.write_servo(1, 4000)
-            case 2: self.write_servo(1, 3450)
-            case 3: self.write_servo(1, 3000)
+            case 1: self.write_servo(1, 1500)
+            case 2: self.write_servo(1, 2500)
 
     def grip_rechts_innen(self, pos: int):
-        """ID 11 – zweiter von rechts. 1: auf, 2: zu  (TODO: kalibrieren)"""
+        """ID 11 – zweiter von rechts. 1: auf, 2: zu"""
         match pos:
-            case 1: self.write_servo(11, 3825)
-            case 2: self.write_servo(11, 2500)
+            case 1: self.write_servo(11, 1048)
+            case 2: self.write_servo(11, 2100)
 
     def grip_rechts_aussen(self, pos: int):
-        """ID 9 – ganz rechts. 1: auf, 2: zu  (TODO: kalibrieren)"""
+        """ID 9 – ganz rechts. 1: auf, 2: zu"""
         match pos:
-            case 1: self.write_servo(9, 1800)
-            case 2: self.write_servo(9, 2800)
+            case 1: self.write_servo(9, 1048)
+            case 2: self.write_servo(9, 2048)
 
     def alle_auf(self):
         self.grip_links_aussen(1)
@@ -87,18 +86,20 @@ class Servos:
         self.write_servo(LIFT_ID_B, LIFT_B_RUNTER)
 
     # ── Winker (2 unabhängige Servos) ─────────────────────────────────────
+    # Winker 1 = ID 7 = linker Winker  (bestätigt)
+    # Winker 2 = ID 8 = rechter Winker (bestätigt)
 
     def winker1_hoch(self):
-        self.write_servo(WINKER_ID_1, WINKER_1_HOCH)
+        self.write_servo(7, WINKER_1_HOCH)  # ID 7 = linker Winker
 
     def winker1_runter(self):
-        self.write_servo(WINKER_ID_1, WINKER_1_RUNTER)
+        self.write_servo(7, WINKER_1_RUNTER)  # ID 7 = linker Winker
 
     def winker2_hoch(self):
-        self.write_servo(8, WINKER_2_HOCH)
+        self.write_servo(8, WINKER_2_HOCH)  # ID 8 = rechter Winker
 
     def winker2_runter(self):
-        self.write_servo(8, WINKER_2_RUNTER)
+        self.write_servo(8, WINKER_2_RUNTER)  # ID 8 = rechter Winker
 
     # ── Home-Position ──────────────────────────────────────────────────────
 
