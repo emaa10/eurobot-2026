@@ -1,3 +1,4 @@
+import time
 from modules.STservo_sdk import *
 from modules.STservo_sdk.sts import STS_TORQUE_ENABLE, STS_MODE
 
@@ -10,6 +11,7 @@ WINKER_STEPS = 1707  # 150° in Schritten (150/360 * 4096)
 
 class Servos:
     PORT = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083059-if00"
+    ALL_IDS = [1, 2, 3, 6, 7, 8, 9, 11]
 
     def __init__(self, port: str = PORT):
         self.port_handler   = PortHandler(port)
@@ -18,6 +20,7 @@ class Servos:
             raise RuntimeError(f"Servo port nicht gefunden: {port}")
         if not self.port_handler.setBaudRate(BAUDRATE):
             raise RuntimeError("Servo baudrate konnte nicht gesetzt werden")
+        self.detach_all()
 
     def write_servo(self, id: int, goal_position: int):
         self.packet_handler.WritePosEx(id, goal_position, STS_MOVING_SPEED, STS_MOVING_ACC)
@@ -29,6 +32,17 @@ class Servos:
         if result != 0:
             return
         self.packet_handler.WritePosEx(id, pos + delta, STS_MOVING_SPEED, STS_MOVING_ACC)
+
+    def detach_all(self):
+        """Torque aller Servos deaktivieren (detach)."""
+        for sid in self.ALL_IDS:
+            self.packet_handler.write1ByteTxRx(sid, STS_TORQUE_ENABLE, 0)
+
+    def attach_all(self):
+        """Torque aller Servos nacheinander aktivieren (attach)."""
+        for sid in self.ALL_IDS:
+            self.packet_handler.write1ByteTxRx(sid, STS_TORQUE_ENABLE, 1)
+            time.sleep(0.1)
 
     # ── 4 Frontgreifer (von links nach rechts: ID 2, 1, 11, 9) ────────────
 

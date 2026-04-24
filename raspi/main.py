@@ -269,6 +269,8 @@ class Robot:
         self.log("Spiel fertig")
 
     async def _do_homing(self):
+        self.log("Servos werden aktiviert …")
+        self.servos.attach_all()
         homing = Task(self.esp32, self.camera, self.gripper,
                       [['hg', 'hm']], self.team, self.lidar)
         while True:
