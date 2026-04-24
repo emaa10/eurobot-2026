@@ -1,136 +1,142 @@
-# Eurobot 2026 – Vollständiges Pinout
+# Eurobot 2026 – Pinout
 
-## Raspberry Pi  (BCM-Nummerierung)
+## Raspberry Pi (BCM-Nummerierung)
 
-| GPIO (BCM) | Pin | Funktion | Beschreibung |
+| GPIO | Pin | Funktion | Pegel |
 |---|---|---|---|
-| GPIO 17 | 11 | Input, Pull-Up | **Team Select**: LOW = Blau, HIGH = Gelb |
-| GPIO 22 | 15 | Input, Pull-Up | **Zugschnur**: LOW = Schnur drin, HIGH-Flanke = Start |
+| **22** | 15 | Zugschnur | Pull-Up: LOW = Schnur drin, HIGH-Flanke = Spielstart |
+
+> Team-Auswahl erfolgt beim Start über `start.sh` (interaktiv) oder `--team blue|yellow`.
 
 ### USB-Geräte am Raspberry Pi
-| Gerät | Typ | Device-Pfad |
-|---|---|---|
-| ESP32 (CP2102) | USB-UART | `/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_...-if00` |
-| STServo Controller (CH340) | USB-UART | `/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083062-if00` |
-| Lidar | USB-Serial | `/dev/serial/by-id/usb-Silicon_Labs_...-if00` |
 
-> Nach dem ersten Anschließen Pfade prüfen: `ls /dev/serial/by-id/`
-> Dann in `raspi/modules/esp32.py` → `PORT` und `raspi/modules/servos.py` → `PORT` eintragen.
+| Gerät | Chip | Device-Pfad |
+|---|---|---|
+| ESP32 | CP2102 | `/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_...-if00` |
+| STServo-Adapter (Seriennr. 5A46083059) | CH340 | `/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083059-if00` |
+| RPLIDAR A1 | CP2102N | `/dev/serial/by-id/usb-Silicon_Labs_CP2102N_USB_to_UART_Bridge_Controller_ee5a3b581464ef1196f5daa9c169b110-if00-port0` |
+
+Nach erstem Anschließen Pfade prüfen: `ls /dev/serial/by-id/`
+Dann ESP32-Pfad in `raspi/modules/esp32.py → PORT` eintragen.
 
 ---
 
-## ESP32 DevKit v1 (38-Pin)  –  nur Stepper-Antrieb
+## ESP32 DevKit v1 – Stepper-Pins
 
-| ESP32 GPIO | Funktion | Anmerkung |
+| GPIO | Funktion | Anmerkung |
 |---|---|---|
-| **GPIO 25** | STEP – Linker Motor | |
-| **GPIO 26** | DIR  – Linker Motor | HIGH = vorwärts |
-| **GPIO 32** | STEP – Rechter Motor | |
-| **GPIO 33** | DIR  – Rechter Motor | LOW = vorwärts (gespiegelt montiert) |
+| **26** | STEP – Rechter Motor | |
+| **27** | DIR – Rechter Motor | |
+| **25** | DIR – Linker Motor | Gespiegelt montiert → `setPinsInverted(true)` im Code |
+| **33** | STEP – Linker Motor | |
 
-### Serielle Kommunikation ESP32 ↔ Raspberry Pi
-UART0 (GPIO 1 TX / GPIO 3 RX) über USB (CP2102). Kein separates Kabel nötig.
+UART0 (GPIO 1 TX / GPIO 3 RX) über USB (CP2102) → Raspi. Kein separates Kabel nötig.
 
 ### Gesperrte Pins
+
 | GPIO | Grund |
 |---|---|
-| GPIO 6–11 | Intern: Flash |
-| GPIO 0, 2, 12, 15 | Boot-Mode |
-| GPIO 1, 3 | UART0 (belegt) |
+| 6–11 | Intern: Flash |
+| 0, 2, 12, 15 | Boot-Mode-Pins |
+| 1, 3 | UART0 (für Raspi-Kommunikation belegt) |
 
 ---
 
-## Stepper-Treiber Verdrahtung (TB6600)
+## TB6600 Stepper-Treiber
 
 ```
-ESP32 GPIO25 ──► PUL+  ┐
-ESP32 GPIO26 ──► DIR+  │  TB6600 Linker Motor
-GND          ──► PUL-  │  (PUL-/DIR- auf GND)
-GND          ──► DIR-  │
-Vmotor       ──► VCC   ┘  Motorspannung 9–42 V
-Motor A+/A-/B+/B- ──► Spulen
+ESP32 GPIO26 ──► PUL+  ]
+ESP32 GPIO27 ──► DIR+  ]  TB6600 – Rechter Motor
+GND          ──► PUL-  ]
+GND          ──► DIR-  ]
 
-ESP32 GPIO32 ──► PUL+  ┐
-ESP32 GPIO33 ──► DIR+  │  TB6600 Rechter Motor (gespiegelt montiert!)
-GND          ──► PUL-  │
-GND          ──► DIR-  ┘
+ESP32 GPIO33 ──► PUL+  ]
+ESP32 GPIO25 ──► DIR+  ]  TB6600 – Linker Motor (gespiegelt montiert!)
+GND          ──► PUL-  ]
+GND          ──► DIR-  ]
+
+Motorspannung 9–42 V an VCC/GND der Treiber
 ```
 
-> TB6600 Microstepping per DIP-Schalter einstellen.
-> Bei STEPS_PER_REV=200 im ESP32-Code → SW auf 1/1 (Vollschritt).
-> Für ruhigeren Lauf: 1/8 Microstepping → STEPS_PER_REV auf 1600 setzen.
+DIP-Schalter am TB6600 auf **1/16 Microstep** → passt zu `STEPS_PER_REV = 3200` im ESP-Code.
+
+Motor-Geometrie im ESP:
+- `STEPS_PER_REV = 3200` (200 Vollschritte × 16 Microsteps)
+- `WHEEL_DIAM_MM = 60`
+- `WHEELBASE_MM  = 200`
+- `MAX_SPEED = 1500 steps/s`
+- `ACCELERATION = 1200 steps/s²`
 
 ---
 
-## STServo Bus – 8 Servos (USB-Adapter am Raspi)
+## STServo Bus (Halbduplex UART, 1 MBaud)
 
-Halbduplex UART, 1 MBaud. Alle Servos auf einem Bus.
+Alle 8 Servos auf einem Bus. Gesteuert über USB-Adapter am Raspi.
 
 ### Frontgreifer (von links nach rechts)
-| Servo-ID | Funktion | pos hoch/auf | pos runter/zu |
-|---|---|---|---|
-| **2** | Greifer links außen | 100 | 630 |
-| **1** | Greifer links innen | 4000 | 3450 (home: 3000) |
-| **11** | Greifer rechts innen | 3825 ← TODO | 2500 ← TODO |
-| **9** | Greifer rechts außen | 1800 ← TODO | 2800 ← TODO |
 
-### Lift-Modul (2 Servos, gegenläufig, werden immer gleichzeitig angesteuert)
-| Servo-ID | Funktion | pos hoch | pos runter |
+| ID | Montageposition | Position auf/hoch | Position zu/runter |
 |---|---|---|---|
-| **TODO** | Lift Servo A | TODO | TODO |
-| **TODO** | Lift Servo B (gegenläufig) | TODO | TODO |
+| **2** | Ganz links (außen) | 1048 | 2000 |
+| **1** | Zweiter von links (innen) | 1500 | 2500 |
+| **11** | Zweiter von rechts (innen) | 1048 | 2100 |
+| **9** | Ganz rechts (außen) | 1048 | 2048 |
 
-### Winker (2 unabhängige Servos)
-| Servo-ID | Funktion | pos hoch | pos runter |
+### Lift-Modul
+
+| ID | Funktion | Position hoch | Position runter |
 |---|---|---|---|
-| **TODO** | Winker 1 | TODO | TODO |
-| **TODO** | Winker 2 | TODO | TODO |
+| **3** | Lift A | TODO | TODO |
+| **6** | Lift B | TODO | TODO |
+
+### Winker (relative Positionierung, kein Absolutwert)
+
+| ID | Funktion | Bewegung runter | Bewegung hoch |
+|---|---|---|---|
+| **7** | Winker links | −1707 steps (150°) | +1707 steps (150°) |
+| **8** | Winker rechts | −1707 steps (150°) | +1707 steps (150°) |
+
+`WINKER_STEPS = 1707` entspricht 150° (1707/4096 × 360° ≈ 150°).
 
 ---
 
-## Serielles Protokoll ESP32 ↔ Raspi  (115200 Baud, Newline-terminiert)
+## Serielles Protokoll ESP32 ↔ Raspi (115200 Baud, `\n`-terminiert)
 
-| Richtung | Befehl | Bedeutung |
-|---|---|---|
-| Raspi→ESP32 | `DD{mm}` | Fahre mm vorwärts (negativ = rückwärts) |
-| Raspi→ESP32 | `TA{deg}` | Drehe deg Grad (positiv = Uhrzeigersinn) |
-| Raspi→ESP32 | `ST` | Sofort stoppen |
-| Raspi→ESP32 | `SP{x};{y};{t}` | Odometrie setzen |
-| ESP32→Raspi | `OK` | Befehl fertig |
-| ESP32→Raspi | `INTERRUPTED` | Durch ST abgebrochen |
-| ESP32→Raspi | `ERR` | Unbekannter Befehl |
+### Raspi → ESP32
+
+| Befehl | Bedeutung |
+|---|---|
+| `DD{mm}` | Geradeaus fahren (+ vorwärts, − rückwärts) |
+| `TA{deg}` | Relativ drehen (+ Uhrzeigersinn, − gegen) |
+| `ST` | Bremsen → PAUSED (kein Ack, Ziel gespeichert) |
+| `RS` | Weiterfahren aus PAUSED (verbleibende Distanz) |
+| `SP{x};{y};{t}` | Odometrie setzen (kein Ack) |
+
+### ESP32 → Raspi
+
+| Antwort | Bedeutung |
+|---|---|
+| `OK` | Fahrbefehl vollständig abgeschlossen |
+| `INTERRUPTED` | Echter Abbruch (ST während PAUSED) |
+| `ERR` | Unbekannter Befehl |
 
 ---
 
-## Spielfeld-Koordinaten (Eurobot 2026)
+## Spielfeld-Koordinaten
 
 ```
-x: 0 (links) → 3000 mm (rechts)    [Zuschauerperspektive]
+x: 0 (links) → 3000 mm (rechts)   [Zuschauerperspektive]
 y: 0 (vorne) → 2000 mm (hinten)
 
-Startzone Blau:  x=0–450,     y=1550–2000  (hintere linke Ecke)
-Startzone Gelb:  x=2550–3000, y=1550–2000  (hintere rechte Ecke)
+θ = 0°:   Richtung Hinterwand (+y)
+θ = 90°:  Richtung rechts (+x)
+θ = 180°: Richtung Zuschauer (−y)
+θ = 270°: Richtung links (−x)
 
-Winkelkonvention:
-  θ=0:   fährt in +y (Richtung Hinterwand)
-  θ=90:  fährt in +x (nach rechts)
-  θ=180: fährt in -y (zum Zuschauer)
-  θ=270: fährt in -x (nach links)
+Startzone Blau:  x = 0–450,     y = 1550–2000
+Startzone Gelb:  x = 2550–3000, y = 1550–2000
 
-Nach Wall-Homing:
-  Drehachse 55 mm von Hinterwand → y_rot = 1945 mm
-  Drehachse 135 mm von linker Wand
-  Blau:  x=135,  y=1945, θ=180
-  Gelb:  x=2865, y=1945, θ=0
-```
-
----
-
-## Startablauf
-
-```
-python3 raspi/client.py   →  team blue/yellow  →  tactic N  →  ready
-  1. Homing (Greifer-Home + Wand-Kalibrierung)
-  2. Warten auf Zugschnur (GPIO 22)
-  3. Taktik ausführen (99 s)
+Nach Wall-Homing (Drehachse 55 mm von Hinterwand, 135 mm von Seitenwand):
+  Blau:  x = 135,  y = 1945, θ = 180°
+  Gelb:  x = 2865, y = 1945, θ = 0°
 ```
