@@ -276,17 +276,30 @@ class Robot:
                 break
 
     async def _run_tactic(self):
-        t = time()
-        self.esp32.time_started  = t
-        self.servos.time_started = t
-
         actions = copy.deepcopy(TACTICS[self.tactic_num])
-        task = Task(self.esp32, self.camera, self.gripper, actions, self.team, self.lidar)
-        while True:
-            task = await task.run()
-            if not task:
-                break
+        task    = Task(self.esp32, self.camera, self.gripper, actions, self.team, self.lidar)
+
+        timer = asyncio.create_task(self._game_timer())
+        try:
+            while True:
+                task = await task.run()
+                if not task:
+                    break
+        finally:
+            timer.cancel()
+            await self.esp32.set_stop()
+            self.servos.alle_auf()
+
+    async def _game_timer(self):
+        """Zentrales Zeitlimit: stoppt nach 99s alles vom Raspi aus."""
+        GAME_TIME = 98
+        await asyncio.sleep(GAME_TIME)
+        self.log(f"Spielzeit ({GAME_TIME}s) abgelaufen – stoppe.")
         await self.esp32.set_stop()
+        self.servos.alle_auf()
+        if self._game_task and not self._game_task.done():
+            self._game_task.cancel()
+        self.state = State.DONE
 
     async def _test_drive(self, mm: int):
         await self.esp32.drive_distance(mm, self.lidar)

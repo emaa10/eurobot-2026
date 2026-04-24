@@ -22,8 +22,8 @@ ROBOT_THT = 0      # °   (0 = Norden)
 DIRECTION = -1     #     (+1 vorwärts, -1 rückwärts, 0 = drehen = Vollkreis)
 
 # ── Erkennungsparameter ───────────────────────────────────────────────────
-STOP_DIST = 300    # mm  30cm Stoppschwelle
-CONE_DEG  = 45.0   # °   halber Kegelwinkel voraus/rückwärts
+STOP_DIST = 400    # mm  40cm Stoppschwelle
+CONE_DEG  = 60.0   # °   halber Kegelwinkel voraus/rückwärts (±60° = 120° gesamt)
 MIN_DIST  = 70     # mm  Eigenkörper-Radius ignorieren
 MIN_HITS  = 3      # Punkte für sicheren Treffer
 

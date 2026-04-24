@@ -19,7 +19,6 @@ import serial
 import asyncio
 import math
 import logging
-from time import time
 
 
 class ESP32:
@@ -32,17 +31,10 @@ class ESP32:
         self.ser = serial.Serial(port, baudrate, timeout=0.05)
         self.logger = logging.getLogger(__name__)
 
-        self.time_started = 9999999999999999
-
         # Dead-reckoning position (updated after each command)
         self.x: float = 0.0
         self.y: float = 0.0
         self.theta: float = 0.0
-
-        self._lidar_stopped = False
-
-    def check_time(self) -> bool:
-        return self.time_started + 99 < time()
 
     def set_pos(self, x: float, y: float, theta: float):
         self.x, self.y, self.theta = x, y, theta
@@ -69,54 +61,48 @@ class ESP32:
         except Exception:
             pass
 
-    async def _wait_for_ok(self, direction: int = 0, lidar=None):
-        """Wait for OK from ESP32. Pauses/resumes drive based on lidar obstacle detection."""
+    async def _wait_for_ok(self, direction: int = 0, lidar=None) -> bool:
+        """Wartet auf OK/INTERRUPTED vom ESP32. Gibt True zurück wenn OK, False wenn unterbrochen."""
         lidar_stopped = False
         while True:
-            if self.check_time():
-                self._write("ST")
-                return
-
             line = self._read_line()
-            if line in ('OK', 'INTERRUPTED'):
-                return
+            if line == 'OK':
+                return True
+            if line == 'INTERRUPTED':
+                return False
             elif line and line.startswith('P'):
                 self._parse_position(line)
 
             if lidar:
                 obstacle = lidar.get_stop(self.x, self.y, self.theta, direction)
                 if obstacle and not lidar_stopped:
-                    self.logger.info(f"Obstacle detected – stopping ({self.x:.0f},{self.y:.0f})")
+                    self.logger.info(f"Obstacle – stop ({self.x:.0f},{self.y:.0f})")
                     self._write("ST")
                     lidar_stopped = True
                 elif not obstacle and lidar_stopped:
-                    self.logger.info("Obstacle cleared – resuming")
+                    self.logger.info("Obstacle weg – resume")
                     self._write("RS")
                     lidar_stopped = False
 
             await asyncio.sleep(0.01)
 
     async def drive_distance(self, mm: int, lidar=None):
-        if self.check_time():
-            return
         direction = 1 if mm >= 0 else -1
         self._write(f"DD{mm}")
-        await self._wait_for_ok(direction, lidar)
-        # Update dead-reckoning position
-        rad = math.radians(self.theta)
-        self.x += mm * math.sin(rad)
-        self.y += mm * math.cos(rad)
+        ok = await self._wait_for_ok(direction, lidar)
+        if ok:
+            # Position nur bei vollständiger Fahrt aktualisieren
+            rad = math.radians(self.theta)
+            self.x += mm * math.sin(rad)
+            self.y += mm * math.cos(rad)
 
     async def turn_angle(self, deg: float, lidar=None):
-        if self.check_time():
-            return
         self._write(f"TA{int(deg)}")
-        await self._wait_for_ok(0, lidar)
-        self.theta = (self.theta + deg) % 360
+        ok = await self._wait_for_ok(0, lidar)
+        if ok:
+            self.theta = (self.theta + deg) % 360
 
     async def turn_to(self, target: float, lidar=None):
-        if self.check_time():
-            return
         delta = target - self.theta
         while delta > 180:
             delta -= 360
@@ -126,7 +112,6 @@ class ESP32:
             await self.turn_angle(delta, lidar)
 
     async def drive_to(self, x: float, y: float, lidar=None):
-        """Turn to face target, then drive straight to it."""
         dx = x - self.x
         dy = y - self.y
         dist = math.sqrt(dx ** 2 + dy ** 2)

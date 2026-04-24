@@ -1,6 +1,5 @@
 from modules.STservo_sdk import *
 from modules.STservo_sdk.sts import STS_TORQUE_ENABLE, STS_MODE
-from time import time
 
 BAUDRATE         = 1000000
 STS_MOVING_SPEED = 3000
@@ -15,25 +14,15 @@ class Servos:
     def __init__(self, port: str = PORT):
         self.port_handler   = PortHandler(port)
         self.packet_handler = sts(self.port_handler)
-        self.time_started   = 9999999999999999
-
         if not self.port_handler.openPort():
             raise RuntimeError(f"Servo port nicht gefunden: {port}")
         if not self.port_handler.setBaudRate(BAUDRATE):
             raise RuntimeError("Servo baudrate konnte nicht gesetzt werden")
 
-    def check_time(self) -> bool:
-        return self.time_started + 99 < time()
-
     def write_servo(self, id: int, goal_position: int):
-        if self.check_time():
-            return
         self.packet_handler.WritePosEx(id, goal_position, STS_MOVING_SPEED, STS_MOVING_ACC)
 
     def write_servo_relative(self, id: int, delta: int):
-        """Fährt relativ zur aktuellen Position um delta Schritte."""
-        if self.check_time():
-            return
         self.packet_handler.write1ByteTxRx(id, STS_MODE, 0)
         self.packet_handler.write1ByteTxRx(id, STS_TORQUE_ENABLE, 1)
         pos, result, _ = self.packet_handler.ReadPos(id)

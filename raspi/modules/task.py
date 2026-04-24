@@ -161,10 +161,6 @@ class Task:
                 self.logger.info(f"Unknown action: {msg}")
 
     async def run(self) -> Self | None:
-        if self.esp32.check_time():
-            await self.esp32.set_stop()
-            return None
-
         if len(self.actions) <= 0:
             if len(self.action_set) <= 0:
                 return None
