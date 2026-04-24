@@ -128,7 +128,8 @@ class Lidar:
 
     def get_stop(self, x, y, theta, direction) -> bool:
         """direction: +1 vorwärts, -1 rückwärts, 0 drehen → nie stoppen."""
-        # direction == 0 (drehen) → Vollkreis, kein Kegelfilter
+        if direction == 0:
+            return False
 
         if self.latest_scan_time + 0.02 > time():
             return self.stop_motor
