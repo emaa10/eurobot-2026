@@ -127,10 +127,7 @@ class Lidar:
         return abs(diff) <= half_deg
 
     def get_stop(self, x, y, theta, direction) -> bool:
-        """direction: +1 vorwärts, -1 rückwärts, 0 drehen → nie stoppen."""
-        if direction == 0:
-            return False
-
+        """direction: +1 vorwärts, -1 rückwärts, 0 drehen → Vollkreis-Check."""
         if self.latest_scan_time + 0.02 > time():
             return self.stop_motor
 
