@@ -68,6 +68,13 @@ class Servos:
         self.grip_rechts_innen(2)
         self.grip_rechts_aussen(2)
 
+    def alle_driving(self):
+        """Mittelposition zwischen auf und zu – für Fahrt."""
+        self.write_servo(2,  1524)  # (1048+2000)//2
+        self.write_servo(1,  2000)  # (1500+2500)//2
+        self.write_servo(11, 1574)  # (1048+2100)//2
+        self.write_servo(9,  1548)  # (1048+2048)//2
+
     def innen_zu(self):
         self.grip_links_innen(2)
         self.grip_rechts_innen(2)

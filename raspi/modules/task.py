@@ -108,7 +108,7 @@ class Task:
                     await self.esp32.turn_angle(90, self.lidar)
                     await self.esp32.home_endstop()
                     self.esp32.set_pos(2625, 55, 0)
-                self.gripper.greifen()
+                self.gripper.driving()
                 self.logger.info("homing done")
 
             case 'he':  # endstop homing – rückwärts bis Endstop

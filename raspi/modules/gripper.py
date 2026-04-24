@@ -12,6 +12,9 @@ class Gripper:
 
     # ── Greifer ───────────────────────────────────────────────────────────
 
+    def driving(self):
+        self.servos.alle_driving()
+
     def greifen(self):
         self.servos.alle_zu()
 
