@@ -172,21 +172,25 @@ class Camera:
         with self._lock:
             return list(self._latest_tags)
 
-    def get_target_side(self, team: str) -> str | None:
+    def get_gripper_positions(self, team: str) -> list[int]:
         """
-        Gibt 'left' oder 'right' zurück – die Seite auf der das eigene Kistchen liegt.
-        Reihenfolge: horizontal_angle negativ = links, positiv = rechts.
-        Gibt None zurück wenn der Ziel-Tag nicht sichtbar ist.
+        Sortiert alle sichtbaren Kistchen von links nach rechts (horizontal_angle).
+        Gibt die Indizes (0=ganz links … 3=ganz rechts) zurück, an denen das eigene
+        Team liegt. Diese Indizes entsprechen den 4 Greifern:
+          0 → linker Außengreifer
+          1 → linker Innengreifer
+          2 → rechter Innengreifer
+          3 → rechter Außengreifer
         """
         target_id = self.TAG_YELLOW if team == 'yellow' else self.TAG_BLUE
         with self._lock:
-            tags = {t.id: t for t in self._latest_tags}
+            tags = list(self._latest_tags)
 
-        if target_id not in tags:
-            return None
+        if not tags:
+            return []
 
-        angle = tags[target_id].horizontal_angle
-        return 'left' if angle < 0 else 'right'
+        tags_sorted = sorted(tags, key=lambda t: t.horizontal_angle)
+        return [i for i, t in enumerate(tags_sorted) if t.id == target_id]
 
     def stop(self):
         self.running = False
