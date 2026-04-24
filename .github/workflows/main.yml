@@ -9,49 +9,43 @@ jobs:
     name: Check Python Syntax
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Check Python syntax
-        run: |
-          find raspi/ -name "*.py" -exec python3 -m py_compile {} +
+        run: find raspi/ -name "*.py" -exec python3 -m py_compile {} +
 
   build-esp:
     name: Build ESP
     runs-on: ubuntu-latest
     needs: check-python
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ runner.os }}-${{ hashFiles('ESP/platformio.ini') }}
+          restore-keys: pio-${{ runner.os }}-
+
       - name: Install PlatformIO
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install platformio
+        run: pip install platformio
 
       - name: Build ESP code
-        run: |
-          source venv/bin/activate
-          cd ESP
-          pio run
+        run: cd ESP && python3 -m platformio run
 
-      - name: Upload ESP build artifacts
+      - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: esp-build
-          path: ESP/.pio/build/
+          name: esp-firmware
+          path: |
+            ESP/.pio/build/esp32dev/firmware.bin
+            ESP/.pio/build/esp32dev/firmware.elf

@@ -1,4 +1,23 @@
+/*
+ * Eurobot 2026 – ESP32 Drive Controller
+ *
+ * Core 0: stepperTask  – AccelStepper (blockierend bis fertig)
+ * Core 1: uartTask     – Serial I/O, Command-Queue
+ *
+ * Raspi → ESP32:
+ *   DD{mm}         Geradeaus  (+ vorwärts, – rückwärts)
+ *   TA{deg}        Drehen     (+ im Uhrzeigersinn)
+ *   ST             Sofort stoppen
+ *   SP{x};{y};{t}  Odometrie setzen (kein Ack)
+ *
+ * ESP32 → Raspi:
+ *   OK             Befehl vollständig ausgeführt
+ *   INTERRUPTED    Befehl durch ST abgebrochen
+ *   ERR            Unbekannter Befehl
+ */
+
 #include <Arduino.h>
+#include <AccelStepper.h>
 
 // ═══════════════════════════════════════════════════════════
 //  PINS  – nur Stepper
