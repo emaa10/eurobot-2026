@@ -28,7 +28,7 @@
 // ── Motor-Geometrie – AN HARDWARE ANPASSEN ───────────────────────────────
 // Falls Roboter falsch dreht/fährt: INVERT_L oder INVERT_R togglen.
 // Falls Distanz/Winkel falsch: WHEEL_DIAM_MM bzw. WHEELBASE_MM anpassen.
-static constexpr float STEPS_PER_REV = 723.0f;
+static constexpr float STEPS_PER_REV = 730.0f;
 static constexpr float WHEEL_DIAM_MM = 48.0f;    // Erhöhen wenn zu kurz, verringern wenn zu weit
 static constexpr float WHEELBASE_MM  = 220.0f;
 static constexpr float STEPS_PER_MM  = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);

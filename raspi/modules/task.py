@@ -94,19 +94,24 @@ class Task:
 
             case 'hm':  # autonomous wall homing
                 self.logger.info(f"homing ({self.color})")
-                back_dist = -300 if self.color == 'blue' else 300
-                await self.esp32.drive_distance(back_dist, self.lidar)
-                await asyncio.sleep(0.5)
-                await self.esp32.drive_distance(-back_dist // 6, self.lidar)
-                await self.esp32.turn_angle(90, self.lidar)
-                await self.esp32.drive_distance(300, self.lidar)
-                await asyncio.sleep(0.5)
-                await self.esp32.drive_distance(-50, self.lidar)
-                await self.esp32.turn_angle(-90, self.lidar)
                 if self.color == 'blue':
-                    self.esp32.set_pos(135, 1945, 180)
+                    # Start facing +x (θ=90): backward → x=0 wall, forward 25cm, turn right → θ=180, forward → y=0 wall
+                    await self.esp32.drive_distance(-300, self.lidar)
+                    await asyncio.sleep(0.5)
+                    await self.esp32.drive_distance(250, self.lidar)
+                    await self.esp32.turn_angle(90, self.lidar)
+                    await self.esp32.drive_distance(250, self.lidar)
+                    await asyncio.sleep(0.5)
+                    self.esp32.set_pos(305, 55, 180)
                 else:
-                    self.esp32.set_pos(2865, 1945, 0)
+                    # Start facing -x (θ=270): backward → x=3000 wall, forward 25cm, turn right → θ=0, backward → y=0 wall
+                    await self.esp32.drive_distance(-300, self.lidar)
+                    await asyncio.sleep(0.5)
+                    await self.esp32.drive_distance(250, self.lidar)
+                    await self.esp32.turn_angle(90, self.lidar)
+                    await self.esp32.drive_distance(-250, self.lidar)
+                    await asyncio.sleep(0.5)
+                    self.esp32.set_pos(2695, 55, 0)
                 self.logger.info("homing done")
 
             case 'hg':  # home gripper
