@@ -127,15 +127,17 @@ class Task:
                     lambda: self.gripper.servos.grip_rechts_innen(1),
                     lambda: self.gripper.servos.grip_rechts_aussen(1),
                 ]
+                _NAMEN = ['links-außen', 'links-innen', 'rechts-innen', 'rechts-außen']
                 positions = self.camera.get_gripper_positions(self.color) if self.camera else []
                 if positions:
                     for p in positions:
                         if 0 <= p < 4:
                             _GRIPPER_FUNCS[p]()
-                    self.logger.info(f"camera: Positionen {positions} → Greifer auf")
+                    gr = ', '.join(_NAMEN[p] for p in positions if 0 <= p < 4)
+                    self.logger.info(f"[GR] auf: {gr}")
                 else:
                     self.gripper.loslassen()
-                    self.logger.info("camera: keine Kistchen sichtbar → alle Greifer auf")
+                    self.logger.info("[GR] keine Kistchen sichtbar → alle Greifer auf")
 
             case 'gr':  # greifer zu
                 self.gripper.greifen()

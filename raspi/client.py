@@ -42,6 +42,16 @@ def _colorize(line: str) -> str:
         return f"\033[92m{line}\033[0m"      # Grün
     if line.startswith('ERR'):
         return f"\033[91m{line}\033[0m"      # Rot
+    if line.startswith('LOG') and '[CAM]' in line:
+        if 'blau' in line and 'gelb' in line:
+            return f"\033[95m{line}\033[0m"  # Magenta (beide Farben)
+        if 'blau' in line:
+            return f"\033[94m{line}\033[0m"  # Blau
+        if 'gelb' in line:
+            return f"\033[93m{line}\033[0m"  # Gelb
+        return f"\033[96m{line}\033[0m"      # Cyan (keine Tags)
+    if line.startswith('LOG') and '[GR]' in line:
+        return f"\033[92;1m{line}\033[0m"    # Grün fett (Greifer-Aktion)
     if line.startswith('LOG'):
         return f"\033[90m{line}\033[0m"      # Grau
     if line.startswith('───') or line.startswith('──'):
