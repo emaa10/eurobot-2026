@@ -72,6 +72,8 @@ static void serialPrintln(const char* msg) {
 enum class MotionState { IDLE, MOVING, STOPPING, PAUSED, HOMING, HOMING_STOP };
 
 static long savedTargetR = 0, savedTargetL = 0;
+static long homingStartPosR = 0;
+static constexpr long MIN_HOMING_STEPS = 400;  // ~83mm Mindestfahrt vor Endstop-Check
 
 static void stepperTask(void*) {
     MotionState state = MotionState::IDLE;
@@ -97,6 +99,7 @@ static void stepperTask(void*) {
                     stepperL.setMaxSpeed(HOMING_SPEED * MAX_SPEED_L / MAX_SPEED_R);
                     stepperR.move(-100000L);
                     stepperL.move(lroundf(-100000.0f * MAX_SPEED_L / MAX_SPEED_R));
+                    homingStartPosR = stepperR.currentPosition();
                     state = MotionState::HOMING;
                 }
             }
@@ -143,7 +146,8 @@ static void stepperTask(void*) {
         if (state == MotionState::HOMING) {
             stepperR.run();
             stepperL.run();
-            if (digitalRead(ENDSTOP_PIN) == LOW) {
+            bool travelledEnough = abs(stepperR.currentPosition() - homingStartPosR) >= MIN_HOMING_STEPS;
+            if (travelledEnough && digitalRead(ENDSTOP_PIN) == HIGH) {
                 stepperR.stop();
                 stepperL.stop();
                 state = MotionState::HOMING_STOP;
@@ -179,6 +183,9 @@ static void uartTask(void*) {
                         stopFlag = true;
                     } else if (buf == "RS") {
                         resumeFlag = true;
+                    } else if (buf == "ES") {
+                        // Debug: Endstop-Status zurückmelden
+                        serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ENDSTOP:LOW" : "ENDSTOP:HIGH");
                     } else if (buf == "HE") {
                         cmd.type = 'H';
                         stopFlag = false;
