@@ -46,7 +46,8 @@ static QueueHandle_t cmdQueue;
 
 // ── Shared ────────────────────────────────────────────────────────────────
 static SemaphoreHandle_t serialMtx;
-static volatile bool stopFlag = false;
+static volatile bool stopFlag   = false;
+static volatile bool resumeFlag = false;
 
 static void serialPrintln(const char* msg) {
     if (xSemaphoreTake(serialMtx, pdMS_TO_TICKS(50)) == pdTRUE) {
@@ -57,48 +58,75 @@ static void serialPrintln(const char* msg) {
 }
 
 // ── Core 0: Stepper-Task ──────────────────────────────────────────────────
-enum class MotionState { IDLE, MOVING, STOPPING };
+//
+//  IDLE ──DD/TA──► MOVING ──ST──► STOPPING ──stillstand──► PAUSED
+//                                                              │
+//                  ◄─────────────────── RS ───────────────────┘
+//  PAUSED ──ST──► IDLE  (sendet INTERRUPTED = echter Abbruch)
+//
+enum class MotionState { IDLE, MOVING, STOPPING, PAUSED };
+
+static long savedTargetR = 0, savedTargetL = 0;
 
 static void stepperTask(void*) {
     MotionState state = MotionState::IDLE;
     Cmd cmd = {};
 
     while (true) {
-        // Blockiert im IDLE, poll im MOVING/STOPPING
         TickType_t wait = (state == MotionState::IDLE) ? portMAX_DELAY : 0;
         if (xQueueReceive(cmdQueue, &cmd, wait) == pdTRUE) {
             if (state == MotionState::IDLE) {
                 if (cmd.type == 'D') {
                     long s = lroundf(cmd.val * STEPS_PER_MM);
                     stepperR.move(s);
-                    stepperL.move(s);   // gleiche Richtung, gleiche Montage
+                    stepperL.move(s);
                     state = MotionState::MOVING;
                 } else if (cmd.type == 'T') {
                     long s = lroundf(cmd.val * STEPS_PER_DEG);
-                    // CW (+deg): R rückwärts, L vorwärts
                     stepperR.move(-s);
                     stepperL.move(s);
                     state = MotionState::MOVING;
                 }
             }
-            // Neue DD/TA während MOVING → ignoriert (Raspi wartet auf OK/INTERRUPTED)
         }
 
-        // ST-Flag: interrupt laufende Bewegung
-        if (state == MotionState::MOVING && stopFlag) {
+        if (stopFlag) {
             stopFlag = false;
-            stepperR.stop();
-            stepperL.stop();
-            state = MotionState::STOPPING;
+            if (state == MotionState::MOVING) {
+                // Original-Ziel sichern, dann bremsen → STOPPING → PAUSED
+                savedTargetR = stepperR.targetPosition();
+                savedTargetL = stepperL.targetPosition();
+                stepperR.stop();
+                stepperL.stop();
+                state = MotionState::STOPPING;
+            } else if (state == MotionState::PAUSED) {
+                // ST im Pause = echter Abbruch
+                state = MotionState::IDLE;
+                serialPrintln("INTERRUPTED");
+            }
         }
 
-        if (state != MotionState::IDLE) {
+        if (resumeFlag) {
+            resumeFlag = false;
+            if (state == MotionState::PAUSED) {
+                long remR = savedTargetR - stepperR.currentPosition();
+                long remL = savedTargetL - stepperL.currentPosition();
+                stepperR.move(remR);
+                stepperL.move(remL);
+                state = MotionState::MOVING;
+            }
+        }
+
+        if (state == MotionState::MOVING || state == MotionState::STOPPING) {
             stepperR.run();
             stepperL.run();
             if (!stepperR.isRunning() && !stepperL.isRunning()) {
-                bool interrupted = (state == MotionState::STOPPING);
-                state = MotionState::IDLE;
-                serialPrintln(interrupted ? "INTERRUPTED" : "OK");
+                if (state == MotionState::STOPPING) {
+                    state = MotionState::PAUSED;  // warte auf RS, kein Ack
+                } else {
+                    state = MotionState::IDLE;
+                    serialPrintln("OK");
+                }
             }
         }
     }
@@ -118,6 +146,8 @@ static void uartTask(void*) {
                     Cmd cmd = {};
                     if (buf == "ST") {
                         stopFlag = true;
+                    } else if (buf == "RS") {
+                        resumeFlag = true;
                     } else if (buf.startsWith("DD")) {
                         cmd.type = 'D';
                         cmd.val  = (int32_t)buf.substring(2).toInt();
