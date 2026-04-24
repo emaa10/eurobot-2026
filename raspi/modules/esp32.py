@@ -126,5 +126,10 @@ class ESP32:
         await self.drive_to(x, y, lidar)
         await self.turn_to(theta, lidar)
 
+    async def home_endstop(self):
+        """Rückwärts fahren bis Endstop (GPIO5 am ESP32 LOW), dann OK abwarten."""
+        self._write("HE")
+        await self._wait_for_ok(0)
+
     async def set_stop(self):
         self._write("ST")

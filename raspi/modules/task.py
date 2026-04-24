@@ -95,25 +95,24 @@ class Task:
             case 'hm':  # autonomous wall homing
                 self.logger.info(f"homing ({self.color})")
                 if self.color == 'blue':
-                    # Start facing +x (θ=90): backward → x=0 wall, forward 30cm, turn left → θ=0, backward → y=0 wall
-                    await self.esp32.drive_distance(-300, self.lidar)
-                    await asyncio.sleep(0.5)
+                    # Start facing +x (θ=90): endstop → x=0 wall, forward 32cm, turn left → θ=0, endstop → y=0 wall
+                    await self.esp32.home_endstop()
                     await self.esp32.drive_distance(320, self.lidar)
                     await self.esp32.turn_angle(-90, self.lidar)
-                    await self.esp32.drive_distance(-250, self.lidar)
-                    await asyncio.sleep(0.5)
+                    await self.esp32.home_endstop()
                     self.esp32.set_pos(375, 55, 0)
                 else:
-                    # Start facing -x (θ=270): backward → x=3000 wall, forward 30cm, turn right → θ=0, backward → y=0 wall
-                    await self.esp32.drive_distance(-300, self.lidar)
-                    await asyncio.sleep(0.5)
+                    # Start facing -x (θ=270): endstop → x=3000 wall, forward 32cm, turn right → θ=0, endstop → y=0 wall
+                    await self.esp32.home_endstop()
                     await self.esp32.drive_distance(320, self.lidar)
                     await self.esp32.turn_angle(90, self.lidar)
-                    await self.esp32.drive_distance(-250, self.lidar)
-                    await asyncio.sleep(0.5)
+                    await self.esp32.home_endstop()
                     self.esp32.set_pos(2625, 55, 0)
                 self.gripper.greifen()
                 self.logger.info("homing done")
+
+            case 'he':  # endstop homing – rückwärts bis Endstop
+                await self.esp32.home_endstop()
 
             case 'hg':  # home gripper
                 self.gripper.home()

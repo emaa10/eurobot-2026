@@ -7,7 +7,9 @@
  * Raspi → ESP32:
  *   DD{mm}         Geradeaus  (+ vorwärts, – rückwärts)
  *   TA{deg}        Drehen     (+ im Uhrzeigersinn)
+ *   HE             Endstop-Homing: rückwärts bis GPIO5 LOW, dann OK
  *   ST             Sofort stoppen (interrupt, kein Queue)
+ *   RS             Weiterfahren nach ST
  *   SP{x};{y};{t}  Odometrie setzen (kein Ack)
  *
  * ESP32 → Raspi:
@@ -20,29 +22,29 @@
 #include <AccelStepper.h>
 
 // ── Pins ──────────────────────────────────────────────────────────────────
-#define STEP_R 26
-#define DIR_R  27
-#define DIR_L  25
-#define STEP_L 33
+#define STEP_R       26
+#define DIR_R        27
+#define DIR_L        25
+#define STEP_L       33
+#define ENDSTOP_PIN   5   // INPUT_PULLUP: HIGH = offen, LOW = gedrückt
 
 // ── Motor-Geometrie – AN HARDWARE ANPASSEN ───────────────────────────────
-// Falls Roboter falsch dreht/fährt: INVERT_L oder INVERT_R togglen.
-// Falls Distanz/Winkel falsch: WHEEL_DIAM_MM bzw. WHEELBASE_MM anpassen.
 static constexpr float STEPS_PER_REV = 730.0f;
-static constexpr float WHEEL_DIAM_MM = 48.0f;    // Erhöhen wenn zu kurz, verringern wenn zu weit
-static constexpr float WHEELBASE_MM  = 220.0f;
+static constexpr float WHEEL_DIAM_MM = 48.0f;
+static constexpr float WHEELBASE_MM  = 226.0f;
 static constexpr float STEPS_PER_MM  = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);
 static constexpr float STEPS_PER_DEG = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
 static constexpr float MAX_SPEED_R   = 1500.0f;
 static constexpr float MAX_SPEED_L   = 1465.0f;  // 2.3% langsamer → Rechtsdrall korrigieren
 static constexpr float ACCEL         = 1200.0f;  // steps/s²
+static constexpr float HOMING_SPEED  = 300.0f;   // steps/s – langsam an Wand heranfahren
 
 // ── AccelStepper ──────────────────────────────────────────────────────────
 AccelStepper stepperR(AccelStepper::DRIVER, STEP_R, DIR_R);
 AccelStepper stepperL(AccelStepper::DRIVER, STEP_L, DIR_L);
 
 // ── Command queue ─────────────────────────────────────────────────────────
-struct Cmd { char type; int32_t val; };  // type: 'D'=DD, 'T'=TA
+struct Cmd { char type; int32_t val; };  // type: 'D'=DD, 'T'=TA, 'H'=HE
 static QueueHandle_t cmdQueue;
 
 // ── Shared ────────────────────────────────────────────────────────────────
@@ -63,9 +65,11 @@ static void serialPrintln(const char* msg) {
 //  IDLE ──DD/TA──► MOVING ──ST──► STOPPING ──stillstand──► PAUSED
 //                                                              │
 //                  ◄─────────────────── RS ───────────────────┘
-//  PAUSED ──ST──► IDLE  (sendet INTERRUPTED = echter Abbruch)
+//  PAUSED ──ST──► IDLE  (sendet INTERRUPTED)
 //
-enum class MotionState { IDLE, MOVING, STOPPING, PAUSED };
+//  IDLE ──HE──► HOMING ──endstop LOW──► HOMING_STOP ──stillstand──► IDLE (OK)
+//
+enum class MotionState { IDLE, MOVING, STOPPING, PAUSED, HOMING, HOMING_STOP };
 
 static long savedTargetR = 0, savedTargetL = 0;
 
@@ -87,6 +91,13 @@ static void stepperTask(void*) {
                     stepperR.move(-s);
                     stepperL.move(lroundf(s * MAX_SPEED_L / MAX_SPEED_R));
                     state = MotionState::MOVING;
+                } else if (cmd.type == 'H') {
+                    // Langsam rückwärts bis Endstop
+                    stepperR.setMaxSpeed(HOMING_SPEED);
+                    stepperL.setMaxSpeed(HOMING_SPEED * MAX_SPEED_L / MAX_SPEED_R);
+                    stepperR.move(-100000L);
+                    stepperL.move(lroundf(-100000.0f * MAX_SPEED_L / MAX_SPEED_R));
+                    state = MotionState::HOMING;
                 }
             }
         }
@@ -94,14 +105,12 @@ static void stepperTask(void*) {
         if (stopFlag) {
             stopFlag = false;
             if (state == MotionState::MOVING) {
-                // Original-Ziel sichern, dann bremsen → STOPPING → PAUSED
                 savedTargetR = stepperR.targetPosition();
                 savedTargetL = stepperL.targetPosition();
                 stepperR.stop();
                 stepperL.stop();
                 state = MotionState::STOPPING;
             } else if (state == MotionState::PAUSED) {
-                // ST im Pause = echter Abbruch
                 state = MotionState::IDLE;
                 serialPrintln("INTERRUPTED");
             }
@@ -123,11 +132,32 @@ static void stepperTask(void*) {
             stepperL.run();
             if (!stepperR.isRunning() && !stepperL.isRunning()) {
                 if (state == MotionState::STOPPING) {
-                    state = MotionState::PAUSED;  // warte auf RS, kein Ack
+                    state = MotionState::PAUSED;
                 } else {
                     state = MotionState::IDLE;
                     serialPrintln("OK");
                 }
+            }
+        }
+
+        if (state == MotionState::HOMING) {
+            stepperR.run();
+            stepperL.run();
+            if (digitalRead(ENDSTOP_PIN) == LOW) {
+                stepperR.stop();
+                stepperL.stop();
+                state = MotionState::HOMING_STOP;
+            }
+        }
+
+        if (state == MotionState::HOMING_STOP) {
+            stepperR.run();
+            stepperL.run();
+            if (!stepperR.isRunning() && !stepperL.isRunning()) {
+                stepperR.setMaxSpeed(MAX_SPEED_R);
+                stepperL.setMaxSpeed(MAX_SPEED_L);
+                state = MotionState::IDLE;
+                serialPrintln("OK");
             }
         }
     }
@@ -149,6 +179,10 @@ static void uartTask(void*) {
                         stopFlag = true;
                     } else if (buf == "RS") {
                         resumeFlag = true;
+                    } else if (buf == "HE") {
+                        cmd.type = 'H';
+                        stopFlag = false;
+                        xQueueSend(cmdQueue, &cmd, pdMS_TO_TICKS(200));
                     } else if (buf.startsWith("DD")) {
                         cmd.type = 'D';
                         cmd.val  = (int32_t)buf.substring(2).toInt();
@@ -168,7 +202,7 @@ static void uartTask(void*) {
                 }
             } else if (c != '\r') {
                 buf += c;
-                if (buf.length() > 64) buf = "";  // Overflow-Schutz
+                if (buf.length() > 64) buf = "";
             }
         }
         vTaskDelay(pdMS_TO_TICKS(1));
@@ -178,13 +212,15 @@ static void uartTask(void*) {
 // ── Setup / Loop ──────────────────────────────────────────────────────────
 void setup() {
     Serial.begin(115200);
-    disableCore0WDT();  // stepperTask läuft als Tight-Loop auf Core 0 ohne yield
+    disableCore0WDT();
+
+    pinMode(ENDSTOP_PIN, INPUT_PULLUP);
 
     stepperR.setMaxSpeed(MAX_SPEED_R);
-    stepperR.setAcceleration(ACCEL * (MAX_SPEED_R / MAX_SPEED_L));  // gleiche Accel/Decel-Zeit wie L
+    stepperR.setAcceleration(ACCEL * (MAX_SPEED_R / MAX_SPEED_L));
     stepperL.setMaxSpeed(MAX_SPEED_L);
     stepperL.setAcceleration(ACCEL);
-    stepperL.setPinsInverted(true, false, false);  // DIR_L invertieren
+    stepperL.setPinsInverted(true, false, false);
 
     cmdQueue  = xQueueCreate(8, sizeof(Cmd));
     serialMtx = xSemaphoreCreateMutex();
@@ -194,5 +230,5 @@ void setup() {
 }
 
 void loop() {
-    vTaskDelay(portMAX_DELAY);  // Arduino-Loop ceded, alles in FreeRTOS-Tasks
+    vTaskDelay(portMAX_DELAY);
 }
