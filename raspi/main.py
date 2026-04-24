@@ -1,10 +1,11 @@
 """
 Eurobot 2026 – Hauptprogramm
 
-Startet automatisch via systemd und wartet auf client.py.
-Alle Steuerung (Team, Taktik, Homing, Test-Befehle) läuft über die TCP-Verbindung.
+Startet via start.sh (team-Auswahl interaktiv) oder systemd (--team blue/yellow).
+Alle Steuerung (Taktik, Homing, Test-Befehle) läuft über die TCP-Verbindung.
 """
 
+import argparse
 import asyncio
 import logging
 import signal
@@ -20,8 +21,7 @@ from modules.servos import Servos
 from modules.gripper import Gripper
 from modules.lidar import Lidar
 
-PIN_PULLCORD    = 22   # Pull-Up: LOW = Schnur drin, HIGH-Flanke = Start
-PIN_TEAM_SELECT = 17   # Pull-Up: LOW = Blau, HIGH = Gelb
+PIN_PULLCORD = 22   # Pull-Up: LOW = Schnur drin, HIGH-Flanke = Start
 
 HOST     = '127.0.0.1'
 PORT     = 5001
@@ -62,10 +62,9 @@ class _QueueLogHandler(logging.Handler):
 
 # ── Haupt-Controller ──────────────────────────────────────────────────────
 class Robot:
-    def __init__(self):
+    def __init__(self, team: str):
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(PIN_PULLCORD,    GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(PIN_TEAM_SELECT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(PIN_PULLCORD, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
         logging.basicConfig(
             filename=LOG_FILE, level=logging.INFO,
@@ -79,7 +78,7 @@ class Robot:
 
         # Zustand
         self.state      = State.IDLE
-        self.team       = 'blue' if GPIO.input(PIN_TEAM_SELECT) == GPIO.LOW else 'yellow'
+        self.team       = team
         self.tactic_num = 1
         self._game_task: asyncio.Task | None = None
         self._writer:    asyncio.StreamWriter | None = None
@@ -95,7 +94,7 @@ class Robot:
             self.log("Warning: Lidar nicht gestartet")
         self.camera.start()
 
-        self.log(f"Bereit. Team (GPIO): {self.team}")
+        self.log(f"Bereit. Team: {self.team}")
 
     # ── Logging ───────────────────────────────────────────────────────────
 
@@ -121,11 +120,11 @@ class Robot:
 
     async def _status(self):
         lines = [
-            f"state   {self.state.value}",
-            f"team    {self.team}",
-            f"tactic  {self.tactic_num}",
-            f"pos     x={self.esp32.x:.0f} y={self.esp32.y:.0f} θ={self.esp32.theta:.1f}°",
-            f"lidar   {'ok' if self.lidar.is_running() else 'FEHLT'}",
+            f"state    {self.state.value}",
+            f"team     {self.team}",
+            f"tactic   {self.tactic_num}",
+            f"pos      x={self.esp32.x:.0f} y={self.esp32.y:.0f} θ={self.esp32.theta:.1f}°",
+            f"lidar    {'ok' if self.lidar.is_running() else 'FEHLT'}",
             f"pullcord {'gezogen' if GPIO.input(PIN_PULLCORD) == GPIO.HIGH else 'drin'}",
         ]
         await self._send("─── Status " + "─" * 30)
@@ -369,8 +368,16 @@ class Robot:
 
 # ── Entry point ───────────────────────────────────────────────────────────
 
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description='Eurobot 2026 Hauptprogramm')
+    p.add_argument('--team', choices=['blue', 'yellow'], default='blue',
+                   help='Teamfarbe (default: blue)')
+    return p.parse_args()
+
+
 async def main():
-    robot = Robot()
+    args  = _parse_args()
+    robot = Robot(team=args.team)
     loop  = asyncio.get_running_loop()
 
     loop.add_signal_handler(signal.SIGINT,  lambda: asyncio.create_task(_shutdown(robot, loop)))

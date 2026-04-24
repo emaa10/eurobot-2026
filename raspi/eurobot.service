@@ -10,7 +10,7 @@ WorkingDirectory=/home/eurobot/eurobot-2026/raspi
 
 # 5 Sekunden warten damit USB-Geräte (ESP32, Servos) nach Boot bereit sind
 ExecStartPre=/bin/sleep 5
-ExecStart=/usr/bin/python3 -u main.py
+ExecStart=/usr/bin/python3 -u main.py --team blue
 
 # Bei Fehler (z.B. USB noch nicht bereit) nach 10 s neu starten
 Restart=on-failure
