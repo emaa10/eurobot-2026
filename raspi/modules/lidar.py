@@ -115,41 +115,54 @@ class Lidar:
         
         self.logger.info("Lidar stopped")
         
+    # Erkennungsparameter
+    STOP_DIST = 300   # mm  Stoppschwelle
+    CONE_DEG  = 45.0  # °   halber Kegelwinkel voraus/rückwärts
+    MIN_DIST  = 70    # mm  Eigenkörper ignorieren
+    MIN_HITS  = 3     # Punkte für sicheren Treffer
+
+    @staticmethod
+    def _in_cone(angle, center_deg, half_deg):
+        diff = (angle - center_deg + 180) % 360 - 180
+        return abs(diff) <= half_deg
+
     def get_stop(self, x, y, theta, direction) -> bool:
-        latest_scan = None
-        
-        if self.latest_scan_time + 0.02 <= time():
-            latest_scan = self.get_latest_scan()
-            self.latest_scan_time = time()
-        
-        if latest_scan: 
-            self.stop_motor = False
-            obstacles = 0
-            for angle, distance in latest_scan:
-                # point in relation to bot
-                d_x = distance * math.sin(angle * math.pi / 180)
-                d_y = distance * math.cos(angle * math.pi / 180)
-                 
-                # point in arena
-                arena_angle_rad = (angle + theta) * math.pi / 180 
-                arena_x = -distance * math.sin(arena_angle_rad) + x 
-                arena_y = distance * math.cos(arena_angle_rad) + y 
-                
-                point_in_arena = 0 <= arena_x <= 3000 and 0 <= arena_y <= 2000
-                # point_in_arena = False # ÄNDERN FÜR MATCH
-                            
-                if (direction >= 0 and 0 <= d_y <= 450) and abs(d_x) <= 220 and point_in_arena and distance > 70:
-                    self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
-                    obstacles += 1
-                
-                if  (direction <= 0 and 0 >= d_y >= -320) and abs(d_x) <= 220 and point_in_arena and distance > 70:
-                    self.logger.info(f'Obstacle: x: {d_x}, y: {d_y}, angle: {angle}, distance: {distance}')
-                    obstacles += 1
-                
-                if obstacles >= 3:
-                    self.stop_motor = True
-                    break
-                
+        """direction: +1 vorwärts, -1 rückwärts, 0 drehen → nie stoppen."""
+        # direction == 0 (drehen) → Vollkreis, kein Kegelfilter
+
+        if self.latest_scan_time + 0.02 > time():
+            return self.stop_motor
+
+        latest_scan = self.get_latest_scan()
+        self.latest_scan_time = time()
+
+        if not latest_scan:
+            return self.stop_motor
+
+        self.stop_motor = False
+        obstacles = 0
+        for angle, distance in latest_scan:
+            if distance < self.MIN_DIST or distance > self.STOP_DIST:
+                continue
+
+            # Kegelfilter nur beim Fahren, beim Drehen (0) Vollkreis
+            if direction > 0 and not self._in_cone(angle, 270, self.CONE_DEG):
+                continue
+            if direction < 0 and not self._in_cone(angle, 90, self.CONE_DEG):
+                continue
+
+            arena_rad = (angle + theta) * math.pi / 180
+            arena_x = -distance * math.sin(arena_rad) + x
+            arena_y =  distance * math.cos(arena_rad) + y
+            if not (0 <= arena_x <= 3000 and 0 <= arena_y <= 2000):
+                continue
+
+            self.logger.info(f'Obstacle: angle={angle:.1f}° dist={distance:.0f}mm')
+            obstacles += 1
+            if obstacles >= self.MIN_HITS:
+                self.stop_motor = True
+                break
+
         return self.stop_motor
 
 # Example usage

@@ -269,7 +269,7 @@ class Robot:
 
     async def _do_homing(self):
         homing = Task(self.esp32, self.camera, self.gripper,
-                      [['hg', 'hm']], self.team)
+                      [['hg', 'hm']], self.team, self.lidar)
         while True:
             homing = await homing.run()
             if not homing:
@@ -281,7 +281,7 @@ class Robot:
         self.servos.time_started = t
 
         actions = copy.deepcopy(TACTICS[self.tactic_num])
-        task = Task(self.esp32, self.camera, self.gripper, actions, self.team)
+        task = Task(self.esp32, self.camera, self.gripper, actions, self.team, self.lidar)
         while True:
             task = await task.run()
             if not task:
@@ -289,11 +289,11 @@ class Robot:
         await self.esp32.set_stop()
 
     async def _test_drive(self, mm: int):
-        await self.esp32.drive_distance(mm)
+        await self.esp32.drive_distance(mm, self.lidar)
         await self._ok(f"drive {mm} mm fertig")
 
     async def _test_turn(self, deg: float):
-        await self.esp32.turn_angle(deg)
+        await self.esp32.turn_angle(deg, self.lidar)
         await self._ok(f"turn {deg}° fertig")
 
     # ── TCP-Server ────────────────────────────────────────────────────────

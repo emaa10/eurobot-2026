@@ -6,6 +6,7 @@ from typing import Self
 from modules.esp32 import ESP32
 from modules.camera import Camera
 from modules.gripper import Gripper
+from modules.lidar import Lidar
 
 
 def _mirror(x: int, y: int, theta: int | None = None):
@@ -19,10 +20,11 @@ def _mirror(x: int, y: int, theta: int | None = None):
 
 class Task:
     def __init__(self, esp32: ESP32, camera: Camera, gripper: Gripper,
-                 action_set: list[list[str]], color: str):
+                 action_set: list[list[str]], color: str, lidar: Lidar | None = None):
         self.esp32   = esp32
         self.camera  = camera
         self.gripper = gripper
+        self.lidar   = lidar
         self.color   = color  # 'blue' | 'yellow'
 
         self.action_set      = action_set
@@ -54,7 +56,7 @@ class Task:
         match cmd:
             case 'dd':  # drive distance mm
                 dist = int(msg[2:])
-                await self.esp32.drive_distance(dist if self.color == 'blue' else -dist)
+                await self.esp32.drive_distance(dist if self.color == 'blue' else -dist, self.lidar)
 
             case 'dp':  # drive to point  x;y[;theta]
                 vals = msg[2:].split(';')
@@ -62,20 +64,20 @@ class Task:
                 theta = int(vals[2]) if len(vals) >= 3 else None
                 if theta is not None:
                     px, py, pt = self._pt(x, y, theta)
-                    await self.esp32.drive_to(px, py)
-                    await self.esp32.turn_to(pt)
+                    await self.esp32.drive_to(px, py, self.lidar)
+                    await self.esp32.turn_to(pt, self.lidar)
                 else:
                     px, py = self._pt(x, y)
-                    await self.esp32.drive_to(px, py)
+                    await self.esp32.drive_to(px, py, self.lidar)
 
             case 'ta':  # turn angle relative degrees
-                await self.esp32.turn_angle(self._angle(int(msg[2:])))
+                await self.esp32.turn_angle(self._angle(int(msg[2:])), self.lidar)
 
             case 'tt':  # turn to absolute degrees
                 theta = int(msg[2:])
                 if self.color == 'yellow':
                     _, __, theta = _mirror(0, 0, theta)
-                await self.esp32.turn_to(theta)
+                await self.esp32.turn_to(theta, self.lidar)
 
             case 'sp':  # set odometry  x;y;theta
                 vals = msg[2:].split(';')
@@ -93,14 +95,14 @@ class Task:
             case 'hm':  # autonomous wall homing
                 self.logger.info(f"homing ({self.color})")
                 back_dist = -300 if self.color == 'blue' else 300
-                await self.esp32.drive_distance(back_dist)
+                await self.esp32.drive_distance(back_dist, self.lidar)
                 await asyncio.sleep(0.5)
-                await self.esp32.drive_distance(-back_dist // 6)
-                await self.esp32.turn_angle(90)
-                await self.esp32.drive_distance(300)
+                await self.esp32.drive_distance(-back_dist // 6, self.lidar)
+                await self.esp32.turn_angle(90, self.lidar)
+                await self.esp32.drive_distance(300, self.lidar)
                 await asyncio.sleep(0.5)
-                await self.esp32.drive_distance(-50)
-                await self.esp32.turn_angle(-90)
+                await self.esp32.drive_distance(-50, self.lidar)
+                await self.esp32.turn_angle(-90, self.lidar)
                 if self.color == 'blue':
                     self.esp32.set_pos(135, 1945, 180)
                 else:
