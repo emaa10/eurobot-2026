@@ -5,22 +5,6 @@ BAUDRATE         = 1000000
 STS_MOVING_SPEED = 3000
 STS_MOVING_ACC   = 80
 
-# TODO: IDs und Positionen für Lift und Winker eintragen
-LIFT_ID_A   = 0    # TODO – Servo A des Lift-Moduls
-LIFT_ID_B   = 0    # TODO – Servo B des Lift-Moduls (gegenläufig zu A)
-WINKER_ID_1 = 0    # TODO – Winker links
-WINKER_ID_2 = 0    # TODO – Winker rechts
-
-LIFT_A_HOCH   = 0  # TODO
-LIFT_A_RUNTER = 0  # TODO
-LIFT_B_HOCH   = 0  # TODO  (entgegengesetzt zu A)
-LIFT_B_RUNTER = 0  # TODO
-
-WINKER_1_HOCH   = 0  # TODO
-WINKER_1_RUNTER = 0  # TODO
-WINKER_2_HOCH   = 0  # TODO
-WINKER_2_RUNTER = 0  # TODO
-
 
 class Servos:
     PORT = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_5A46083062-if00"
@@ -111,10 +95,10 @@ class Servos:
         self.write_servo(WINKER_ID_1, WINKER_1_RUNTER)
 
     def winker2_hoch(self):
-        self.write_servo(WINKER_ID_2, WINKER_2_HOCH)
+        self.write_servo(8, WINKER_2_HOCH)
 
     def winker2_runter(self):
-        self.write_servo(WINKER_ID_2, WINKER_2_RUNTER)
+        self.write_servo(8, WINKER_2_RUNTER)
 
     # ── Home-Position ──────────────────────────────────────────────────────
 
