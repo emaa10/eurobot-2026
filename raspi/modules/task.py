@@ -56,7 +56,7 @@ class Task:
         match cmd:
             case 'dd':  # drive distance mm
                 dist = int(msg[2:])
-                await self.esp32.drive_distance(dist if self.color == 'blue' else -dist, self.lidar)
+                await self.esp32.drive_distance(dist, self.lidar)
 
             case 'dp':  # drive to point  x;y[;theta]
                 vals = msg[2:].split(';')
@@ -95,25 +95,25 @@ class Task:
             case 'hm':  # autonomous wall homing
                 self.logger.info(f"homing ({self.color})")
                 if self.color == 'blue':
-                    # Start facing +x (θ=90): backward → x=0 wall, forward 25cm, turn right → θ=180, forward → y=0 wall, back 25cm into field
+                    # Start facing +x (θ=90): backward → x=0 wall, forward 30cm, turn left → θ=0, backward → y=0 wall, forward 25cm into field
                     await self.esp32.drive_distance(-300, self.lidar)
                     await asyncio.sleep(0.5)
-                    await self.esp32.drive_distance(250, self.lidar)
-                    await self.esp32.turn_angle(90, self.lidar)
-                    await self.esp32.drive_distance(250, self.lidar)
+                    await self.esp32.drive_distance(300, self.lidar)
+                    await self.esp32.turn_angle(-90, self.lidar)
+                    await self.esp32.drive_distance(-250, self.lidar)
                     await asyncio.sleep(0.5)
-                    await self.esp32.drive_distance(-250, self.lidar)  # 25cm into field (θ=180 → -y → backward = +y)
-                    self.esp32.set_pos(305, 305, 180)
+                    await self.esp32.drive_distance(250, self.lidar)
+                    self.esp32.set_pos(355, 305, 0)
                 else:
-                    # Start facing -x (θ=270): backward → x=3000 wall, forward 25cm, turn right → θ=0, backward → y=0 wall, forward 25cm into field
+                    # Start facing -x (θ=270): backward → x=3000 wall, forward 30cm, turn right → θ=0, backward → y=0 wall, forward 25cm into field
                     await self.esp32.drive_distance(-300, self.lidar)
                     await asyncio.sleep(0.5)
-                    await self.esp32.drive_distance(250, self.lidar)
+                    await self.esp32.drive_distance(300, self.lidar)
                     await self.esp32.turn_angle(90, self.lidar)
                     await self.esp32.drive_distance(-250, self.lidar)
                     await asyncio.sleep(0.5)
-                    await self.esp32.drive_distance(250, self.lidar)   # 25cm into field (θ=0 → +y = forward)
-                    self.esp32.set_pos(2695, 305, 0)
+                    await self.esp32.drive_distance(250, self.lidar)
+                    self.esp32.set_pos(2645, 305, 0)
                 self.logger.info("homing done")
 
             case 'hg':  # home gripper
