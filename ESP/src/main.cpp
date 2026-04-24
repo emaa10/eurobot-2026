@@ -33,7 +33,8 @@ static constexpr float WHEEL_DIAM_MM = 48.0f;    // Erhöhen wenn zu kurz, verri
 static constexpr float WHEELBASE_MM  = 220.0f;
 static constexpr float STEPS_PER_MM  = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);
 static constexpr float STEPS_PER_DEG = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
-static constexpr float MAX_SPEED     = 1500.0f;  // steps/s
+static constexpr float MAX_SPEED_R   = 1500.0f;
+static constexpr float MAX_SPEED_L   = 1465.0f;  // 2.3% langsamer → Rechtsdrall korrigieren
 static constexpr float ACCEL         = 1200.0f;  // steps/s²
 
 // ── AccelStepper ──────────────────────────────────────────────────────────
@@ -79,12 +80,12 @@ static void stepperTask(void*) {
                 if (cmd.type == 'D') {
                     long s = lroundf(cmd.val * STEPS_PER_MM);
                     stepperR.move(s);
-                    stepperL.move(s);
+                    stepperL.move(lroundf(s * MAX_SPEED_L / MAX_SPEED_R));
                     state = MotionState::MOVING;
                 } else if (cmd.type == 'T') {
                     long s = lroundf(cmd.val * STEPS_PER_DEG);
                     stepperR.move(-s);
-                    stepperL.move(s);
+                    stepperL.move(lroundf(s * MAX_SPEED_L / MAX_SPEED_R));
                     state = MotionState::MOVING;
                 }
             }
@@ -179,9 +180,9 @@ void setup() {
     Serial.begin(115200);
     disableCore0WDT();  // stepperTask läuft als Tight-Loop auf Core 0 ohne yield
 
-    stepperR.setMaxSpeed(MAX_SPEED);
-    stepperR.setAcceleration(ACCEL);
-    stepperL.setMaxSpeed(MAX_SPEED);
+    stepperR.setMaxSpeed(MAX_SPEED_R);
+    stepperR.setAcceleration(ACCEL * (MAX_SPEED_R / MAX_SPEED_L));  // gleiche Accel/Decel-Zeit wie L
+    stepperL.setMaxSpeed(MAX_SPEED_L);
     stepperL.setAcceleration(ACCEL);
     stepperL.setPinsInverted(true, false, false);  // DIR_L invertieren
 
