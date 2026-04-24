@@ -37,7 +37,7 @@ static constexpr float STEPS_PER_DEG = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM
 static constexpr float MAX_SPEED_R   = 1500.0f;
 static constexpr float MAX_SPEED_L   = 1465.0f;  // 2.3% langsamer → Rechtsdrall korrigieren
 static constexpr float ACCEL         = 1200.0f;  // steps/s²
-static constexpr float HOMING_SPEED  = 300.0f;   // steps/s – langsam an Wand heranfahren
+static constexpr float HOMING_SPEED  = 400.0f;   // steps/s – langsam an Wand heranfahren
 
 // ── AccelStepper ──────────────────────────────────────────────────────────
 AccelStepper stepperR(AccelStepper::DRIVER, STEP_R, DIR_R);
