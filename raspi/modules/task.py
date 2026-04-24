@@ -96,7 +96,7 @@ class Task:
                 self.logger.info(f"homing ({self.color})")
                 if self.color == 'blue':
                     # Start facing +x (θ=90): backward → x=0 wall, forward 35cm, turn left → θ=0, backward → y=0 wall
-                    await self.esp32.drive_distance(-300, self.lidar)
+                    await self.esp32.drive_distance(-250, self.lidar)
                     await asyncio.sleep(0.5)
                     await self.esp32.drive_distance(350, self.lidar)
                     await self.esp32.turn_angle(-90, self.lidar)
@@ -105,7 +105,7 @@ class Task:
                     self.esp32.set_pos(405, 55, 0)
                 else:
                     # Start facing -x (θ=270): backward → x=3000 wall, forward 35cm, turn right → θ=0, backward → y=0 wall
-                    await self.esp32.drive_distance(-300, self.lidar)
+                    await self.esp32.drive_distance(-250, self.lidar)
                     await asyncio.sleep(0.5)
                     await self.esp32.drive_distance(350, self.lidar)
                     await self.esp32.turn_angle(90, self.lidar)
