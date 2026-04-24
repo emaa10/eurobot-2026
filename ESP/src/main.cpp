@@ -1,6 +1,9 @@
 /*
  * Eurobot 2026 – ESP32 Drive Controller
  *
+ * Core 0: stepperTask  – AccelStepper (blockierend bis fertig)
+ * Core 1: uartTask     – Serial I/O, Command-Queue
+ *
  * Raspi → ESP32:
  *   DD{mm}         Geradeaus  (+ vorwärts, – rückwärts)
  *   TA{deg}        Drehen     (+ im Uhrzeigersinn)
@@ -14,9 +17,10 @@
  */
 
 #include <Arduino.h>
+#include <AccelStepper.h>
 
 // ═══════════════════════════════════════════════════════════
-//  PINS  – nur Stepper
+//  PINS
 // ═══════════════════════════════════════════════════════════
 #define STEP_L  25
 #define DIR_L   26
@@ -30,23 +34,17 @@
 #define WHEEL_DIAM_MM    65.0f
 #define WHEELBASE_MM    150.0f
 #define DRIVE_SPEED_CM_S  10.0f
+#define ACCEL_CM_S2       20.0f
 
 static const float STEPS_PER_MM = STEPS_PER_REV / (PI * WHEEL_DIAM_MM);
 static const float STEPS_PER_CM = STEPS_PER_REV / (PI * WHEEL_DIAM_MM * 0.1f);
-
-static int toDelayUs(float cmS) {
-    if (cmS <= 0.0f) return 5000;
-    return max((int)(500000.0f / (cmS * STEPS_PER_CM)), 100);
-}
+static const float MAX_SPEED_SPS = DRIVE_SPEED_CM_S * STEPS_PER_CM;
+static const float ACCEL_SPS2    = ACCEL_CM_S2     * STEPS_PER_CM;
 
 // ═══════════════════════════════════════════════════════════
 //  SHARED STATE
 // ═══════════════════════════════════════════════════════════
-portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-volatile bool  stopFlag = false;
-volatile long  posL = 0, posR = 0;
-volatile float spdL = DRIVE_SPEED_CM_S;
-volatile float spdR = DRIVE_SPEED_CM_S;
+volatile bool stopFlag = false;
 
 // ═══════════════════════════════════════════════════════════
 //  COMMAND QUEUE
@@ -56,67 +54,52 @@ struct Cmd { CmdType type; float val; };
 QueueHandle_t cmdQueue;
 
 // ═══════════════════════════════════════════════════════════
-//  STEPPER CORE (Christophs doSteps)
-// ═══════════════════════════════════════════════════════════
-static bool doSteps(uint8_t dirL, uint8_t dirR, long stepsL, long stepsR) {
-    digitalWrite(DIR_L, dirL);
-    digitalWrite(DIR_R, dirR);
-
-    int dL = toDelayUs(spdL);
-    int dR = toDelayUs(spdR);
-    long doneL = 0, doneR = 0;
-    unsigned long nextL = micros(), nextR = micros();
-
-    while (doneL < stepsL || doneR < stepsR) {
-        if (stopFlag) return false;
-        unsigned long now = micros();
-
-        if (doneL < stepsL && (long)(now - nextL) >= 0) {
-            digitalWrite(STEP_L, HIGH); delayMicroseconds(5); digitalWrite(STEP_L, LOW);
-            nextL = now + (unsigned long)(dL * 2);
-            portENTER_CRITICAL(&mux);
-            posL += (dirL == HIGH) ? 1 : -1;
-            portEXIT_CRITICAL(&mux);
-            doneL++;
-        }
-        if (doneR < stepsR && (long)(now - nextR) >= 0) {
-            digitalWrite(STEP_R, HIGH); delayMicroseconds(5); digitalWrite(STEP_R, LOW);
-            nextR = now + (unsigned long)(dR * 2);
-            portENTER_CRITICAL(&mux);
-            posR += (dirR == LOW) ? 1 : -1;   // R gespiegelt: LOW = vorwärts
-            portEXIT_CRITICAL(&mux);
-            doneR++;
-        }
-    }
-    return true;
-}
-
-// ═══════════════════════════════════════════════════════════
 //  STEPPER TASK  (Core 0)
 // ═══════════════════════════════════════════════════════════
 void stepperTask(void *) {
-    pinMode(STEP_L, OUTPUT); pinMode(DIR_L, OUTPUT);
-    pinMode(STEP_R, OUTPUT); pinMode(DIR_R, OUTPUT);
+    AccelStepper motorL(AccelStepper::DRIVER, STEP_L, DIR_L);
+    AccelStepper motorR(AccelStepper::DRIVER, STEP_R, DIR_R);
+
+    motorL.setMaxSpeed(MAX_SPEED_SPS);
+    motorL.setAcceleration(ACCEL_SPS2);
+    motorR.setMaxSpeed(MAX_SPEED_SPS);
+    motorR.setAcceleration(ACCEL_SPS2);
+    motorR.setPinsInverted(true);  // Rechter Motor gespiegelt montiert: LOW = vorwärts
 
     Cmd cmd;
     while (true) {
         if (xQueueReceive(cmdQueue, &cmd, portMAX_DELAY) != pdTRUE) continue;
         stopFlag = false;
 
-        bool ok;
+        long stepsL, stepsR;
         if (cmd.type == CMD_DRIVE) {
-            long steps = (long)(fabsf(cmd.val) * STEPS_PER_MM);
-            bool fwd = cmd.val >= 0;
-            ok = doSteps(fwd ? HIGH : LOW, fwd ? LOW : HIGH, steps, steps);
+            long s = lroundf(cmd.val * STEPS_PER_MM);
+            stepsL = s;
+            stepsR = s;
         } else {
-            float arc_mm = fabsf(cmd.val) / 360.0f * PI * WHEELBASE_MM;
-            long steps = (long)(arc_mm * STEPS_PER_MM);
-            bool cw = cmd.val >= 0;
-            // CW: L vorwärts (HIGH), R gespiegelt vorwärts (HIGH)
-            ok = doSteps(cw ? HIGH : LOW, cw ? HIGH : LOW, steps, steps);
+            // Drehung: L und R gegenläufig
+            long s = lroundf(cmd.val / 360.0f * PI * WHEELBASE_MM * STEPS_PER_MM);
+            stepsL =  s;
+            stepsR = -s;
         }
 
-        Serial.println(ok ? "OK" : "INTERRUPTED");
+        motorL.move(stepsL);
+        motorR.move(stepsR);
+
+        bool interrupted = false;
+        while (motorL.distanceToGo() != 0 || motorR.distanceToGo() != 0) {
+            if (stopFlag) {
+                // Sofortiger Stopp: Ziel = aktuelle Position
+                motorL.setCurrentPosition(motorL.currentPosition());
+                motorR.setCurrentPosition(motorR.currentPosition());
+                interrupted = true;
+                break;
+            }
+            motorL.run();
+            motorR.run();
+        }
+
+        Serial.println(interrupted ? "INTERRUPTED" : "OK");
     }
 }
 
