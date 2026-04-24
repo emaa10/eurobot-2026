@@ -72,6 +72,8 @@ class ESP32:
                 return False
             elif line and line.startswith('P'):
                 self._parse_position(line)
+            elif line:
+                self.logger.info(f"ESP32: {line}")
 
             if lidar:
                 obstacle = lidar.get_stop(self.x, self.y, self.theta, direction)

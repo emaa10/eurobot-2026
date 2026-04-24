@@ -73,7 +73,7 @@ enum class MotionState { IDLE, MOVING, STOPPING, PAUSED, HOMING, HOMING_STOP };
 
 static long savedTargetR = 0, savedTargetL = 0;
 static long homingStartPosR = 0;
-static constexpr long MIN_HOMING_STEPS = 400;  // ~83mm Mindestfahrt vor Endstop-Check
+static constexpr long MIN_HOMING_STEPS = 2420; // ~500mm Mindestfahrt vor Endstop-Check
 
 static void stepperTask(void*) {
     MotionState state = MotionState::IDLE;
@@ -94,7 +94,8 @@ static void stepperTask(void*) {
                     stepperL.move(lroundf(s * MAX_SPEED_L / MAX_SPEED_R));
                     state = MotionState::MOVING;
                 } else if (cmd.type == 'H') {
-                    // Langsam rückwärts bis Endstop
+                    // Langsam rückwärts bis Endstop – Pin-Status zuerst senden
+                    serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ES:LOW" : "ES:HIGH");
                     stepperR.setMaxSpeed(HOMING_SPEED);
                     stepperL.setMaxSpeed(HOMING_SPEED * MAX_SPEED_L / MAX_SPEED_R);
                     stepperR.move(-100000L);
@@ -147,7 +148,7 @@ static void stepperTask(void*) {
             stepperR.run();
             stepperL.run();
             bool travelledEnough = abs(stepperR.currentPosition() - homingStartPosR) >= MIN_HOMING_STEPS;
-            if (travelledEnough && digitalRead(ENDSTOP_PIN) == HIGH) {
+            if (travelledEnough && digitalRead(ENDSTOP_PIN) == LOW) {
                 stepperR.stop();
                 stepperL.stop();
                 state = MotionState::HOMING_STOP;
