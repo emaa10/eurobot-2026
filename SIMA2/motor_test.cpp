@@ -2,6 +2,9 @@
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
 
+// --- Zugschnur ---
+#define PIN_PULLCORD 21
+
 // --- Motor Pins ---
 #define L_STEP 0
 #define L_DIR  1
@@ -142,8 +145,15 @@ void setup1() {
     gpio_init(R_DIR);  gpio_set_dir(R_DIR,  GPIO_OUT);
     gpio_init(R_EN);   gpio_set_dir(R_EN,   GPIO_OUT);
     MOTORS_OFF();
+
+    gpio_init(PIN_PULLCORD);
+    gpio_set_dir(PIN_PULLCORD, GPIO_IN);
+    gpio_pull_up(PIN_PULLCORD);
+
     sleep_ms(2000);
-    Serial.println("Core1: Stepper bereit");
+    Serial.println("Core1: Stepper bereit, warte auf Zugschnur...");
+    while (gpio_get(PIN_PULLCORD) == 1) sleep_ms(10);
+    Serial.println("Core1: Zugschnur gezogen, starte Motor-Test");
 }
 
 void loop1() {
