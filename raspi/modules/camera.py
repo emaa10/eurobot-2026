@@ -164,10 +164,29 @@ class Camera:
                 if self.running:
                     self.logger.error(f"Camera error: {e}")
 
+    TAG_BLUE   = 36
+    TAG_YELLOW = 47
+
     def getTag(self) -> List[TagDetection]:
         """Gibt alle aktuell sichtbaren Marker zurück mit horizontalem Winkel in Grad."""
         with self._lock:
             return list(self._latest_tags)
+
+    def get_target_side(self, team: str) -> str | None:
+        """
+        Gibt 'left' oder 'right' zurück – die Seite auf der das eigene Kistchen liegt.
+        Reihenfolge: horizontal_angle negativ = links, positiv = rechts.
+        Gibt None zurück wenn der Ziel-Tag nicht sichtbar ist.
+        """
+        target_id = self.TAG_YELLOW if team == 'yellow' else self.TAG_BLUE
+        with self._lock:
+            tags = {t.id: t for t in self._latest_tags}
+
+        if target_id not in tags:
+            return None
+
+        angle = tags[target_id].horizontal_angle
+        return 'left' if angle < 0 else 'right'
 
     def stop(self):
         self.running = False

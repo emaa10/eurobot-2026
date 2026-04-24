@@ -118,6 +118,20 @@ class Task:
             case 'hg':  # home gripper
                 self.gripper.home()
 
+            case 'co':  # camera open – öffnet Greifer auf der Seite des eigenen Kistchens
+                side = self.camera.get_target_side(self.color) if self.camera else None
+                if side == 'left':
+                    self.gripper.servos.grip_links_aussen(1)
+                    self.gripper.servos.grip_links_innen(1)
+                    self.logger.info("camera: Kistchen links → linke Greifer auf")
+                elif side == 'right':
+                    self.gripper.servos.grip_rechts_innen(1)
+                    self.gripper.servos.grip_rechts_aussen(1)
+                    self.logger.info("camera: Kistchen rechts → rechte Greifer auf")
+                else:
+                    self.gripper.loslassen()
+                    self.logger.info("camera: Kistchen nicht sichtbar → alle Greifer auf")
+
             case 'gr':  # greifer zu
                 self.gripper.greifen()
 
