@@ -73,7 +73,7 @@ enum class MotionState { IDLE, MOVING, STOPPING, PAUSED, HOMING, HOMING_STOP };
 
 static long savedTargetR = 0, savedTargetL = 0;
 static long homingStartPosR = 0;
-static constexpr long MIN_HOMING_STEPS = 2420; // ~500mm Mindestfahrt vor Endstop-Check
+static constexpr long MIN_HOMING_STEPS = 100;  // ~20mm Anti-Bounce vor Endstop-Check
 
 static void stepperTask(void*) {
     MotionState state = MotionState::IDLE;
