@@ -94,6 +94,7 @@ class Task:
 
             case 'hm':  # autonomous wall homing
                 self.logger.info(f"homing ({self.color})")
+                self.gripper.loslassen()
                 if self.color == 'blue':
                     # Start facing +x (θ=90): endstop → x=0 wall, forward 32cm, turn left → θ=0, endstop → y=0 wall
                     await self.esp32.home_endstop()
@@ -118,6 +119,8 @@ class Task:
                 self.gripper.home()
 
             case 'co':  # camera open – öffnet die Greifer an den Positionen der eigenen Kistchen
+                self.gripper.greifen()
+                sleep(0.5)
                 _GRIPPER_FUNCS = [
                     lambda: self.gripper.servos.grip_links_aussen(1),
                     lambda: self.gripper.servos.grip_links_innen(1),
