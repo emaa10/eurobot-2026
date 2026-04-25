@@ -253,7 +253,9 @@ void waitForGegnerWeg() {
 
 void servoSpin() {
     servo.attach(SERVO_PIN);
-    servo.write(30);  // Mittelstellung
+    servo.writeMicroseconds(1500);  // neutral / stop
+    sleep_ms(200);
+    servo.writeMicroseconds(2000);  // full speed
     Serial.println("[SERVO] dreht");
 }
 
