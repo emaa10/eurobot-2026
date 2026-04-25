@@ -32,7 +32,7 @@ void setup1() {
 
     gpio_init(PIN_LED);
     gpio_set_dir(PIN_LED, GPIO_OUT);
-    gpio_put(PIN_LED, 1);   // LED an: bereit, warte auf Zugschnur
+    gpio_put(PIN_LED, 0);   // LED an: bereit, warte auf Zugschnur
 
     gpio_init(PIN_PULLCORD);
     gpio_set_dir(PIN_PULLCORD, GPIO_IN);
@@ -41,10 +41,23 @@ void setup1() {
     sleep_ms(2000);  // warten bis Core0 ToF initialisiert hat
 
     Serial.println("Core1: bereit, warte auf Zugschnur...");
-    while (gpio_get(PIN_PULLCORD) == 1) sleep_ms(10);
+    int last_state = -1;
+    int low_count = 0;
+    while (true) {
+        int state = gpio_get(PIN_PULLCORD);
+        if (state != last_state) {
+            Serial.printf("[PULLCORD] GP%d = %d (%s)\n", PIN_PULLCORD, state, state ? "HIGH / offen" : "LOW / verbunden");
+            last_state = state;
+        }
+        if (state == 0) low_count++;
+        else            low_count = 0;
+        if (low_count >= 5) break;  // 5x LOW in Folge = stabil verbunden
+        sleep_ms(10);
+    }
 
-    gpio_put(PIN_LED, 0);   // LED aus: Zugschnur gezogen, starte Taktik
-    Serial.println("Core1: Zugschnur gezogen, starte Taktik");
+    gpio_put(PIN_LED, 0);
+    Serial.println("Core1: Zugschnur stabil LOW, starte Taktik");
+    Serial.flush();
 }
 
 void loop1() {
