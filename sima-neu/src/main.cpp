@@ -1,7 +1,12 @@
 #include <Arduino.h>
+#include <Servo.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
 #include <math.h>
+
+// ── Pins ──────────────────────────────────────────────────────
+#define PIN_PULLCORD  21
+#define SERVO_PIN     22
 
 // ── Motor-Pins ────────────────────────────────────────────────
 #define L_STEP  0
@@ -148,6 +153,9 @@ static void run_steps(uint32_t steps, bool check_opponent) {
     }
 }
 
+// ── Servo ─────────────────────────────────────────────────────
+static Servo servo;
+
 // ── Öffentliche API ───────────────────────────────────────────
 
 // cm > 0 = vorwärts, cm < 0 = rückwärts
@@ -180,7 +188,41 @@ void turn(int angle) {
     Serial.printf("[turn]  %d° (%u steps)\n", angle, steps);
 }
 
-// ── Core 1: Taktik ────────────────────────────────────────────
+// ── Taktik-Methoden ───────────────────────────────────────────
+
+void waitForPullcord() {
+    gpio_init(PIN_PULLCORD);
+    gpio_set_dir(PIN_PULLCORD, GPIO_IN);
+    gpio_pull_down(PIN_PULLCORD);
+
+    Serial.println("[PULLCORD] warte auf LOW...");
+    int low_count = 0;
+    while (true) {
+        int state = gpio_get(PIN_PULLCORD);
+        Serial.printf("[PULLCORD] GP%d = %d (%s)\n", PIN_PULLCORD, state, state ? "HIGH / offen" : "LOW / verbunden");
+        if (state == 0) low_count++;
+        else            low_count = 0;
+        if (low_count >= 5) break;
+        sleep_ms(200);
+    }
+    Serial.println("[PULLCORD] gezogen, starte Taktik");
+}
+
+void servoSpin() {
+    servo.attach(SERVO_PIN);
+    servo.writeMicroseconds(1500);  // kurz neutral
+    sleep_ms(200);
+    servo.writeMicroseconds(2000);  // full speed
+    Serial.println("[SERVO] dreht");
+}
+
+void runTactic() {
+    drive(100);   // Beispiel: 100 cm vorwärts
+    servoSpin();
+    while (true) sleep_ms(1000);
+}
+
+// ── Core 1 ────────────────────────────────────────────────────
 
 void setup1() {
     gpio_init(L_STEP); gpio_set_dir(L_STEP, GPIO_OUT);
@@ -193,10 +235,10 @@ void setup1() {
 
     sleep_ms(2000);  // warten bis Core0 ToF initialisiert hat
     Serial.println("Core1: bereit");
+
+    waitForPullcord();
 }
 
 void loop1() {
-    drive(100);   // 100 cm vorwärts
-    turn(90);     // 90° rechts
-    while (true) sleep_ms(1000);
+    runTactic();
 }
