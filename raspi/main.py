@@ -30,12 +30,13 @@ LOG_FILE = '/home/eurobot/eurobot-2026/raspi/eurobot.log'
 # Taktiken in Blau-Koordinaten – Task spiegelt für Gelb.
 # Homing (hg + hm) wird von 'ready' automatisch davor ausgeführt.
 TACTICS = {
-    1: [['hg', 'lh', 'dd100', 'ta-20', 'dd800', 'ta10', 'dd700', 'ta90', 'dd200', 'ta90', 'dd1700', 'ta90']],
+    1: [['hg', 'lh', 'dd100', 'ta-15', 'dd800', 'ta10', 'dd680', 'ta90', 'dd350', 'ta70', 'dd1700', 'ta90']],
     2: [['dd100', 'ta-10', 'dd800', 'ta100', 'go', 'dd700', 'dd-100', 'ta70', 'dd1000', 'dd-70', 'ta90']],
-    3: [['hg', 'dd1000', 'ta90', 'dd300', 'ta-90', 'dd800', 'dd-300', 'ta-90', 'dd800', 'dd-300',
+    3: [['hg', 'lh', 'dd100', 'ta-15', 'dd800', 'ta10', 'dd680', 'ta90', 'dd350', 'ta70', 'dd1700', 'ta90']], # 1 mit cursor
+    4: [['hg', 'dd1000', 'ta90', 'dd300', 'ta-90', 'dd800', 'dd-300', 'ta-90', 'dd800', 'dd-300',
          'ta-90', 'dd2000', 'dd-300', 'ta180', 'dd2000', 'dd-300', 'ta-90', 'dd1200',
          'w2r', 'dd-700', 'w2h', 'ta90', 'dd1000', 'ta90', 'dd500', 'ta-90', 'dd800']],
-    4: [['hg', 'dd1000', 'ta90', 'dd800', 'ta-90', 'dd500', 'co', 'dd200', 'cg', 'dd-500',
+    5: [['hg', 'dd1000', 'ta90', 'dd800', 'ta-90', 'dd500', 'co', 'dd200', 'cg', 'dd-500',
          'ta90', 'dd300', 'go', 'dd-300', 'ta180', 'dd1000', 'ta-90', 'dd1000']],
 }
 
