@@ -7,6 +7,7 @@
 // ── Pins ──────────────────────────────────────────────────────
 #define PIN_PULLCORD  21
 #define SERVO_PIN     22
+#define PIN_LED       25
 
 // ── Motor-Pins ────────────────────────────────────────────────
 #define L_STEP  0
@@ -165,15 +166,15 @@ static Servo servo;
 void drive(int cm) {
     if (cm == 0) return;
     uint32_t steps = (uint32_t)(fabsf((float)cm) * 10.0f * STEPS_PER_MM);
+    Serial.printf("[drive] %dcm → %u steps, opponent_detected=%d\n", cm, steps, opponent_detected);
 
     gpio_put(L_DIR, cm > 0 ? 1 : 0);
     gpio_put(R_DIR, cm > 0 ? 0 : 1);
 
     MOTORS_ON();
-    run_steps(steps, cm > 0);  // Gegner-Check nur vorwärts
+    run_steps(steps, cm > 0);
     MOTORS_OFF();
-
-    Serial.printf("[drive] %dcm (%u steps)\n", cm, steps);
+    Serial.printf("[drive] fertig\n");
 }
 
 // angle > 0 = rechts, angle < 0 = links
@@ -198,6 +199,10 @@ void waitForPullcord() {
     gpio_set_dir(PIN_PULLCORD, GPIO_IN);
     gpio_pull_down(PIN_PULLCORD);
 
+    gpio_init(PIN_LED);
+    gpio_set_dir(PIN_LED, GPIO_OUT);
+    gpio_put(PIN_LED, 1);  // LED an: warte auf Zugschnur
+
     Serial.println("[PULLCORD] warte auf LOW...");
     int low_count = 0;
     while (true) {
@@ -208,6 +213,8 @@ void waitForPullcord() {
         if (low_count >= 5) break;
         sleep_ms(200);
     }
+
+    gpio_put(PIN_LED, 0);  // LED aus: Zugschnur gezogen
     Serial.println("[PULLCORD] gezogen, starte Taktik");
 }
 
@@ -237,7 +244,7 @@ void setup1() {
     sleep_ms(2000);  // warten bis Core0 ToF initialisiert hat
     Serial.println("Core1: bereit");
 
-    waitForPullcord();
+    //waitForPullcord();
 }
 
 void loop1() {
