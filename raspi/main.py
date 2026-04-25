@@ -34,20 +34,22 @@ TACTICS = {
     2: [['dd100', 'ta-10', 'dd800', 'ta100', 'go', 'dd700', 'dd-100', 'ta70', 'dd1000', 'dd-70', 'ta90']],
     3: [['hg', 'lh', 'dd100', 'ta-10', 'dd800', 'ta10', 'dd950', 'dd-210', 'ta90', 'dd300', 'gr', 'ta90', 'dd-240', 'ta-90', 'dd320', 'dd-1250', 'w2r', 'dd600', 'w2h', 'dd400', 'ta90', 'go', 'dd1900', 'ta90']],
     4: [['hg', 'lh', 'dd100', 'ta-18', 'dd800', 'ta10', 'dd950', 'dd-220', 'ta90', 'dd220', 'gr', 'ta-90', 'dd240', 'dd-150', 'ta90', 'dd-320', 'dd1250', 'w1r', 'dd-600', 'w1h', 'dd-400', 'ta-90', 'go', 'dd1900', 'ta90']],
-    5: [['hg', 'dd1000', 'ta90', 'dd300', 'ta-90', 'dd800', 'dd-300', 'ta-90', 'dd800', 'dd-300',
+    5: [['hg', 'lh', 'dd100', 'ta-18', 'dd800', 'ta190', 'dd-950', 'dd100', 'ta90', 'dd-600', 'go', 'w2r', 'dd500', 'w2h', 'dd850', 'dd-1000', 'dd100', 'ta-90', 'gh', 'dd1700']],
+    6: [['hg', 'dd1000', 'ta90', 'dd300', 'ta-90', 'dd800', 'dd-300', 'ta-90', 'dd800', 'dd-300',
          'ta-90', 'dd2000', 'dd-300', 'ta180', 'dd2000', 'dd-300', 'ta-90', 'dd1200',
          'w2r', 'dd-700', 'w2h', 'ta90', 'dd1000', 'ta90', 'dd500', 'ta-90', 'dd800']],
-    6: [['hg', 'dd1000', 'ta90', 'dd800', 'ta-90', 'dd500', 'co', 'dd200', 'cg', 'dd-500',
+    7: [['hg', 'dd1000', 'ta90', 'dd800', 'ta-90', 'dd500', 'co', 'dd200', 'cg', 'dd-500',
          'ta90', 'dd300', 'go', 'dd-300', 'ta180', 'dd1000', 'ta-90', 'dd1000']],
 }
 
 TACTIC_NAMES = {
     1: "8 Stück",
     2: "4 Stück, Homologation",
-    3: "1 mit Cursor",
-    4: "1 mit Cursor ABER FÜR GELB",
-    5: "Schlangenmäher",
-    6: "Greifer-Test",
+    3: "1 mit Cursor - taktik 67 auf blau",
+    4: "1 mit Cursor ABER FÜR GELB => geht nicht gscheid",
+    5: "TAKTIK 67 GELB",
+    6: "bums",
+    7: "bums",
 }
 
 
