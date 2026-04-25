@@ -32,7 +32,7 @@ LOG_FILE = '/home/eurobot/eurobot-2026/raspi/eurobot.log'
 TACTICS = {
     1: [['dd2000', 'dd-300', 'ta90', 'dd350',
          'co', 'dd280', 'gr', 'dd-500']],
-    2: [['dd1000', 'ta-90', 'dd500', 'ta90', 'dd-1000']],
+    2: [['dd1000', 'ta90', 'dd500', 'ta90', 'dd-1000']],
     3: [['dd1000']],
     4: [['dd1000']],
 }
