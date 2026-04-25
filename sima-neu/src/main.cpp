@@ -133,13 +133,16 @@ static inline void pulse(uint pin) {
 }
 
 static void run_steps(uint32_t steps, bool check_opponent) {
+    Serial.printf("[motor] start: %u steps, opponent_check=%d, opponent_detected=%d\n", steps, check_opponent, opponent_detected);
     float delay_us = DELAY_START_US;
     uint32_t decel_start = steps > 80 ? steps - 80 : 0;
 
     for (uint32_t i = 0; i < steps; i++) {
         if (check_opponent && opponent_detected) {
+            Serial.printf("[motor] PAUSE bei step %u — warte auf Freigabe\n", i);
             MOTORS_OFF();
             while (opponent_detected) sleep_ms(10);
+            Serial.println("[motor] RESUME");
             MOTORS_ON();
         }
         if (i < steps / 2 && delay_us > DELAY_MIN_US)
@@ -210,9 +213,7 @@ void waitForPullcord() {
 
 void servoSpin() {
     servo.attach(SERVO_PIN);
-    servo.writeMicroseconds(1500);  // kurz neutral
-    sleep_ms(200);
-    servo.writeMicroseconds(2000);  // full speed
+    servo.write(1);  // Mittelstellung
     Serial.println("[SERVO] dreht");
 }
 
