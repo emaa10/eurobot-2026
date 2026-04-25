@@ -58,7 +58,7 @@ class Task:
         match cmd:
             case 'dd':  # drive distance mm
                 dist = int(msg[2:])
-                await self.esp32.drive_distance(-dist if self.color == 'blue' else dist, self.lidar)
+                await self.esp32.drive_distance(dist, self.lidar)
 
             case 'dp':  # drive to point  x;y[;theta]
                 vals = msg[2:].split(';')
