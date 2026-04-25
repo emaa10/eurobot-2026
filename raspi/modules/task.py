@@ -185,17 +185,11 @@ class Task:
                 if self.lidar:
                     self.lidar.arms_up = False
 
-            case 'w1h':  # winker 1 hoch
-                self.gripper.winker(1, True)
+            case 'w1':
+                self.gripper.winker(1, msg == 'w1h')
 
-            case 'w1r':  # winker 1 runter
-                self.gripper.winker(1, False)
-
-            case 'w2h':  # winker 2 hoch
-                self.gripper.winker(2, True)
-
-            case 'w2r':  # winker 2 runter
-                self.gripper.winker(2, False)
+            case 'w2':
+                self.gripper.winker(2, msg == 'w2h')
 
             case 'ws':  # write servo manually  id;pos
                 vals = msg[2:].split(';')

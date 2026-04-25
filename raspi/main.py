@@ -32,7 +32,7 @@ LOG_FILE = '/home/eurobot/eurobot-2026/raspi/eurobot.log'
 TACTICS = {
     1: [['hg', 'lh', 'dd100', 'ta-15', 'dd800', 'ta10', 'dd680', 'ta90', 'dd350', 'ta70', 'dd1700', 'ta90']],
     2: [['dd100', 'ta-10', 'dd800', 'ta100', 'go', 'dd700', 'dd-100', 'ta70', 'dd1000', 'dd-70', 'ta90']],
-    3: [['hg', 'lh', 'dd100', 'ta-15', 'dd800', 'ta10', 'dd950', 'dd-190', 'ta90', 'dd200', 'gr', 'ta90', 'dd-200', 'ta-90', 'dd-1000', 'w2r', 'dd600', 'w2h', 'dd300', 'ta90', 'go', 'dd1900', 'ta90']],
+    3: [['hg', 'lh', 'dd100', 'ta-15', 'dd800', 'ta10', 'dd950', 'dd-200', 'ta90', 'dd300', 'gr', 'ta90', 'dd-220', 'ta-90', 'dd-1000', 'w2r', 'dd600', 'w2h', 'dd400', 'ta90', 'go', 'dd1900', 'ta90']],
     4: [['hg', 'dd1000', 'ta90', 'dd300', 'ta-90', 'dd800', 'dd-300', 'ta-90', 'dd800', 'dd-300',
          'ta-90', 'dd2000', 'dd-300', 'ta180', 'dd2000', 'dd-300', 'ta-90', 'dd1200',
          'w2r', 'dd-700', 'w2h', 'ta90', 'dd1000', 'ta90', 'dd500', 'ta-90', 'dd800']],
@@ -219,6 +219,10 @@ class Robot:
                 self.servos.write_servo(int(args[0]), int(args[1]))
                 await self._ok(f"servo {args[0]} → {args[1]}")
 
+            case 'winker':
+                n = int(args[0]) if args and args[0].isdigit() else 5
+                asyncio.create_task(self._test_winker(n))
+
             case 'gripper' | 'g':
                 sub = args[0].lower() if args else ''
                 match sub:
@@ -248,6 +252,7 @@ class Robot:
             "  drive <mm> / d <mm>     Test: fahre mm",
             "  turn <deg>              Test: drehe deg°",
             "  servo <id> <pos>        Test: Servo direkt setzen",
+            "  winker [n]              Test: Servo 8 n×hin+her (default 5)",
             "  gripper open|close|home / g o|c|h",
             "─" * 41,
         ]
@@ -318,6 +323,16 @@ class Robot:
         if self._game_task and not self._game_task.done():
             self._game_task.cancel()
         self.state = State.DONE
+
+    async def _test_winker(self, n: int = 5):
+        from modules.STservo_sdk.sts import STS_TORQUE_ENABLE
+        self.servos.packet_handler.write1ByteTxRx(8, STS_TORQUE_ENABLE, 1)
+        for i in range(n):
+            self.servos.winker2_runter()
+            await asyncio.sleep(1.5)
+            self.servos.winker2_hoch()
+            await asyncio.sleep(1.5)
+        await self._ok(f"winker test fertig ({n}x)")
 
     async def _test_drive(self, mm: int):
         await self.esp32.drive_distance(mm, self.lidar)
