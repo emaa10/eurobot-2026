@@ -114,24 +114,26 @@ class Servos:
         self.write_servo(self.LIFT_B, self.LIFT_B_RUNTER)
 
     # ── Winker (2 unabhängige Servos) ─────────────────────────────────────
-    # Winker 1 = ID 7 = linker Winker  (bestätigt)
-    # Winker 2 = ID 8 = rechter Winker (bestätigt)
-    # Beide drehen relativ ±150° (WINKER_STEPS), keine absoluten Positionen
+    # Winker 1 = ID 7 = linker Winker  (nicht verwendet)
+    # Winker 2 = ID 8 = rechter Winker (kalibriert)
+    WINKER2_OBEN   = 980
+    WINKER2_UNTEN  = 1958
 
     def winker1_runter(self):
-        self.write_servo_relative(7, -WINKER_STEPS)  # 150° nach rechts/unten
+        self.write_servo_relative(7, -WINKER_STEPS)
 
     def winker1_hoch(self):
-        self.write_servo_relative(7, +WINKER_STEPS)  # 150° zurück
+        self.write_servo_relative(7, +WINKER_STEPS)
 
     def winker2_runter(self):
-        self.write_servo_relative(8, -WINKER_STEPS)  # 150° nach rechts/unten
+        self.write_servo(8, self.WINKER2_UNTEN)
 
     def winker2_hoch(self):
-        self.write_servo_relative(8, +WINKER_STEPS)  # 150° zurück
+        self.write_servo(8, self.WINKER2_OBEN)
 
     # ── Home-Position ──────────────────────────────────────────────────────
 
     def home(self):
         self.alle_auf()
         self.lift_runter()
+        self.winker2_hoch()
