@@ -124,7 +124,7 @@ class Task:
 
             case 'co':  # camera open – öffnet die Greifer an den Positionen der eigenen Kistchen
                 self.gripper.greifen()
-                sleep(0.5)
+                sleep(1.0)
                 _GRIPPER_FUNCS = [
                     lambda: self.gripper.servos.grip_links_aussen(1),
                     lambda: self.gripper.servos.grip_links_innen(1),
@@ -132,6 +132,15 @@ class Task:
                     lambda: self.gripper.servos.grip_rechts_aussen(1),
                 ]
                 _NAMEN = ['links-außen', 'links-innen', 'rechts-innen', 'rechts-außen']
+                if self.camera:
+                    import cv2
+                    frame = self.camera.get_latest_frame()
+                    if frame is not None:
+                        desktop = '/home/eurobot/Desktop'
+                        os.makedirs(desktop, exist_ok=True)
+                        path = f'{desktop}/co_{int(time())}.jpg'
+                        cv2.imwrite(path, frame)
+                        self.logger.info(f"[CAM] Bild gespeichert: {path}")
                 positions = self.camera.get_gripper_positions(self.color) if self.camera else []
                 self._cam_positions = [p for p in positions if 0 <= p < 4]
                 if self._cam_positions:
@@ -142,15 +151,6 @@ class Task:
                 else:
                     self.gripper.loslassen()
                     self.logger.info("[GR] keine Kistchen sichtbar → alle Greifer auf")
-                if self.camera:
-                    import cv2
-                    frame = self.camera.get_latest_frame()
-                    if frame is not None:
-                        desktop = '/home/eurobot/Desktop'
-                        os.makedirs(desktop, exist_ok=True)
-                        path = f'{desktop}/co_{int(time())}.jpg'
-                        cv2.imwrite(path, frame)
-                        self.logger.info(f"[CAM] Bild gespeichert: {path}")
 
             case 'cg':  # camera grab – schließt nur Greifer aus vorherigem co
                 _CLOSE_FUNCS = [

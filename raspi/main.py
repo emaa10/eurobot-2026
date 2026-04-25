@@ -31,8 +31,8 @@ LOG_FILE = '/home/eurobot/eurobot-2026/raspi/eurobot.log'
 # Homing (hg + hm) wird von 'ready' automatisch davor ausgeführt.
 TACTICS = {
     1: [['hg', 'lh', 'dd1000', 'ta-90', 'dd300', 'ta90', 'dd1000', 'dd-270', 'ta90', 'dd350',
-         'dd200', 'ta90', 'dd2000']],
-    2: [['dd1000', 'ta90', 'go', 'dd500', 'dd-130', 'ta90', 'dd1000']],
+         'dd200', 'dd-150', 'ta90', 'dd1500']],
+    2: [['dd100', 'ta-10', 'dd800', 'ta100', 'go', 'dd500', 'dd-100', 'ta90', 'dd1000', 'dd-70']],
     3: [['hg', 'dd1000', 'ta90', 'dd300', 'ta-90', 'dd1000', 'dd-300', 'ta-90', 'dd800', 'dd-300',
          'ta-90', 'dd2000', 'dd-300', 'ta180', 'dd2000', 'dd-300', 'ta-90', 'dd1200',
          'w2r', 'dd-700', 'w2h', 'ta90', 'dd1000', 'ta90', 'dd500', 'ta-90', 'dd800']],
