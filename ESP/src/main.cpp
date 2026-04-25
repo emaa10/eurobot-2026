@@ -111,9 +111,9 @@ static void stepperTask(void*) {
             if (state == MotionState::MOVING) {
                 savedTargetR = stepperR.targetPosition();
                 savedTargetL = stepperL.targetPosition();
-                stepperR.stop();
-                stepperL.stop();
-                state = MotionState::STOPPING;
+                stepperR.setCurrentPosition(stepperR.currentPosition());
+                stepperL.setCurrentPosition(stepperL.currentPosition());
+                state = MotionState::PAUSED;
             } else if (state == MotionState::PAUSED) {
                 state = MotionState::IDLE;
                 serialPrintln("INTERRUPTED");
