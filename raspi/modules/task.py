@@ -118,6 +118,8 @@ class Task:
 
             case 'hg':  # home gripper
                 self.gripper.home()
+                if self.lidar:
+                    self.lidar.arms_up = False
 
             case 'co':  # camera open – öffnet die Greifer an den Positionen der eigenen Kistchen
                 self.gripper.greifen()
@@ -163,9 +165,13 @@ class Task:
 
             case 'lh':  # lift hoch
                 self.gripper.lift_hoch()
+                if self.lidar:
+                    self.lidar.arms_up = True
 
             case 'lr':  # lift runter
                 self.gripper.lift_runter()
+                if self.lidar:
+                    self.lidar.arms_up = False
 
             case 'w1h':  # winker 1 hoch
                 self.gripper.winker(1, True)

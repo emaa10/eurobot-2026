@@ -20,6 +20,7 @@ class Lidar:
         self.running = False
         self.thread = None
         self.stop_motor = False
+        self.arms_up = False
     
     def connect(self):
         """Connect to the Lidar device"""
@@ -116,7 +117,8 @@ class Lidar:
         self.logger.info("Lidar stopped")
         
     # Erkennungsparameter
-    STOP_DIST = 430   # mm  Stoppschwelle (43cm)
+    STOP_DIST          = 430   # mm  Stoppschwelle (43cm)
+    STOP_DIST_ARMS_UP  = 630   # mm  Stoppschwelle vorwärts wenn Arme oben (+20cm)
     CONE_DEG  = 60.0  # °   halber Kegelwinkel voraus/rückwärts (±60° = 120° gesamt)
     MIN_DIST  = 70    # mm  Eigenkörper ignorieren
     MIN_HITS  = 3     # Punkte für sicheren Treffer
@@ -140,13 +142,22 @@ class Lidar:
         self.stop_motor = False
         obstacles = 0
         for angle, distance in latest_scan:
-            if distance < self.MIN_DIST or distance > self.STOP_DIST:
+            if distance < self.MIN_DIST:
                 continue
 
-            # Kegelfilter nur beim Fahren, beim Drehen (0) Vollkreis
-            if direction > 0 and not self._in_cone(angle, 270, self.CONE_DEG):
-                continue
-            if direction < 0 and not self._in_cone(angle, 90, self.CONE_DEG):
+            # Kegelfilter + Stoppdistanz: vorwärts mit Armen oben 20cm weiter
+            if direction > 0:
+                if not self._in_cone(angle, 270, self.CONE_DEG):
+                    continue
+                stop_dist = self.STOP_DIST_ARMS_UP if self.arms_up else self.STOP_DIST
+            elif direction < 0:
+                if not self._in_cone(angle, 90, self.CONE_DEG):
+                    continue
+                stop_dist = self.STOP_DIST
+            else:
+                stop_dist = self.STOP_DIST
+
+            if distance > stop_dist:
                 continue
 
             arena_rad = (angle + theta) * math.pi / 180
