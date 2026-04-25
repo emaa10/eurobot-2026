@@ -30,6 +30,7 @@ class Gripper:
     # ── Lift ──────────────────────────────────────────────────────────────
 
     def lift_hoch(self):
+        self.servos.alle_auf()
         self.servos.lift_hoch()
 
     def lift_runter(self):
