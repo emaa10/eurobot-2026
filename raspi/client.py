@@ -12,49 +12,14 @@ import asyncio
 import curses
 import threading
 import queue
-import json
-import os
 import re
 
 HOST = '127.0.0.1'
 PORT = 5001
 
-_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_FILE = os.path.join(_DIR, '.tactic_config.json')
-
-TACTIC_LABELS_DEFAULT = {
-    1: "8 Stück",
-    2: "4 Stück, Homologation",
-    3: "Taktik 3",
-    4: "Taktik 4",
-}
-
 STEP_TEAM   = 0
 STEP_TACTIC = 1
 STEP_MATCH  = 2
-
-
-# ─── Taktik-Beschreibungen laden / speichern ─────────────────────────────────
-
-def load_labels() -> dict[int, str]:
-    labels = dict(TACTIC_LABELS_DEFAULT)
-    try:
-        with open(CONFIG_FILE) as f:
-            for k, v in json.load(f).items():
-                n = int(k)
-                if n in (3, 4):
-                    labels[n] = v
-    except (FileNotFoundError, json.JSONDecodeError, ValueError, KeyError):
-        pass
-    return labels
-
-
-def save_labels(labels: dict[int, str]):
-    try:
-        with open(CONFIG_FILE, 'w') as f:
-            json.dump({str(k): labels[k] for k in (3, 4)}, f)
-    except Exception:
-        pass
 
 
 # ─── Netzwerk-Thread ──────────────────────────────────────────────────────────
@@ -162,8 +127,8 @@ class App:
         self.scr     = stdscr
         self.step    = STEP_TEAM
         self.team    = 0          # 0 = blau, 1 = gelb
-        self.tactic  = 0          # 0-3 → Taktik 1-4
-        self.labels  = load_labels()
+        self.tactic  = 0          # Index in sorted(self.labels)
+        self.labels: dict[int, str] = {}
         self.logs:  list[str] = []
         self.scroll = 0           # Zeilen vom Ende zurück
         self._status: dict[str, str] = {}
@@ -257,8 +222,20 @@ class App:
             if line == '__DISCONNECTED__':
                 self.logs.append('[Verbindung getrennt]')
             else:
-                self.logs.append(line)
+                self._parse_tactic(line)
+                if not line.startswith('TACTIC '):
+                    self.logs.append(line)
                 self._parse_status(line)
+
+    def _parse_tactic(self, line: str):
+        if not line.startswith('TACTIC '):
+            return
+        parts = line.split(None, 2)
+        if len(parts) == 3:
+            try:
+                self.labels[int(parts[1])] = parts[2]
+            except ValueError:
+                pass
 
     def _parse_status(self, line: str):
         clean = strip_ansi(line).strip()
@@ -327,34 +304,35 @@ class App:
         team_str = "BLAU" if self.team == 0 else "GELB"
         self._header(f"EUROBOT 2026  ─  Schritt 2 / 2: Taktik    Team: {team_str}")
 
-        start_y = max(2, h // 2 - 3)
-        for i, num in enumerate([1, 2, 3, 4]):
+        if not self.labels:
+            safe_addstr(self.scr, h // 2, 2, "Lade Taktiken …", curses.color_pair(3))
+            self._footer("←  zurück    Q  beenden")
+            return
+
+        start_y = max(2, h // 2 - len(self.labels))
+        for i, num in enumerate(sorted(self.labels)):
             y = start_y + i * 2
             if y >= h - 3:
                 break
             lbl   = self.labels[num]
             sel   = (i == self.tactic)
             arrow = "▶" if sel else " "
-            edit  = "  [E]" if num in (3, 4) else ""
-
-            left  = f"  {arrow}  {num}   {lbl}"
-            right = edit
-            pad   = w - len(left) - len(right) - 3
-            line  = left + " " * max(1, pad) + right
+            line  = f"  {arrow}  {num}   {lbl}"
 
             attr = curses.color_pair(5) | curses.A_BOLD if sel else curses.color_pair(6)
             safe_addstr(self.scr, y, 1, line[:w - 2], attr)
 
-        self._footer("↑ ↓  wählen    1-4  direkt    E  Beschreibung bearbeiten"
-                     "    ←  zurück    Enter  bestätigen    Q  beenden")
+        n = len(self.labels)
+        self._footer(f"↑ ↓  wählen    1-{n}  direkt    ←  zurück    Enter  bestätigen    Q  beenden")
 
     # ── Schritt 3: Match ──────────────────────────────────────────────────────
 
     def _draw_match(self):
         h, w = self.scr.getmaxyx()
         team_str  = "BLAU" if self.team == 0 else "GELB"
-        t_num     = self.tactic + 1
-        t_desc    = self.labels[t_num]
+        tactic_keys = sorted(self.labels)
+        t_num  = tactic_keys[self.tactic] if tactic_keys else self.tactic + 1
+        t_desc = self.labels.get(t_num, '…')
         state     = self._status.get('state', '…').upper()
 
         self._header(
@@ -415,20 +393,27 @@ class App:
         return None
 
     def _key_tactic(self, key: int) -> str | None:
+        n = len(self.labels)
+        if n == 0:
+            if key in (curses.KEY_LEFT, curses.KEY_BACKSPACE, 127):
+                self.step = STEP_TEAM
+            elif key in (ord('q'), ord('Q')):
+                return 'quit'
+            return None
         if key == curses.KEY_UP:
-            self.tactic = (self.tactic - 1) % 4
+            self.tactic = (self.tactic - 1) % n
         elif key == curses.KEY_DOWN:
-            self.tactic = (self.tactic + 1) % 4
-        elif key in (ord('1'), ord('2'), ord('3'), ord('4')):
-            self.tactic = int(chr(key)) - 1
-        elif key in (ord('e'), ord('E')):
-            num = self.tactic + 1
-            if num in (3, 4):
-                self._edit_label(num)
+            self.tactic = (self.tactic + 1) % n
+        elif ord('1') <= key <= ord('9'):
+            idx = int(chr(key)) - 1
+            if idx < n:
+                self.tactic = idx
         elif key in (curses.KEY_ENTER, 10, 13):
+            tactic_keys = sorted(self.labels)
+            tactic_num  = tactic_keys[self.tactic]
             team_str = 'blue' if self.team == 0 else 'yellow'
             self._net.send(f'team {team_str}')
-            self._net.send(f'tactic {self.tactic + 1}')
+            self._net.send(f'tactic {tactic_num}')
             self._net.send('status')
             self.scroll = 0
             self.step = STEP_MATCH
@@ -453,73 +438,6 @@ class App:
         elif key in (ord('q'), ord('Q')):
             return 'quit'
         return None
-
-    # ── Beschreibung bearbeiten ───────────────────────────────────────────────
-
-    def _edit_label(self, num: int):
-        """Inline-Editor für Taktik-Beschreibungen 3 und 4."""
-        h, w = self.scr.getmaxyx()
-        original = self.labels[num]
-        buf      = list(original)
-        cur      = len(buf)
-
-        self.scr.timeout(-1)   # Blocking während Edit
-        curses.curs_set(1)
-
-        start_y  = max(2, h // 2 - 3)
-        y        = start_y + (num - 1) * 2
-        prefix   = f"  ▶  {num}   "
-        field_x  = 1 + len(prefix)
-        max_w    = w - field_x - 4
-
-        while True:
-            # Zeile neu zeichnen
-            line = (prefix + ''.join(buf))[:w - 2]
-            safe_addstr(self.scr, y, 1, ' ' * (w - 3),
-                        curses.color_pair(5) | curses.A_BOLD)
-            safe_addstr(self.scr, y, 1, line,
-                        curses.color_pair(5) | curses.A_BOLD)
-            # Editier-Hinweis
-            hint = "  Enter=OK   Esc=Abbrechen"
-            safe_addstr(self.scr, y + 1, 1, hint, curses.color_pair(3))
-            try:
-                self.scr.move(y, field_x + cur)
-            except curses.error:
-                pass
-            self.scr.refresh()
-
-            k = self.scr.getch()
-            if k in (curses.KEY_ENTER, 10, 13):
-                break
-            elif k == 27:                           # ESC
-                buf = list(original)
-                break
-            elif k in (curses.KEY_BACKSPACE, 127, 8):
-                if cur > 0:
-                    buf.pop(cur - 1)
-                    cur -= 1
-            elif k == curses.KEY_DC:
-                if cur < len(buf):
-                    buf.pop(cur)
-            elif k == curses.KEY_LEFT:
-                cur = max(0, cur - 1)
-            elif k == curses.KEY_RIGHT:
-                cur = min(len(buf), cur + 1)
-            elif k == curses.KEY_HOME:
-                cur = 0
-            elif k == curses.KEY_END:
-                cur = len(buf)
-            elif 32 <= k <= 126 and len(buf) < max_w:
-                buf.insert(cur, chr(k))
-                cur += 1
-
-        curses.curs_set(0)
-        self.scr.timeout(150)
-
-        new = ''.join(buf).strip()
-        if new:
-            self.labels[num] = new
-            save_labels(self.labels)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

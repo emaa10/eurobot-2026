@@ -32,12 +32,20 @@ LOG_FILE = '/home/eurobot/eurobot-2026/raspi/eurobot.log'
 TACTICS = {
     1: [['hg', 'lh', 'dd100', 'ta-15', 'dd800', 'ta10', 'dd680', 'ta90', 'dd350', 'ta70', 'dd1700', 'ta90']],
     2: [['dd100', 'ta-10', 'dd800', 'ta100', 'go', 'dd700', 'dd-100', 'ta70', 'dd1000', 'dd-70', 'ta90']],
-    3: [['hg', 'lh', 'dd100', 'ta-15', 'dd800', 'ta10', 'dd800', 'dd-100', 'ta90', 'dd300', 'w2r', 'dd-590', 'w2h', 'ta90', 'dd120', 'ta-90', 'dd650', 'ta70', 'dd1700', 'ta90']], # 1 mit cursor
+    3: [['hg', 'lh', 'dd100', 'ta-15', 'dd800', 'ta10', 'dd950', 'dd-190', 'ta90', 'dd200', 'gr', 'ta90', 'dd-200', 'ta-90', 'dd-1000', 'w2r', 'dd600', 'w2h', 'dd300', 'ta90', 'go', 'dd1900', 'ta90']],
     4: [['hg', 'dd1000', 'ta90', 'dd300', 'ta-90', 'dd800', 'dd-300', 'ta-90', 'dd800', 'dd-300',
          'ta-90', 'dd2000', 'dd-300', 'ta180', 'dd2000', 'dd-300', 'ta-90', 'dd1200',
          'w2r', 'dd-700', 'w2h', 'ta90', 'dd1000', 'ta90', 'dd500', 'ta-90', 'dd800']],
     5: [['hg', 'dd1000', 'ta90', 'dd800', 'ta-90', 'dd500', 'co', 'dd200', 'cg', 'dd-500',
          'ta90', 'dd300', 'go', 'dd-300', 'ta180', 'dd1000', 'ta-90', 'dd1000']],
+}
+
+TACTIC_NAMES = {
+    1: "8 Stück",
+    2: "4 Stück, Homologation",
+    3: "1 mit Cursor",
+    4: "Schlangenmäher",
+    5: "Greifer-Test",
 }
 
 
@@ -168,6 +176,10 @@ class Robot:
                 self.tactic_num = n
                 self.log(f"Taktik: {self.tactic_num}")
                 await self._ok(f"tactic={self.tactic_num}")
+
+            case 'tactics':
+                for n, name in TACTIC_NAMES.items():
+                    await self._send(f"TACTIC {n} {name}")
 
             case 'ready' | 'r':
                 if self.state not in (State.IDLE, State.DONE):
@@ -328,6 +340,8 @@ class Robot:
         self.log(f"Client verbunden: {addr}")
         await self._send("── Eurobot 2026 ── verbunden. 'help' für Befehle, 'status' für Zustand.")
         await self._status()
+        for n, name in TACTIC_NAMES.items():
+            await self._send(f"TACTIC {n} {name}")
 
         try:
             while True:
