@@ -49,6 +49,7 @@ class Camera:
         self.tracked_crates: Dict[int, CratePosition] = {}
 
         self._latest_tags: List[TagDetection] = []
+        self._latest_frame: np.ndarray | None = None
         self._lock = threading.Lock()
 
         self.running = False
@@ -145,7 +146,11 @@ class Camera:
         self.logger.info("Camera capture loop running")
         while self.running:
             try:
-                detected_crates = self.process_frame()
+                frame = self.capture_frame()
+                undistorted = self.undistort_image(frame)
+                corners, ids, _ = self.detect_aruco_markers(undistorted)
+                detected_crates = self.estimate_pose(corners, ids)
+                self.update_tracking(detected_crates)
 
                 tags: List[TagDetection] = []
                 for crate in detected_crates:
@@ -159,6 +164,7 @@ class Camera:
 
                 with self._lock:
                     self._latest_tags = tags
+                    self._latest_frame = frame
 
             except Exception as e:
                 if self.running:
@@ -171,6 +177,10 @@ class Camera:
         """Gibt alle aktuell sichtbaren Marker zurück mit horizontalem Winkel in Grad."""
         with self._lock:
             return list(self._latest_tags)
+
+    def get_latest_frame(self) -> np.ndarray | None:
+        with self._lock:
+            return self._latest_frame.copy() if self._latest_frame is not None else None
 
     def get_gripper_positions(self, team: str) -> list[int]:
         """

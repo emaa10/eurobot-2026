@@ -30,9 +30,9 @@ LOG_FILE = '/home/eurobot/eurobot-2026/raspi/eurobot.log'
 # Taktiken in Blau-Koordinaten – Task spiegelt für Gelb.
 # Homing (hg + hm) wird von 'ready' automatisch davor ausgeführt.
 TACTICS = {
-    1: [['dd1000', 'ta-90', 'dd500', 'ta90', 'dd585', 'ta90', 'dd350',
-         'co', 'dd260', 'gr', 'dd-500']],
-    2: [['dd1000']],
+    1: [['dd2000', 'dd-300', 'ta90', 'dd350',
+         'co', 'dd280', 'gr', 'dd-500']],
+    2: [['dd1000', 'ta-90', 'dd500', 'ta90', 'dd-1000']],
     3: [['dd1000']],
     4: [['dd1000']],
 }
@@ -364,27 +364,26 @@ class Robot:
     # ── Hintergrund-Tasks ─────────────────────────────────────────────────
 
     async def _camera_loop(self):
-        _prev_ids: frozenset = frozenset()
+        _had_tags = False
+        TAG_NAMEN = {Camera.TAG_BLUE: 'blau', Camera.TAG_YELLOW: 'gelb'}
+        GREIFER   = ['links-außen', 'links-innen', 'rechts-innen', 'rechts-außen']
         while True:
             tags = self.camera.getTag()
-            ids  = frozenset(t.id for t in tags)
-            if ids != _prev_ids:
-                _prev_ids = ids
-                if not tags:
-                    self.log("[CAM] keine Tags sichtbar")
+            if tags:
+                _had_tags = True
+                parts = [
+                    f"{TAG_NAMEN.get(t.id, f'ID {t.id}')} ({t.horizontal_angle:+.1f}°, {t.distance:.0f}mm)"
+                    for t in sorted(tags, key=lambda t: t.horizontal_angle)
+                ]
+                positions = self.camera.get_gripper_positions(self.team)
+                if positions:
+                    gr = ', '.join(GREIFER[p] for p in positions if 0 <= p < 4)
+                    self.log(f"[CAM] {' | '.join(parts)} → Greifer auf: {gr}")
                 else:
-                    TAG_NAMEN = {Camera.TAG_BLUE: 'blau', Camera.TAG_YELLOW: 'gelb'}
-                    GREIFER   = ['links-außen', 'links-innen', 'rechts-innen', 'rechts-außen']
-                    parts = [
-                        f"{TAG_NAMEN.get(t.id, f'ID {t.id}')} ({t.horizontal_angle:+.1f}°, {t.distance:.0f}mm)"
-                        for t in sorted(tags, key=lambda t: t.horizontal_angle)
-                    ]
-                    positions = self.camera.get_gripper_positions(self.team)
-                    if positions:
-                        gr = ', '.join(GREIFER[p] for p in positions if 0 <= p < 4)
-                        self.log(f"[CAM] {' | '.join(parts)} → Greifer auf: {gr}")
-                    else:
-                        self.log(f"[CAM] {' | '.join(parts)} → keine eigenen Kistchen")
+                    self.log(f"[CAM] {' | '.join(parts)} → keine eigenen Kistchen")
+            elif _had_tags:
+                _had_tags = False
+                self.log("[CAM] keine Tags sichtbar")
             await asyncio.sleep(0.5)
 
     async def _lidar_loop(self):

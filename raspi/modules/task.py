@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from time import time, sleep
 from typing import Self
 
@@ -138,6 +139,15 @@ class Task:
                 else:
                     self.gripper.loslassen()
                     self.logger.info("[GR] keine Kistchen sichtbar → alle Greifer auf")
+                if self.camera:
+                    import cv2
+                    frame = self.camera.get_latest_frame()
+                    if frame is not None:
+                        desktop = '/home/eurobot/Desktop'
+                        os.makedirs(desktop, exist_ok=True)
+                        path = f'{desktop}/co_{int(time())}.jpg'
+                        cv2.imwrite(path, frame)
+                        self.logger.info(f"[CAM] Bild gespeichert: {path}")
 
             case 'gr':  # greifer zu
                 self.gripper.greifen()
