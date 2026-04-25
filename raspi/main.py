@@ -30,9 +30,8 @@ LOG_FILE = '/home/eurobot/eurobot-2026/raspi/eurobot.log'
 # Taktiken in Blau-Koordinaten – Task spiegelt für Gelb.
 # Homing (hg + hm) wird von 'ready' automatisch davor ausgeführt.
 TACTICS = {
-    1: [['hg', 'lh', 'dd1000', 'ta-90', 'dd300', 'ta90', 'dd1000', 'dd-300', 'ta90', 'dd350',
-         'co', 'dd280', 'cg', 'dd-500', 'ta90', 'dd1000',
-         'ta-90', 'dd300', 'ta90', 'dd1000']],
+    1: [['hg', 'lh', 'dd1000', 'ta-90', 'dd300', 'ta90', 'dd1000', 'dd-270', 'ta90', 'dd350',
+         'dd200', 'ta90', 'dd2000']],
     2: [['dd1000', 'ta90', 'go', 'dd500', 'dd-130', 'ta90', 'dd1000']],
     3: [['dd1000']],
     4: [['dd1000']],
