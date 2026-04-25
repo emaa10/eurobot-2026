@@ -35,6 +35,10 @@ static constexpr float RAMP_US        = 150.0f;
 #define BELOW_LIMIT 5
 
 volatile bool opponent_detected = false;
+volatile uint16_t last_dist_l = 9999;
+volatile uint16_t last_dist_r = 9999;
+static uint32_t tactic_start_ms = 0;
+#define TACTIC_TIMEOUT_MS 99000
 
 static bool tof_valid(uint16_t v) {
     return v != 0 && v != 20 && v != 8190 && v != 9999;
@@ -107,6 +111,8 @@ void loop() {
 
     uint16_t d1 = filter_l.median();
     uint16_t d2 = filter_r.median();
+    last_dist_l = d1;
+    last_dist_r = d2;
 
     bool obstacle = tof_valid(d1) && tof_valid(d2) && (d1 < STOP_MM || d2 < STOP_MM);
 
@@ -139,10 +145,23 @@ static void run_steps(uint32_t steps, bool check_opponent) {
     uint32_t decel_start = steps > 80 ? steps - 80 : 0;
 
     for (uint32_t i = 0; i < steps; i++) {
+        if (tactic_start_ms > 0 && (millis() - tactic_start_ms) >= TACTIC_TIMEOUT_MS) {
+            MOTORS_OFF();
+            Serial.println("[motor] 99s Timeout — Stepper gestoppt");
+            return;
+        }
         if (check_opponent && opponent_detected) {
             Serial.printf("[motor] PAUSE bei step %u — warte auf Freigabe\n", i);
             MOTORS_OFF();
-            while (opponent_detected) sleep_ms(10);
+            uint32_t blocked_ms = 0;
+            while (opponent_detected) {
+                sleep_ms(10);
+                blocked_ms += 10;
+                if (blocked_ms >= 10000) {
+                    Serial.println("[motor] 10s Gegner — Fahrt abgebrochen");
+                    return;
+                }
+            }
             Serial.println("[motor] RESUME");
             MOTORS_ON();
         }
@@ -218,14 +237,30 @@ void waitForPullcord() {
     Serial.println("[PULLCORD] gezogen, starte Taktik");
 }
 
+void waitForGegnerWeg() {
+    Serial.println("[GEGNER] warte bis Weg frei...");
+    gpio_init(14);
+    gpio_set_dir(14, GPIO_OUT);
+    gpio_put(14, 0);
+    while (opponent_detected) {
+        Serial.printf("[GEGNER] L=%dmm R=%dmm\n", last_dist_l, last_dist_r);
+        sleep_ms(200);
+    }
+    gpio_put(14, 1);
+    tactic_start_ms = millis();
+    Serial.println("[GEGNER] Weg frei — Timer gestartet");
+}
+
 void servoSpin() {
     servo.attach(SERVO_PIN);
-    servo.write(1);  // Mittelstellung
+    servo.write(30);  // Mittelstellung
     Serial.println("[SERVO] dreht");
 }
 
 void runTactic() {
-    drive(100);   // Beispiel: 100 cm vorwärts
+    waitForGegnerWeg();  // warte bis Weg frei, dann erst losfahren
+    sleep_ms(86000);     // 85 Sekunden warten
+    drive(100);          // 100 cm vorwärts
     servoSpin();
     while (true) sleep_ms(1000);
 }
