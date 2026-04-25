@@ -34,6 +34,7 @@ class Task:
 
         self.points = 0
         self.logger = logging.getLogger(__name__)
+        self._cam_positions: list[int] = []
 
     def next_task(self):
         self.initial_actions = self.action_set[0]
@@ -132,11 +133,11 @@ class Task:
                 ]
                 _NAMEN = ['links-außen', 'links-innen', 'rechts-innen', 'rechts-außen']
                 positions = self.camera.get_gripper_positions(self.color) if self.camera else []
-                if positions:
-                    for p in positions:
-                        if 0 <= p < 4:
-                            _GRIPPER_FUNCS[p]()
-                    gr = ', '.join(_NAMEN[p] for p in positions if 0 <= p < 4)
+                self._cam_positions = [p for p in positions if 0 <= p < 4]
+                if self._cam_positions:
+                    for p in self._cam_positions:
+                        _GRIPPER_FUNCS[p]()
+                    gr = ', '.join(_NAMEN[p] for p in self._cam_positions)
                     self.logger.info(f"[GR] auf: {gr}")
                 else:
                     self.gripper.loslassen()
@@ -150,6 +151,17 @@ class Task:
                         path = f'{desktop}/co_{int(time())}.jpg'
                         cv2.imwrite(path, frame)
                         self.logger.info(f"[CAM] Bild gespeichert: {path}")
+
+            case 'cg':  # camera grab – schließt nur Greifer aus vorherigem co
+                _CLOSE_FUNCS = [
+                    lambda: self.gripper.servos.grip_links_aussen(2),
+                    lambda: self.gripper.servos.grip_links_innen(2),
+                    lambda: self.gripper.servos.grip_rechts_innen(2),
+                    lambda: self.gripper.servos.grip_rechts_aussen(2),
+                ]
+                for p in self._cam_positions:
+                    _CLOSE_FUNCS[p]()
+                self.logger.info(f"[CG] zu: {self._cam_positions}")
 
             case 'gr':  # greifer zu
                 self.gripper.greifen()
