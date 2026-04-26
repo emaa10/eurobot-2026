@@ -30,8 +30,8 @@ static constexpr float RAMP_US        = 150.0f;
 
 // ── ToF ───────────────────────────────────────────────────────
 #define VL53_ADDR   0x29
-#define STOP_MM     500
-#define RESUME_MM   540
+#define STOP_MM     100
+#define RESUME_MM   120
 #define BELOW_LIMIT 5
 
 volatile bool opponent_detected = false;
@@ -114,11 +114,7 @@ void loop() {
     last_dist_l = d1;
     last_dist_r = d2;
 
-#ifdef IGNORE_LEFT_TOF
-    bool obstacle = tof_valid(d2) && d2 < STOP_MM;
-#else
-    bool obstacle = tof_valid(d1) && tof_valid(d2) && (d1 < STOP_MM || d2 < STOP_MM);
-#endif
+    bool obstacle = tof_valid(d2) && d2 < STOP_MM;  // L ignoriert
 
     if (obstacle) { below++; } else if (below > 0) { below--; }
 
@@ -246,9 +242,15 @@ void waitForGegnerWeg() {
     gpio_init(14);
     gpio_set_dir(14, GPIO_OUT);
     gpio_put(14, 0);
+    uint32_t waited = 0;
     while (opponent_detected) {
-        Serial.printf("[GEGNER] L=%dmm R=%dmm\n", last_dist_l, last_dist_r);
+        Serial.printf("[GEGNER] L=%dmm R=%dmm (waited %ums)\n", last_dist_l, last_dist_r, waited);
         sleep_ms(200);
+        waited += 200;
+        if (waited >= 5000) {
+            Serial.println("[GEGNER] Timeout — fahre trotzdem");
+            break;
+        }
     }
     gpio_put(14, 1);
     tactic_start_ms = millis();

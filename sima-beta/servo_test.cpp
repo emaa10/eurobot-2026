@@ -10,10 +10,11 @@ static void tof_write(i2c_inst_t *i2c, uint8_t reg, uint8_t val) {
 }
 
 static uint16_t tof_read_raw(i2c_inst_t *i2c) {
-    uint8_t reg = 0x1E, buf[2] = {0xFF, 0xFF};
+    uint8_t reg = 0x1E;
+    uint8_t buf[2] = {0xFF, 0xFF};
     if (i2c_write_blocking(i2c, VL53_ADDR, &reg, 1, true) < 0) return 9999;
     i2c_read_blocking(i2c, VL53_ADDR, buf, 2, false);
-    return (buf[0] << 8) | buf[1];
+    return (uint16_t)((buf[0] << 8) | buf[1]);
 }
 
 static void tof_start(i2c_inst_t *i2c) {
@@ -24,6 +25,7 @@ static void tof_start(i2c_inst_t *i2c) {
 
 void setup() {
     Serial.begin(115200);
+    Serial.println("Starte Servo-Test...");
     sleep_ms(500);
 
     i2c_init(i2c1, 100000);
@@ -43,6 +45,6 @@ void setup() {
 void loop() {
     uint16_t l = tof_read_raw(i2c1);
     uint16_t r = tof_read_raw(i2c0);
-    Serial.printf("[TOF] L=%d mm  R=%d mm\n", l, r);
+    Serial.printf("[TOF] L=%u R=%u\n", l, r);
     delay(200);
 }
