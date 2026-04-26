@@ -270,10 +270,22 @@ void servoSpin() {
     Serial.println("[SERVO] dreht");
 }
 
-void runTactic() {
+void runTactic() { //blue
     waitForGegnerWeg();  // warte bis Weg frei, dann erst losfahren
     sleep_ms(86000);     // 85 Sekunden warten
-    drive(100);          // 100 cm vorwärts
+    drive(110);          // 100 cm vorwärts
+    /*turn(-30);           // 90° rechts drehen
+    drive(20);           // 20 cm vorwärts*/
+    servoSpin();
+    while (true) sleep_ms(1000);
+}
+
+void runTactic2() { //yellow
+    waitForGegnerWeg();  // warte bis Weg frei, dann erst losfahren
+    sleep_ms(86000);     // 85 Sekunden warten
+    drive(115);          // 100 cm vorwärts
+    turn(45);           // 90° rechts drehen
+    drive(35);           // 20 cm vorwärts
     servoSpin();
     while (true) sleep_ms(1000);
 }
