@@ -38,7 +38,7 @@ volatile bool opponent_detected = false;
 volatile uint16_t last_dist_l = 9999;
 volatile uint16_t last_dist_r = 9999;
 static uint32_t tactic_start_ms = 0;
-#define TACTIC_TIMEOUT_MS 99000
+#define TACTIC_TIMEOUT_MS 10000
 
 static bool tof_valid(uint16_t v) {
     return v != 0 && v != 20 && v != 8190 && v != 9999;
@@ -184,8 +184,8 @@ void drive(int cm) {
     uint32_t steps = (uint32_t)(fabsf((float)cm) * 10.0f * STEPS_PER_MM);
     Serial.printf("[drive] %dcm → %u steps, opponent_detected=%d\n", cm, steps, opponent_detected);
 
-    gpio_put(L_DIR, cm > 0 ? 1 : 0);
-    gpio_put(R_DIR, cm > 0 ? 0 : 1);
+    gpio_put(L_DIR, cm > 0 ? 0 : 1);
+    gpio_put(R_DIR, cm > 0 ? 1 : 0);
 
     MOTORS_ON();
     run_steps(steps, cm > 0);
@@ -270,12 +270,24 @@ void servoSpin() {
 }
 
 void runTactic() {
-    waitForGegnerWeg();  // warte bis Weg frei, dann erst losfahren
-    sleep_ms(86000);     // 85 Sekunden warten
-    drive(100);          // 100 cm vorwärts
+    waitForGegnerWeg();  // warte bis Weg frei, dann erst losfahren    // 85 Sekunden warten
+    //delay(9000);       // kurze Pause, damit ToF-Werte stabilisieren können
+    drive(50);          // 100 cm vorwärts
+    turn(-30);          // 90° rechts drehen
+    drive(50);          // 100 cm vorwärts*/
     servoSpin();
     while (true) sleep_ms(1000);
 }
+
+void runTactic2() {
+    waitForGegnerWeg();  // warte bis Weg frei, dann erst losfahren    // 85 Sekunden warten
+    drive(40);          // 100 cm vorwärts
+    turn(-37);          // 90° rechts drehen
+    drive(120);          // 100 cm vorwärts
+    servoSpin();
+    while (true) sleep_ms(1000);
+}
+
 
 // ── Core 1 ────────────────────────────────────────────────────
 
