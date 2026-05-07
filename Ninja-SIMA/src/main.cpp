@@ -1,31 +1,31 @@
-#include <SCServo.h>
+#include <Arduino.h>
+// ── Pins ─────────────────────────────
+#define STEP_R 2
+#define DIR_R  3
+#define STEP_L 4
+#define DIR_L  5
 
-SMS_STS sc;
-
-void blink(int times) {
-  for (int i = 0; i < times; i++) {
-    digitalWrite(LED_BUILTIN, HIGH); delay(150);
-    digitalWrite(LED_BUILTIN, LOW);  delay(150);
-  }
-}
+// ── Speed ────────────────────────────
+int delayTime = 500; // kleiner = schneller
 
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-  Serial.begin(1000000);
-  sc.pSerial = &Serial;
-  delay(1000);
+  pinMode(STEP_R, OUTPUT);
+  pinMode(DIR_R, OUTPUT);
+  pinMode(STEP_L, OUTPUT);
+  pinMode(DIR_L, OUTPUT);
 
-  // Scan IDs 1–20
-  for (int id = 1; id <= 20; id++) {
-    if (sc.Ping(id) != -1) {
-      delay(500);
-      blink(id);   // LED blinkt ID-Anzahl mal
-      delay(1000);
-    }
-  }
-
-  // Scan fertig: 3x schnell blinken
-  blink(3);
+  // Richtung fest
+  digitalWrite(DIR_R, HIGH);
+  digitalWrite(DIR_L, HIGH);
 }
 
-void loop() {}
+void loop() {
+  // beide Motoren Schritt
+  digitalWrite(STEP_R, HIGH);
+  digitalWrite(STEP_L, HIGH);
+  delayMicroseconds(delayTime);
+
+  digitalWrite(STEP_R, LOW);
+  digitalWrite(STEP_L, LOW);
+  delayMicroseconds(delayTime);
+}
