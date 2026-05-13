@@ -7,10 +7,12 @@ ESP32 Protocol (text, newline-terminated):
     TA{deg}       turn by relative angle in degrees
     ST            stop current drive motion immediately
     RS            resume drive motion after stop
+    MD            motor disable (EN HIGH) – vor Pullcord / manuelles Positionieren
+    ME            motor enable  (EN LOW)  – nach Pullcord / vor Bewegung
     SP{x};{y};{t} set odometry position
 
   ESP32 → Raspi:
-    OK            command completed (DD / TA)
+    OK            command completed (DD / TA / MD / ME)
     ERR           error
     P{x};{y};{t}  position update (optional, ESP32 can send periodically)
 """
@@ -135,3 +137,13 @@ class ESP32:
 
     async def set_stop(self):
         self._write("ST")
+
+    async def motor_disable(self):
+        """Motoren deaktivieren (EN HIGH) – Treiber aus, Robot manuell verschiebbar."""
+        self._write("MD")
+        await self._wait_for_ok()
+
+    async def motor_enable(self):
+        """Motoren aktivieren (EN LOW) – vor jeder Fahrt aufrufen."""
+        self._write("ME")
+        await self._wait_for_ok()
