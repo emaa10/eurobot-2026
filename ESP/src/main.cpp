@@ -1,7 +1,7 @@
 /*
  * Eurobot 2026 – ESP32 Drive Controller
  *
- * Core 0: stepperTask  – AccelStepper, läuft durch ohne Delay
+ * Core 0: stepperTask  – direct GPIO stepping (wie Testcode, delayMicroseconds)
  * Core 1: uartTask     – Serial I/O → Command-Queue
  *
  * Raspi → ESP32:
@@ -21,7 +21,6 @@
  */
 
 #include <Arduino.h>
-#include <AccelStepper.h>
 
 // ── Pins ──────────────────────────────────────────────────────────────────
 #define STEP_R       26
@@ -30,25 +29,19 @@
 #define STEP_L       33
 #define EN_L         32
 #define EN_R         35
-#define ENDSTOP_PIN   5   // INPUT_PULLUP: HIGH = offen, LOW = gedrückt
+#define ENDSTOP_PIN   5
 
-// ── Motor-Geometrie – AN HARDWARE ANPASSEN ───────────────────────────────
-static constexpr float STEPS_PER_REV = 1600.0f;
-static constexpr float WHEEL_DIAM_MM = 48.0f;
-static constexpr float WHEELBASE_MM  = 226.0f;
-static constexpr float STEPS_PER_MM  = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);
-static constexpr float STEPS_PER_DEG = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
-static constexpr float MAX_SPEED_R   = 2500.0f;  // delayTime=200µs → 1/(2*200µs)
-static constexpr float MAX_SPEED_L   = 2442.0f;  // 2.3% langsamer → Rechtsdrall korrigieren
-static constexpr float ACCEL         = 2000.0f;  // steps/s²
-static constexpr float HOMING_SPEED  = 400.0f;   // steps/s – langsam an Wand heranfahren
-
-// ── AccelStepper ──────────────────────────────────────────────────────────
-AccelStepper stepperR(AccelStepper::DRIVER, STEP_R, DIR_R);
-AccelStepper stepperL(AccelStepper::DRIVER, STEP_L, DIR_L);
+// ── Motor-Geometrie ────────────────────────────────────────────────────────
+static constexpr float STEPS_PER_REV   = 1600.0f;
+static constexpr float WHEEL_DIAM_MM   = 48.0f;
+static constexpr float WHEELBASE_MM    = 226.0f;
+static constexpr float STEPS_PER_MM    = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);
+static constexpr float STEPS_PER_DEG   = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
+static constexpr int   STEP_DELAY_US   = 200;   // µs pro Halbzyklus (= 2500 steps/s)
+static constexpr long  MIN_HOMING_STEPS = 100;
 
 // ── Command queue ─────────────────────────────────────────────────────────
-struct Cmd { char type; int32_t val; };  // type: 'D'=DD, 'T'=TA, 'H'=HE
+struct Cmd { char type; int32_t val; };
 static QueueHandle_t cmdQueue;
 
 // ── Shared ────────────────────────────────────────────────────────────────
@@ -66,107 +59,106 @@ static void serialPrintln(const char* msg) {
 
 // ── Core 0: Stepper-Task ──────────────────────────────────────────────────
 //
-//  IDLE ──DD/TA──► MOVING ──ST──► STOPPING ──stillstand──► PAUSED
-//                                                              │
-//                  ◄─────────────────── RS ───────────────────┘
-//  PAUSED ──ST──► IDLE  (sendet INTERRUPTED)
+//  Vorwärts (DD+): DIR_R=LOW,  DIR_L=LOW
+//  Rückwärts (DD-): DIR_R=HIGH, DIR_L=HIGH
+//  Uhrzeigersinn (TA+): DIR_R=HIGH (zurück), DIR_L=LOW (vor)
+//  Gegenuhrzeigersinn (TA-): DIR_R=LOW (vor),  DIR_L=HIGH (zurück)
 //
-//  IDLE ──HE──► HOMING ──endstop LOW──► HOMING_STOP ──stillstand──► IDLE (OK)
-//
-enum class MotionState { IDLE, MOVING, STOPPING, PAUSED, HOMING, HOMING_STOP };
-
-static long savedTargetR = 0, savedTargetL = 0;
-static long homingStartPosR = 0;
-static constexpr long MIN_HOMING_STEPS = 100;  // ~20mm Anti-Bounce vor Endstop-Check
+enum class MotionState { IDLE, MOVING, PAUSED, HOMING };
 
 static void stepperTask(void*) {
     MotionState state = MotionState::IDLE;
+    long  stepsRem    = 0;
+    long  homingSteps = 0;
+    uint8_t savedDirR = LOW, savedDirL = LOW;
     Cmd cmd = {};
 
     while (true) {
-        TickType_t wait = (state == MotionState::IDLE) ? portMAX_DELAY : 0;
-        if (xQueueReceive(cmdQueue, &cmd, wait) == pdTRUE) {
-            if (state == MotionState::IDLE) {
-                if (cmd.type == 'D') {
-                    long s = lroundf(cmd.val * STEPS_PER_MM);
-                    stepperR.move(-s);
-                    stepperL.move(lroundf(s * MAX_SPEED_L / MAX_SPEED_R));
-                    state = MotionState::MOVING;
-                } else if (cmd.type == 'T') {
-                    long s = lroundf(cmd.val * STEPS_PER_DEG);
-                    stepperR.move(s);
-                    stepperL.move(lroundf(s * MAX_SPEED_L / MAX_SPEED_R));
-                    state = MotionState::MOVING;
-                } else if (cmd.type == 'H') {
-                    // Langsam rückwärts bis Endstop – Pin-Status zuerst senden
-                    serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ES:LOW" : "ES:HIGH");
-                    stepperR.setMaxSpeed(HOMING_SPEED);
-                    stepperL.setMaxSpeed(HOMING_SPEED * MAX_SPEED_L / MAX_SPEED_R);
-                    stepperR.move(100000L);
-                    stepperL.move(lroundf(-100000.0f * MAX_SPEED_L / MAX_SPEED_R));
-                    homingStartPosR = stepperR.currentPosition();
-                    state = MotionState::HOMING;
-                }
-            }
-        }
 
-        if (stopFlag) {
-            stopFlag = false;
-            if (state == MotionState::MOVING) {
-                savedTargetR = stepperR.targetPosition();
-                savedTargetL = stepperL.targetPosition();
-                stepperR.setCurrentPosition(stepperR.currentPosition());
-                stepperL.setCurrentPosition(stepperL.currentPosition());
-                state = MotionState::PAUSED;
-            } else if (state == MotionState::PAUSED) {
-                state = MotionState::IDLE;
-                serialPrintln("INTERRUPTED");
-            }
-        }
+        // ── IDLE ──────────────────────────────────────────────────────
+        if (state == MotionState::IDLE) {
+            if (xQueueReceive(cmdQueue, &cmd, portMAX_DELAY) != pdTRUE) continue;
 
-        if (resumeFlag) {
-            resumeFlag = false;
-            if (state == MotionState::PAUSED) {
-                long remR = savedTargetR - stepperR.currentPosition();
-                long remL = savedTargetL - stepperL.currentPosition();
-                stepperR.move(remR);
-                stepperL.move(remL);
+            if (cmd.type == 'D') {
+                long s = lroundf(cmd.val * STEPS_PER_MM);
+                savedDirR = (s >= 0) ? LOW  : HIGH;
+                savedDirL = (s >= 0) ? LOW  : HIGH;
+                stepsRem  = abs(s);
+                digitalWrite(DIR_R, savedDirR);
+                digitalWrite(DIR_L, savedDirL);
                 state = MotionState::MOVING;
+
+            } else if (cmd.type == 'T') {
+                long s = lroundf(cmd.val * STEPS_PER_DEG);
+                savedDirR = (s >= 0) ? HIGH : LOW;
+                savedDirL = (s >= 0) ? LOW  : HIGH;
+                stepsRem  = abs(s);
+                digitalWrite(DIR_R, savedDirR);
+                digitalWrite(DIR_L, savedDirL);
+                state = MotionState::MOVING;
+
+            } else if (cmd.type == 'H') {
+                serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ES:LOW" : "ES:HIGH");
+                digitalWrite(DIR_R, HIGH);
+                digitalWrite(DIR_L, HIGH);
+                homingSteps = 0;
+                state = MotionState::HOMING;
             }
         }
 
-        if (state == MotionState::MOVING || state == MotionState::STOPPING) {
-            stepperR.run();
-            stepperL.run();
-            if (!stepperR.isRunning() && !stepperL.isRunning()) {
-                if (state == MotionState::STOPPING) {
-                    state = MotionState::PAUSED;
-                } else {
-                    state = MotionState::IDLE;
-                    serialPrintln("OK");
-                }
-            }
-        }
-
-        if (state == MotionState::HOMING) {
-            stepperR.run();
-            stepperL.run();
-            bool travelledEnough = abs(stepperR.currentPosition() - homingStartPosR) >= MIN_HOMING_STEPS;
-            if (travelledEnough && digitalRead(ENDSTOP_PIN) == LOW) {
-                stepperR.stop();
-                stepperL.stop();
-                state = MotionState::HOMING_STOP;
-            }
-        }
-
-        if (state == MotionState::HOMING_STOP) {
-            stepperR.run();
-            stepperL.run();
-            if (!stepperR.isRunning() && !stepperL.isRunning()) {
-                stepperR.setMaxSpeed(MAX_SPEED_R);
-                stepperL.setMaxSpeed(MAX_SPEED_L);
+        // ── MOVING ────────────────────────────────────────────────────
+        else if (state == MotionState::MOVING) {
+            if (stopFlag) {
+                stopFlag = false;
+                state = MotionState::PAUSED;
+            } else if (stepsRem <= 0) {
                 state = MotionState::IDLE;
                 serialPrintln("OK");
+            } else {
+                digitalWrite(STEP_R, HIGH);
+                digitalWrite(STEP_L, HIGH);
+                delayMicroseconds(STEP_DELAY_US);
+                digitalWrite(STEP_R, LOW);
+                digitalWrite(STEP_L, LOW);
+                delayMicroseconds(STEP_DELAY_US);
+                stepsRem--;
+            }
+        }
+
+        // ── PAUSED ────────────────────────────────────────────────────
+        else if (state == MotionState::PAUSED) {
+            if (resumeFlag) {
+                resumeFlag = false;
+                digitalWrite(DIR_R, savedDirR);
+                digitalWrite(DIR_L, savedDirL);
+                state = MotionState::MOVING;
+            } else if (stopFlag) {
+                stopFlag = false;
+                stepsRem = 0;
+                state = MotionState::IDLE;
+                serialPrintln("INTERRUPTED");
+            } else {
+                vTaskDelay(pdMS_TO_TICKS(1));
+            }
+        }
+
+        // ── HOMING ────────────────────────────────────────────────────
+        else if (state == MotionState::HOMING) {
+            if (stopFlag) {
+                stopFlag = false;
+                state = MotionState::IDLE;
+                serialPrintln("INTERRUPTED");
+            } else if (homingSteps >= MIN_HOMING_STEPS && digitalRead(ENDSTOP_PIN) == LOW) {
+                state = MotionState::IDLE;
+                serialPrintln("OK");
+            } else {
+                digitalWrite(STEP_R, HIGH);
+                digitalWrite(STEP_L, HIGH);
+                delayMicroseconds(STEP_DELAY_US);
+                digitalWrite(STEP_R, LOW);
+                digitalWrite(STEP_L, LOW);
+                delayMicroseconds(STEP_DELAY_US);
+                homingSteps++;
             }
         }
     }
@@ -198,7 +190,6 @@ static void uartTask(void*) {
                         digitalWrite(EN_R, LOW);
                         serialPrintln("OK");
                     } else if (buf == "ES") {
-                        // Debug: Endstop-Status zurückmelden
                         serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ENDSTOP:LOW" : "ENDSTOP:HIGH");
                     } else if (buf == "HE") {
                         cmd.type = 'H';
@@ -215,7 +206,7 @@ static void uartTask(void*) {
                         stopFlag = false;
                         xQueueSend(cmdQueue, &cmd, pdMS_TO_TICKS(200));
                     } else if (buf.startsWith("SP")) {
-                        // Odometrie-Sync – kein Ack nötig
+                        // Odometrie-Sync – kein Ack
                     } else {
                         serialPrintln("ERR");
                     }
@@ -235,18 +226,17 @@ void setup() {
     Serial.begin(115200);
     disableCore0WDT();
 
-    pinMode(EN_L, OUTPUT);
-    pinMode(EN_R, OUTPUT);
+    pinMode(STEP_R, OUTPUT);
+    pinMode(DIR_R,  OUTPUT);
+    pinMode(STEP_L, OUTPUT);
+    pinMode(DIR_L,  OUTPUT);
+    pinMode(EN_L,   OUTPUT);
+    pinMode(EN_R,   OUTPUT);
+
     digitalWrite(EN_L, HIGH);  // deaktiviert bis ME-Befehl (nach Pullcord)
     digitalWrite(EN_R, HIGH);
 
     pinMode(ENDSTOP_PIN, INPUT_PULLUP);
-
-    stepperR.setMaxSpeed(MAX_SPEED_R);
-    stepperR.setAcceleration(ACCEL * (MAX_SPEED_R / MAX_SPEED_L));
-    stepperL.setMaxSpeed(MAX_SPEED_L);
-    stepperL.setAcceleration(ACCEL);
-    stepperL.setPinsInverted(true, false, false);
 
     cmdQueue  = xQueueCreate(8, sizeof(Cmd));
     serialMtx = xSemaphoreCreateMutex();
