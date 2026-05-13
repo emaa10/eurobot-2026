@@ -88,20 +88,20 @@ static void stepperTask(void*) {
             if (xQueueReceive(cmdQueue, &cmd, portMAX_DELAY) != pdTRUE) continue;
 
             if (cmd.type == 'D') {
-                // Geradeaus: beide Motoren gleiche Richtung (wie Testcode HIGH+HIGH)
+                // Geradeaus: DIR_R und DIR_L entgegengesetzt (Motoren physisch gespiegelt)
                 long s = lroundf(cmd.val * STEPS_PER_MM);
                 savedDirR = (s >= 0) ? HIGH : LOW;
-                savedDirL = (s >= 0) ? HIGH : LOW;
+                savedDirL = (s >= 0) ? LOW  : HIGH;
                 totalSteps = stepsRem = abs(s);
                 digitalWrite(DIR_R, savedDirR);
                 digitalWrite(DIR_L, savedDirL);
                 state = MotionState::MOVING;
 
             } else if (cmd.type == 'T') {
-                // Drehen: Motoren entgegengesetzt
+                // Drehen: beide Pins gleich (R rückwärts + L vorwärts = beide LOW = CW)
                 long s = lroundf(cmd.val * STEPS_PER_DEG);
                 savedDirR = (s >= 0) ? LOW  : HIGH;
-                savedDirL = (s >= 0) ? HIGH : LOW;
+                savedDirL = (s >= 0) ? LOW  : HIGH;
                 totalSteps = stepsRem = abs(s);
                 digitalWrite(DIR_R, savedDirR);
                 digitalWrite(DIR_L, savedDirL);
@@ -110,7 +110,7 @@ static void stepperTask(void*) {
             } else if (cmd.type == 'H') {
                 serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ES:LOW" : "ES:HIGH");
                 digitalWrite(DIR_R, LOW);
-                digitalWrite(DIR_L, LOW);
+                digitalWrite(DIR_L, HIGH);
                 homingSteps = 0;
                 state = MotionState::HOMING;
             }
