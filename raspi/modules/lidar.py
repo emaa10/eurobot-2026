@@ -144,8 +144,11 @@ class Lidar:
         if not latest_scan:
             return self.stop_motor
 
+        prev_stop = self.stop_motor
         self.stop_motor = False
         obstacles = 0
+        closest_dist = None
+        closest_angle = None
         for angle, distance in latest_scan:
             if distance < self.MIN_DIST:
                 continue
@@ -165,11 +168,20 @@ class Lidar:
             if distance > stop_dist:
                 continue
 
-            self.logger.info(f'Obstacle: angle={angle:.1f}° dist={distance:.0f}mm')
+            if closest_dist is None or distance < closest_dist:
+                closest_dist = distance
+                closest_angle = angle
             obstacles += 1
             if obstacles >= self.MIN_HITS:
                 self.stop_motor = True
                 break
+
+        if self.stop_motor and not prev_stop:
+            self.logger.info(
+                f'GEGNER ERKANNT – Stop! {closest_dist:.0f}mm @ {closest_angle:.1f}°'
+            )
+        elif not self.stop_motor and prev_stop:
+            self.logger.info('Weg frei – Fahrt fortgesetzt')
 
         return self.stop_motor
 

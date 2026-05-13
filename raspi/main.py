@@ -94,7 +94,9 @@ class Robot:
 
         # Log-Queue: Hintergrund-Task streamt Einträge zum Client
         self._log_queue: asyncio.Queue = asyncio.Queue()
-        self.logger.addHandler(_QueueLogHandler(self._log_queue))
+        _q_handler = _QueueLogHandler(self._log_queue)
+        self.logger.addHandler(_q_handler)
+        logging.getLogger('modules.lidar').addHandler(_q_handler)
 
         # Zustand
         self.state      = State.IDLE
