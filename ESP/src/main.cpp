@@ -32,6 +32,10 @@
 #define ENDSTOP_PIN   5
 
 // ── Motor-Geometrie ────────────────────────────────────────────────────────
+// Motor-Invertierung: auf true setzen wenn Kabel am Treiber vertauscht
+static constexpr bool  INVERT_R        = false;
+static constexpr bool  INVERT_L        = false;
+
 static constexpr float STEPS_PER_REV   = 1600.0f;
 static constexpr float WHEEL_DIAM_MM   = 48.0f;
 static constexpr float WHEELBASE_MM    = 226.0f;
@@ -68,6 +72,9 @@ static void serialPrintln(const char* msg) {
 //
 enum class MotionState { IDLE, MOVING, PAUSED, HOMING };
 
+static inline uint8_t dirR(uint8_t d) { return INVERT_R ? (d == HIGH ? LOW : HIGH) : d; }
+static inline uint8_t dirL(uint8_t d) { return INVERT_L ? (d == HIGH ? LOW : HIGH) : d; }
+
 static inline int accel_delay(long done, long rem) {
     long ramp = min(done, min(rem, ACCEL_STEPS));
     return STEP_DELAY_MAX - (int)((STEP_DELAY_MAX - STEP_DELAY_MIN) * ramp / ACCEL_STEPS);
@@ -90,8 +97,8 @@ static void stepperTask(void*) {
             if (cmd.type == 'D') {
                 // R: LOW=vor, HIGH=zurück  |  L: HIGH=vor, LOW=zurück
                 long s = lroundf(cmd.val * STEPS_PER_MM);
-                savedDirR = (s >= 0) ? LOW  : HIGH;
-                savedDirL = (s >= 0) ? HIGH : LOW;
+                savedDirR = dirR((s >= 0) ? LOW  : HIGH);
+                savedDirL = dirL((s >= 0) ? HIGH : LOW);
                 totalSteps = stepsRem = abs(s);
                 digitalWrite(DIR_R, savedDirR);
                 digitalWrite(DIR_L, savedDirL);
@@ -100,8 +107,8 @@ static void stepperTask(void*) {
             } else if (cmd.type == 'T') {
                 // CW: R zurück (HIGH) + L vor (HIGH) = beide HIGH
                 long s = lroundf(cmd.val * STEPS_PER_DEG);
-                savedDirR = (s >= 0) ? HIGH : LOW;
-                savedDirL = (s >= 0) ? HIGH : LOW;
+                savedDirR = dirR((s >= 0) ? HIGH : LOW);
+                savedDirL = dirL((s >= 0) ? HIGH : LOW);
                 totalSteps = stepsRem = abs(s);
                 digitalWrite(DIR_R, savedDirR);
                 digitalWrite(DIR_L, savedDirL);
@@ -109,8 +116,8 @@ static void stepperTask(void*) {
 
             } else if (cmd.type == 'H') {
                 serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ES:LOW" : "ES:HIGH");
-                digitalWrite(DIR_R, HIGH);  // R rückwärts
-                digitalWrite(DIR_L, LOW);   // L rückwärts
+                digitalWrite(DIR_R, dirR(HIGH));
+                digitalWrite(DIR_L, dirL(LOW));
                 homingSteps = 0;
                 state = MotionState::HOMING;
             }
