@@ -37,7 +37,9 @@ static constexpr float WHEEL_DIAM_MM   = 48.0f;
 static constexpr float WHEELBASE_MM    = 226.0f;
 static constexpr float STEPS_PER_MM    = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);
 static constexpr float STEPS_PER_DEG   = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
-static constexpr int   STEP_DELAY_US   = 200;   // µs pro Halbzyklus (= 2500 steps/s)
+static constexpr int   STEP_DELAY_MIN  = 200;   // µs Vollgas
+static constexpr int   STEP_DELAY_MAX  = 800;   // µs Anlauf/Auslauf
+static constexpr long  ACCEL_STEPS     = 300;   // Rampenlänge in Steps
 static constexpr long  MIN_HOMING_STEPS = 100;
 
 // ── Command queue ─────────────────────────────────────────────────────────
@@ -66,9 +68,15 @@ static void serialPrintln(const char* msg) {
 //
 enum class MotionState { IDLE, MOVING, PAUSED, HOMING };
 
+static inline int accel_delay(long done, long rem) {
+    long ramp = min(done, min(rem, ACCEL_STEPS));
+    return STEP_DELAY_MAX - (int)((STEP_DELAY_MAX - STEP_DELAY_MIN) * ramp / ACCEL_STEPS);
+}
+
 static void stepperTask(void*) {
     MotionState state = MotionState::IDLE;
     long  stepsRem    = 0;
+    long  totalSteps  = 0;
     long  homingSteps = 0;
     uint8_t savedDirR = LOW, savedDirL = LOW;
     Cmd cmd = {};
@@ -83,7 +91,7 @@ static void stepperTask(void*) {
                 long s = lroundf(cmd.val * STEPS_PER_MM);
                 savedDirR = (s >= 0) ? HIGH : LOW;
                 savedDirL = (s >= 0) ? LOW  : HIGH;
-                stepsRem  = abs(s);
+                totalSteps = stepsRem = abs(s);
                 digitalWrite(DIR_R, savedDirR);
                 digitalWrite(DIR_L, savedDirL);
                 state = MotionState::MOVING;
@@ -92,7 +100,7 @@ static void stepperTask(void*) {
                 long s = lroundf(cmd.val * STEPS_PER_DEG);
                 savedDirR = (s >= 0) ? LOW  : HIGH;
                 savedDirL = (s >= 0) ? LOW  : HIGH;
-                stepsRem  = abs(s);
+                totalSteps = stepsRem = abs(s);
                 digitalWrite(DIR_R, savedDirR);
                 digitalWrite(DIR_L, savedDirL);
                 state = MotionState::MOVING;
@@ -115,12 +123,13 @@ static void stepperTask(void*) {
                 state = MotionState::IDLE;
                 serialPrintln("OK");
             } else {
+                int d = accel_delay(totalSteps - stepsRem, stepsRem);
                 digitalWrite(STEP_R, HIGH);
                 digitalWrite(STEP_L, HIGH);
-                delayMicroseconds(STEP_DELAY_US);
+                delayMicroseconds(d);
                 digitalWrite(STEP_R, LOW);
                 digitalWrite(STEP_L, LOW);
-                delayMicroseconds(STEP_DELAY_US);
+                delayMicroseconds(d);
                 stepsRem--;
             }
         }
@@ -129,6 +138,7 @@ static void stepperTask(void*) {
         else if (state == MotionState::PAUSED) {
             if (resumeFlag) {
                 resumeFlag = false;
+                totalSteps = stepsRem;  // Rampe neu starten
                 digitalWrite(DIR_R, savedDirR);
                 digitalWrite(DIR_L, savedDirL);
                 state = MotionState::MOVING;
@@ -154,10 +164,10 @@ static void stepperTask(void*) {
             } else {
                 digitalWrite(STEP_R, HIGH);
                 digitalWrite(STEP_L, HIGH);
-                delayMicroseconds(STEP_DELAY_US);
+                delayMicroseconds(STEP_DELAY_MAX);
                 digitalWrite(STEP_R, LOW);
                 digitalWrite(STEP_L, LOW);
-                delayMicroseconds(STEP_DELAY_US);
+                delayMicroseconds(STEP_DELAY_MAX);
                 homingSteps++;
             }
         }
