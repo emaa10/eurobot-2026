@@ -32,7 +32,7 @@
 #define ENDSTOP_PIN   5
 
 // Motor-Invertierung: true wenn Kabel am Treiber vertauscht
-static constexpr bool  INVERT_R        = false;
+static constexpr bool  INVERT_R        = true;
 static constexpr bool  INVERT_L        = true;
 
 // ── Motor-Geometrie ────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ static void serialPrintln(const char* msg) {
     }
 }
 
-// R: HIGH=vor, LOW=zurück  |  L: LOW=vor, HIGH=zurück
+// R: LOW=vor, HIGH=zurück (invertiert)  |  L: LOW=vor, HIGH=zurück (invertiert)
 static inline uint8_t dirR(uint8_t d) { return INVERT_R ? (d == HIGH ? LOW : HIGH) : d; }
 static inline uint8_t dirL(uint8_t d) { return INVERT_L ? (d == HIGH ? LOW : HIGH) : d; }
 
@@ -99,7 +99,7 @@ static void stepperTask(void*) {
                 state = MotionState::MOVING;
 
             } else if (cmd.type == 'T') {
-                // CW(+): R zurück (LOW), L vorwärts (LOW) → beide LOW
+                // CW(+): R zurück, L vorwärts → dirR(LOW)=HIGH, dirL(LOW)=HIGH → beide HIGH
                 long s = lroundf(cmd.val * STEPS_PER_DEG);
                 savedDirR = dirR((s >= 0) ? LOW  : HIGH);
                 savedDirL = dirL((s >= 0) ? LOW  : HIGH);

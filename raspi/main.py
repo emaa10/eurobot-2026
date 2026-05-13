@@ -283,26 +283,38 @@ class Robot:
         await self._ok("Homing fertig – zurück auf IDLE")
 
     async def _flow_ready(self):
-        # 1. Homing
-        self.state = State.HOMING
-        self.log(f"Homing gestartet (team={self.team} tactic={self.tactic_num})")
-        await self.esp32.motor_enable()
-        await self._do_homing()
+        try:
+            # 1. Homing
+            self.state = State.HOMING
+            self.log(f"Homing gestartet (team={self.team} tactic={self.tactic_num})")
+            await self.esp32.motor_enable()
+            await self._do_homing()
 
-        # 2. Motoren aus – Robot manuell positionierbar bis Zugschnur
-        await self.esp32.motor_disable()
-        self.state = State.READY
-        self.log("Homing fertig – warte auf Zugschnur …")
-        while GPIO.input(PIN_PULLCORD) == GPIO.LOW:
-            await asyncio.sleep(0.05)
+            # 2. Motoren aus – Robot manuell positionierbar bis Zugschnur
+            await self.esp32.motor_disable()
+            self.state = State.READY
+            self.log("Homing fertig – warte auf Zugschnur …")
+            high_count = 0
+            while high_count < 5:
+                if GPIO.input(PIN_PULLCORD) == GPIO.HIGH:
+                    high_count += 1
+                else:
+                    high_count = 0
+                await asyncio.sleep(0.05)
 
-        # 3. Taktik ausführen
-        await self.esp32.motor_enable()
-        self.log("Zugschnur – Spiel startet!")
-        self.state = State.RUNNING
-        await self._run_tactic()
-        self.state = State.DONE
-        self.log("Spiel fertig")
+            # 3. Taktik ausführen
+            await self.esp32.motor_enable()
+            self.log("Zugschnur – Spiel startet!")
+            self.state = State.RUNNING
+            await self._run_tactic()
+            self.state = State.DONE
+            self.log("Spiel fertig")
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            self.log(f"FEHLER in _flow_ready: {e}")
+            self.state = State.IDLE
+            raise
 
     async def _do_homing(self):
         self.log("Servos werden aktiviert …")
