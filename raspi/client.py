@@ -239,7 +239,7 @@ class App:
 
     def _parse_status(self, line: str):
         clean = strip_ansi(line).strip()
-        for field in ('state', 'team', 'tactic', 'pos', 'lidar', 'pullcord'):
+        for field in ('state', 'team', 'tactic', 'pos', 'lidar', 'servos', 'pullcord'):
             if clean.lstrip().startswith(field + ' ') or clean.lstrip().startswith(field + '\t'):
                 val = clean.split(None, 1)[-1] if len(clean.split()) > 1 else ''
                 self._status[field] = val
@@ -339,7 +339,14 @@ class App:
             f"EUROBOT 2026  │  {team_str}  │  Taktik {t_num}: {t_desc}  │  {state}"
         )
 
-        log_h = h - 4
+        warn_offset = 0
+        if self._status.get('servos') == 'FEHLT':
+            warn_msg = " !! SERVO-BOARD NICHT VERBUNDEN – Servos deaktiviert "
+            safe_addstr(self.scr, 1, 1, warn_msg[:w - 2],
+                        curses.color_pair(4) | curses.A_BOLD)
+            warn_offset = 1
+
+        log_h = h - 4 - warn_offset
         total = len(self.logs)
         end   = total - self.scroll
         start = max(0, end - log_h)
@@ -347,7 +354,7 @@ class App:
 
         for i, line in enumerate(visible):
             clean = strip_ansi(line)
-            safe_addstr(self.scr, 1 + i, 1, clean[:w - 2], self._log_attr(line))
+            safe_addstr(self.scr, 1 + warn_offset + i, 1, clean[:w - 2], self._log_attr(line))
 
         # Scroll-Hinweis
         if self.scroll > 0:
@@ -366,6 +373,8 @@ class App:
             return curses.color_pair(2)
         if c.startswith('ERR') or 'Fehler' in c:
             return curses.color_pair(4)
+        if 'Warning' in c or 'FEHLT' in c:
+            return curses.color_pair(1)
         if '───' in c or '──' in c:
             return curses.color_pair(1)
         if 'getrennt' in c.lower() or 'DISCONNECTED' in c:

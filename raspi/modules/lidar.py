@@ -152,11 +152,11 @@ class Lidar:
 
             # Kegelfilter + Stoppdistanz: vorwärts mit Armen oben 20cm weiter
             if direction > 0:
-                if not self._in_cone(angle, 270, self.CONE_DEG):
+                if not self._in_cone(angle, 0, self.CONE_DEG):
                     continue
                 stop_dist = self.STOP_DIST_ARMS_UP if self.arms_up else self.STOP_DIST
             elif direction < 0:
-                if not self._in_cone(angle, 90, self.CONE_DEG):
+                if not self._in_cone(angle, 180, self.CONE_DEG):
                     continue
                 stop_dist = self.STOP_DIST
             else:

@@ -14,18 +14,27 @@ class Servos:
     ALL_IDS = [1, 2, 3, 6, 7, 8, 9, 11]
 
     def __init__(self, port: str = PORT):
+        self.available = False
         self.port_handler   = PortHandler(port)
         self.packet_handler = sts(self.port_handler)
-        if not self.port_handler.openPort():
-            raise RuntimeError(f"Servo port nicht gefunden: {port}")
-        if not self.port_handler.setBaudRate(BAUDRATE):
-            raise RuntimeError("Servo baudrate konnte nicht gesetzt werden")
+        try:
+            if not self.port_handler.openPort():
+                return
+            if not self.port_handler.setBaudRate(BAUDRATE):
+                return
+        except Exception:
+            return
+        self.available = True
         self.detach_all()
 
     def write_servo(self, id: int, goal_position: int):
+        if not self.available:
+            return
         self.packet_handler.WritePosEx(id, goal_position, STS_MOVING_SPEED, STS_MOVING_ACC)
 
     def write_servo_relative(self, id: int, delta: int):
+        if not self.available:
+            return
         self.packet_handler.write1ByteTxRx(id, STS_MODE, 0)
         self.packet_handler.write1ByteTxRx(id, STS_TORQUE_ENABLE, 1)
         pos, result, _ = self.packet_handler.ReadPos(id)
@@ -34,12 +43,14 @@ class Servos:
         self.packet_handler.WritePosEx(id, pos + delta, STS_MOVING_SPEED, STS_MOVING_ACC)
 
     def detach_all(self):
-        """Torque aller Servos deaktivieren (detach)."""
+        if not self.available:
+            return
         for sid in self.ALL_IDS:
             self.packet_handler.write1ByteTxRx(sid, STS_TORQUE_ENABLE, 0)
 
     def attach_all(self):
-        """Torque aller Servos nacheinander aktivieren (attach)."""
+        if not self.available:
+            return
         for sid in self.ALL_IDS:
             self.packet_handler.write1ByteTxRx(sid, STS_TORQUE_ENABLE, 1)
             time.sleep(0.1)

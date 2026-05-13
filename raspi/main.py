@@ -110,6 +110,8 @@ class Robot:
         self.lidar   = Lidar()
         self.camera  = Camera()
 
+        if not self.servos.available:
+            self.log("Warning: Servo-Board nicht verbunden – Servos deaktiviert")
         if not self.lidar.start_scanning():
             self.log("Warning: Lidar nicht gestartet")
         self.camera.start()
@@ -145,6 +147,7 @@ class Robot:
             f"tactic   {self.tactic_num}",
             f"pos      x={self.esp32.x:.0f} y={self.esp32.y:.0f} θ={self.esp32.theta:.1f}°",
             f"lidar    {'ok' if self.lidar.is_running() else 'FEHLT'}",
+            f"servos   {'ok' if self.servos.available else 'FEHLT'}",
             f"pullcord {'gezogen' if GPIO.input(PIN_PULLCORD) == GPIO.HIGH else 'drin'}",
         ]
         await self._send("─── Status " + "─" * 30)

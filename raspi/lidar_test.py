@@ -50,9 +50,9 @@ def classify(scan, x, y, theta, direction):
             continue
 
         # Kegelfilter nur beim Fahren
-        if direction > 0 and not _in_cone(angle, 270, CONE_DEG):
+        if direction > 0 and not _in_cone(angle, 0, CONE_DEG):
             continue
-        if direction < 0 and not _in_cone(angle, 90, CONE_DEG):
+        if direction < 0 and not _in_cone(angle, 180, CONE_DEG):
             continue
         # direction == 0: kein Winkelfilter → Vollkreis
 
