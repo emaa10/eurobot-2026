@@ -27,6 +27,10 @@ class Lidar:
         try:
             self.lidar = PyRPlidar()
             self.lidar.connect(port=self.port, baudrate=460800, timeout=5)
+            self.lidar.stop()
+            sleep(0.1)
+            self.lidar.set_motor_pwm(660)
+            sleep(1.0)
             self.logger.info("Lidar connected successfully")
             return True
         except Exception as e:
@@ -108,6 +112,7 @@ class Lidar:
         if self.lidar:
             try:
                 self.lidar.stop()
+                self.lidar.set_motor_pwm(0)
                 self.lidar.disconnect()
             except Exception as e:
                 self.logger.info(f"Error stopping Lidar: {e}")
