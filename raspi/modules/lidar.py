@@ -21,6 +21,7 @@ class Lidar:
         self.thread = None
         self.stop_motor = False
         self.arms_up = False
+        self._last_live_log = 0.0
     
     def connect(self):
         """Connect to the Lidar device"""
@@ -176,12 +177,17 @@ class Lidar:
                 self.stop_motor = True
                 break
 
+        now = time()
         if self.stop_motor and not prev_stop:
             self.logger.info(
                 f'GEGNER ERKANNT – Stop! {closest_dist:.0f}mm @ {closest_angle:.1f}°'
             )
+            self._last_live_log = now
         elif not self.stop_motor and prev_stop:
             self.logger.info('Weg frei – Fahrt fortgesetzt')
+        elif self.stop_motor and now - self._last_live_log >= 0.333:
+            self.logger.info(f'Gegner: {closest_dist:.0f}mm @ {closest_angle:.1f}°')
+            self._last_live_log = now
 
         return self.stop_motor
 
