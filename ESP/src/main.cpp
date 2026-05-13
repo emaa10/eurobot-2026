@@ -81,7 +81,7 @@ static void stepperTask(void*) {
 
             if (cmd.type == 'D') {
                 long s = lroundf(cmd.val * STEPS_PER_MM);
-                savedDirR = (s >= 0) ? LOW  : HIGH;
+                savedDirR = (s >= 0) ? HIGH : LOW;
                 savedDirL = (s >= 0) ? LOW  : HIGH;
                 stepsRem  = abs(s);
                 digitalWrite(DIR_R, savedDirR);
@@ -90,7 +90,7 @@ static void stepperTask(void*) {
 
             } else if (cmd.type == 'T') {
                 long s = lroundf(cmd.val * STEPS_PER_DEG);
-                savedDirR = (s >= 0) ? HIGH : LOW;
+                savedDirR = (s >= 0) ? LOW  : HIGH;
                 savedDirL = (s >= 0) ? LOW  : HIGH;
                 stepsRem  = abs(s);
                 digitalWrite(DIR_R, savedDirR);
@@ -99,7 +99,7 @@ static void stepperTask(void*) {
 
             } else if (cmd.type == 'H') {
                 serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ES:LOW" : "ES:HIGH");
-                digitalWrite(DIR_R, HIGH);
+                digitalWrite(DIR_R, LOW);
                 digitalWrite(DIR_L, HIGH);
                 homingSteps = 0;
                 state = MotionState::HOMING;
