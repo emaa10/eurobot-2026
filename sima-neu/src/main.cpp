@@ -154,7 +154,7 @@ static void waitForPullcord() {
 
 static inline void pulse() {
     gpio_put(L_STEP, 1); gpio_put(R_STEP, 1);
-    sleep_us(30);
+    sleep_us(500);
     gpio_put(L_STEP, 0); gpio_put(R_STEP, 0);
 }
 
@@ -238,6 +238,7 @@ void setup() {
     sleep_ms(2500);  // Core1 Zeit zum Initialisieren
 
     waitForPullcord();
+    delay(86000);
     driveForward(TARGET_MM);
     servoSpin();
 }
