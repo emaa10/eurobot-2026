@@ -125,9 +125,10 @@ class Lidar:
     # Erkennungsparameter
     STOP_DIST          = 250   # mm  Stoppschwelle (25cm)
     STOP_DIST_ARMS_UP  = 630   # mm  Stoppschwelle vorwärts wenn Arme oben (+20cm)
-    CONE_DEG  = 60.0  # °   halber Kegelwinkel voraus/rückwärts (±60° = 120° gesamt)
-    MIN_DIST  = 70    # mm  Eigenkörper ignorieren
-    MIN_HITS  = 3     # Punkte für sicheren Treffer
+    CONE_DEG   = 60.0  # °   halber Kegelwinkel voraus/rückwärts (±60° = 120° gesamt)
+    MIN_DIST   = 70    # mm  Eigenkörper ignorieren
+    MIN_HITS   = 3     # Punkte für sicheren Treffer
+    ANGLE_OFFSET = 90   # °   Montage-Rotation des Lidars (0°=rechts → vorne=90°)
 
     @staticmethod
     def _in_cone(angle, center_deg, half_deg):
@@ -156,11 +157,11 @@ class Lidar:
 
             # Kegelfilter + Stoppdistanz: vorwärts mit Armen oben 20cm weiter
             if direction > 0:
-                if not self._in_cone(angle, 0, self.CONE_DEG):
+                if not self._in_cone(angle, (0 + self.ANGLE_OFFSET) % 360, self.CONE_DEG):
                     continue
                 stop_dist = self.STOP_DIST_ARMS_UP if self.arms_up else self.STOP_DIST
             elif direction < 0:
-                if not self._in_cone(angle, 180, self.CONE_DEG):
+                if not self._in_cone(angle, (180 + self.ANGLE_OFFSET) % 360, self.CONE_DEG):
                     continue
                 stop_dist = self.STOP_DIST
             else:

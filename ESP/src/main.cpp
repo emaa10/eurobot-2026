@@ -24,16 +24,16 @@
 
 // ── Pins ──────────────────────────────────────────────────────────────────
 #define STEP_R       33   // physisch rechts
-#define DIR_R        25
+#define DIR_R        27
 #define EN_R         32
 #define STEP_L       26   // physisch links
-#define DIR_L        27
+#define DIR_L        25
 #define EN_L         35
 #define ENDSTOP_PIN   5
 
 // Motor-Invertierung: true wenn Kabel am Treiber vertauscht
 static constexpr bool  INVERT_R        = true;
-static constexpr bool  INVERT_L        = true;
+static constexpr bool  INVERT_L        = false;
 
 // ── Motor-Geometrie ────────────────────────────────────────────────────────
 static constexpr float STEPS_PER_REV   = 1600.0f;
@@ -41,9 +41,9 @@ static constexpr float WHEEL_DIAM_MM   = 48.0f;
 static constexpr float WHEELBASE_MM    = 226.0f;
 static constexpr float STEPS_PER_MM    = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);
 static constexpr float STEPS_PER_DEG   = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
-static constexpr int   STEP_DELAY_MIN  = 200;
-static constexpr int   STEP_DELAY_MAX  = 800;
-static constexpr long  ACCEL_STEPS     = 300;
+static constexpr int   STEP_DELAY_MIN  = 350;
+static constexpr int   STEP_DELAY_MAX  = 1500;
+static constexpr long  ACCEL_STEPS     = 600;
 static constexpr long  MIN_HOMING_STEPS = 100;
 
 // ── Command queue ─────────────────────────────────────────────────────────

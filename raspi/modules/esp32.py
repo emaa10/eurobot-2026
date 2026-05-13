@@ -21,6 +21,7 @@ import serial
 import asyncio
 import math
 import logging
+import time
 
 
 class ESP32:
@@ -66,6 +67,7 @@ class ESP32:
     async def _wait_for_ok(self, direction: int = 0, lidar=None) -> bool:
         """Wartet auf OK/INTERRUPTED vom ESP32. Gibt True zurück wenn OK, False wenn unterbrochen."""
         lidar_stopped = False
+        clear_since: float | None = None  # Zeitstempel seit wann kein Hindernis mehr
         while True:
             line = self._read_line()
             if line == 'OK':
@@ -83,14 +85,22 @@ class ESP32:
                     self.logger.info(f"Obstacle – stop ({self.x:.0f},{self.y:.0f})")
                     self._write("ST")
                     lidar_stopped = True
+                    clear_since = None
+                elif obstacle and lidar_stopped:
+                    clear_since = None  # Hindernis wieder da, Timer zurücksetzen
                 elif not obstacle and lidar_stopped:
-                    self.logger.info("Obstacle weg – resume")
-                    self._write("RS")
-                    lidar_stopped = False
+                    if clear_since is None:
+                        clear_since = time.monotonic()
+                    elif time.monotonic() - clear_since >= 0.5:
+                        self.logger.info("Obstacle weg (0.5s) – resume")
+                        self._write("RS")
+                        lidar_stopped = False
+                        clear_since = None
 
             await asyncio.sleep(0.01)
 
     async def drive_distance(self, mm: int, lidar=None):
+        invert = True
         direction = 1 if mm >= 0 else -1
         self._write(f"DD{mm}")
         ok = await self._wait_for_ok(direction, lidar)
