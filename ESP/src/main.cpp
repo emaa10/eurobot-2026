@@ -33,14 +33,14 @@
 #define ENDSTOP_PIN   5   // INPUT_PULLUP: HIGH = offen, LOW = gedrückt
 
 // ── Motor-Geometrie – AN HARDWARE ANPASSEN ───────────────────────────────
-static constexpr float STEPS_PER_REV = 730.0f;
+static constexpr float STEPS_PER_REV = 1600.0f;
 static constexpr float WHEEL_DIAM_MM = 48.0f;
 static constexpr float WHEELBASE_MM  = 226.0f;
 static constexpr float STEPS_PER_MM  = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);
 static constexpr float STEPS_PER_DEG = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
-static constexpr float MAX_SPEED_R   = 1500.0f;
-static constexpr float MAX_SPEED_L   = 1465.0f;  // 2.3% langsamer → Rechtsdrall korrigieren
-static constexpr float ACCEL         = 1200.0f;  // steps/s²
+static constexpr float MAX_SPEED_R   = 2500.0f;  // delayTime=200µs → 1/(2*200µs)
+static constexpr float MAX_SPEED_L   = 2442.0f;  // 2.3% langsamer → Rechtsdrall korrigieren
+static constexpr float ACCEL         = 2000.0f;  // steps/s²
 static constexpr float HOMING_SPEED  = 400.0f;   // steps/s – langsam an Wand heranfahren
 
 // ── AccelStepper ──────────────────────────────────────────────────────────
