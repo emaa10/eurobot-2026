@@ -89,12 +89,12 @@ static void stepperTask(void*) {
             if (state == MotionState::IDLE) {
                 if (cmd.type == 'D') {
                     long s = lroundf(cmd.val * STEPS_PER_MM);
-                    stepperR.move(s);
+                    stepperR.move(-s);
                     stepperL.move(lroundf(s * MAX_SPEED_L / MAX_SPEED_R));
                     state = MotionState::MOVING;
                 } else if (cmd.type == 'T') {
                     long s = lroundf(cmd.val * STEPS_PER_DEG);
-                    stepperR.move(-s);
+                    stepperR.move(s);
                     stepperL.move(lroundf(s * MAX_SPEED_L / MAX_SPEED_R));
                     state = MotionState::MOVING;
                 } else if (cmd.type == 'H') {
@@ -102,7 +102,7 @@ static void stepperTask(void*) {
                     serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ES:LOW" : "ES:HIGH");
                     stepperR.setMaxSpeed(HOMING_SPEED);
                     stepperL.setMaxSpeed(HOMING_SPEED * MAX_SPEED_L / MAX_SPEED_R);
-                    stepperR.move(-100000L);
+                    stepperR.move(100000L);
                     stepperL.move(lroundf(-100000.0f * MAX_SPEED_L / MAX_SPEED_R));
                     homingStartPosR = stepperR.currentPosition();
                     state = MotionState::HOMING;
