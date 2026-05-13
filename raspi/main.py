@@ -284,14 +284,15 @@ class Robot:
 
     async def _flow_ready(self):
         try:
-            # 1. Homing
-            self.state = State.HOMING
-            self.log(f"Homing gestartet (team={self.team} tactic={self.tactic_num})")
-            await self.esp32.motor_enable()
-            await self._do_homing()
+            # 1. Homing (übersprungen bei Taktik 9)
+            if self.tactic_num != 9:
+                self.state = State.HOMING
+                self.log(f"Homing gestartet (team={self.team} tactic={self.tactic_num})")
+                await self.esp32.motor_enable()
+                await self._do_homing()
+                await self.esp32.motor_disable()
 
             # 2. Motoren aus – Robot manuell positionierbar bis Zugschnur
-            await self.esp32.motor_disable()
             self.state = State.READY
             self.log("Homing fertig – warte auf Zugschnur …")
             high_count = 0
