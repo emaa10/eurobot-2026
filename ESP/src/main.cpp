@@ -33,7 +33,7 @@
 
 // Motor-Invertierung: true wenn Kabel am Treiber vertauscht
 static constexpr bool  INVERT_R        = false;
-static constexpr bool  INVERT_L        = false;
+static constexpr bool  INVERT_L        = true;
 
 // ── Motor-Geometrie ────────────────────────────────────────────────────────
 static constexpr float STEPS_PER_REV   = 1600.0f;
