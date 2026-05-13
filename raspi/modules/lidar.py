@@ -75,7 +75,7 @@ class Lidar:
 
                         current_scan_data = []
                         
-                    if measurement.quality > 10 and measurement.distance > 0:  
+                    if measurement.quality > 0 and measurement.distance > 0:
                         current_scan_data.append((measurement.angle, measurement.distance))
             
             except Exception as e:
@@ -163,12 +163,6 @@ class Lidar:
                 stop_dist = self.STOP_DIST
 
             if distance > stop_dist:
-                continue
-
-            arena_rad = (angle + theta) * math.pi / 180
-            arena_x = -distance * math.sin(arena_rad) + x
-            arena_y =  distance * math.cos(arena_rad) + y
-            if not (0 <= arena_x <= 3000 and 0 <= arena_y <= 2000):
                 continue
 
             self.logger.info(f'Obstacle: angle={angle:.1f}° dist={distance:.0f}mm')
