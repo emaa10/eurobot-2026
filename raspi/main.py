@@ -41,6 +41,7 @@ TACTICS = {
          'w2r', 'dd-700', 'w2h', 'ta90', 'dd1000', 'ta90', 'dd500', 'ta-90', 'dd800']],
     8: [['hg', 'dd1000', 'ta90', 'dd800', 'ta-90', 'dd500', 'co', 'dd200', 'cg', 'dd-500',
          'ta90', 'dd300', 'go', 'dd-300', 'ta180', 'dd1000', 'ta-90', 'dd1000']],
+    9: [['dd1000', 'dd-1000']],
 }
 
 TACTIC_NAMES = {
@@ -52,6 +53,7 @@ TACTIC_NAMES = {
     6: "TAKTIK 67 BLAU",
     7: "bums",
     8: "bums",
+    9: "Homologation – 1m vor, 1m zurück (mit Lidar)",
 }
 
 

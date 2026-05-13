@@ -1,7 +1,7 @@
 /*
  * Eurobot 2026 – ESP32 Drive Controller
  *
- * Core 0: stepperTask  – direct GPIO stepping (wie Testcode, delayMicroseconds)
+ * Core 0: stepperTask  – direct GPIO stepping
  * Core 1: uartTask     – Serial I/O → Command-Queue
  *
  * Raspi → ESP32:
@@ -23,27 +23,27 @@
 #include <Arduino.h>
 
 // ── Pins ──────────────────────────────────────────────────────────────────
-#define STEP_R       26
-#define DIR_R        27
-#define DIR_L        25
-#define STEP_L       33
-#define EN_L         32
-#define EN_R         35
+#define STEP_R       33   // physisch rechts
+#define DIR_R        25
+#define EN_R         32
+#define STEP_L       26   // physisch links
+#define DIR_L        27
+#define EN_L         35
 #define ENDSTOP_PIN   5
 
-// ── Motor-Geometrie ────────────────────────────────────────────────────────
-// Motor-Invertierung: auf true setzen wenn Kabel am Treiber vertauscht
+// Motor-Invertierung: true wenn Kabel am Treiber vertauscht
 static constexpr bool  INVERT_R        = false;
 static constexpr bool  INVERT_L        = false;
 
+// ── Motor-Geometrie ────────────────────────────────────────────────────────
 static constexpr float STEPS_PER_REV   = 1600.0f;
 static constexpr float WHEEL_DIAM_MM   = 48.0f;
 static constexpr float WHEELBASE_MM    = 226.0f;
 static constexpr float STEPS_PER_MM    = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);
 static constexpr float STEPS_PER_DEG   = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
-static constexpr int   STEP_DELAY_MIN  = 200;   // µs Vollgas
-static constexpr int   STEP_DELAY_MAX  = 800;   // µs Anlauf/Auslauf
-static constexpr long  ACCEL_STEPS     = 300;   // Rampenlänge in Steps
+static constexpr int   STEP_DELAY_MIN  = 200;
+static constexpr int   STEP_DELAY_MAX  = 800;
+static constexpr long  ACCEL_STEPS     = 300;
 static constexpr long  MIN_HOMING_STEPS = 100;
 
 // ── Command queue ─────────────────────────────────────────────────────────
@@ -63,15 +63,7 @@ static void serialPrintln(const char* msg) {
     }
 }
 
-// ── Core 0: Stepper-Task ──────────────────────────────────────────────────
-//
-//  Vorwärts (DD+): DIR_R=LOW,  DIR_L=LOW
-//  Rückwärts (DD-): DIR_R=HIGH, DIR_L=HIGH
-//  Uhrzeigersinn (TA+): DIR_R=HIGH (zurück), DIR_L=LOW (vor)
-//  Gegenuhrzeigersinn (TA-): DIR_R=LOW (vor),  DIR_L=HIGH (zurück)
-//
-enum class MotionState { IDLE, MOVING, PAUSED, HOMING };
-
+// R: HIGH=vor, LOW=zurück  |  L: LOW=vor, HIGH=zurück
 static inline uint8_t dirR(uint8_t d) { return INVERT_R ? (d == HIGH ? LOW : HIGH) : d; }
 static inline uint8_t dirL(uint8_t d) { return INVERT_L ? (d == HIGH ? LOW : HIGH) : d; }
 
@@ -79,6 +71,9 @@ static inline int accel_delay(long done, long rem) {
     long ramp = min(done, min(rem, ACCEL_STEPS));
     return STEP_DELAY_MAX - (int)((STEP_DELAY_MAX - STEP_DELAY_MIN) * ramp / ACCEL_STEPS);
 }
+
+// ── Core 0: Stepper-Task ──────────────────────────────────────────────────
+enum class MotionState { IDLE, MOVING, PAUSED, HOMING };
 
 static void stepperTask(void*) {
     MotionState state = MotionState::IDLE;
@@ -95,20 +90,19 @@ static void stepperTask(void*) {
             if (xQueueReceive(cmdQueue, &cmd, portMAX_DELAY) != pdTRUE) continue;
 
             if (cmd.type == 'D') {
-                // R: LOW=vor, HIGH=zurück  |  L: HIGH=vor, LOW=zurück
                 long s = lroundf(cmd.val * STEPS_PER_MM);
-                savedDirR = dirR((s >= 0) ? LOW  : HIGH);
-                savedDirL = dirL((s >= 0) ? HIGH : LOW);
+                savedDirR = dirR((s >= 0) ? HIGH : LOW);
+                savedDirL = dirL((s >= 0) ? LOW  : HIGH);
                 totalSteps = stepsRem = abs(s);
                 digitalWrite(DIR_R, savedDirR);
                 digitalWrite(DIR_L, savedDirL);
                 state = MotionState::MOVING;
 
             } else if (cmd.type == 'T') {
-                // CW: R zurück (HIGH) + L vor (HIGH) = beide HIGH
+                // CW(+): R zurück (LOW), L vorwärts (LOW) → beide LOW
                 long s = lroundf(cmd.val * STEPS_PER_DEG);
-                savedDirR = dirR((s >= 0) ? HIGH : LOW);
-                savedDirL = dirL((s >= 0) ? HIGH : LOW);
+                savedDirR = dirR((s >= 0) ? LOW  : HIGH);
+                savedDirL = dirL((s >= 0) ? LOW  : HIGH);
                 totalSteps = stepsRem = abs(s);
                 digitalWrite(DIR_R, savedDirR);
                 digitalWrite(DIR_L, savedDirL);
@@ -116,8 +110,8 @@ static void stepperTask(void*) {
 
             } else if (cmd.type == 'H') {
                 serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ES:LOW" : "ES:HIGH");
-                digitalWrite(DIR_R, dirR(HIGH));
-                digitalWrite(DIR_L, dirL(LOW));
+                digitalWrite(DIR_R, dirR(LOW));   // R rückwärts
+                digitalWrite(DIR_L, dirL(HIGH));  // L rückwärts
                 homingSteps = 0;
                 state = MotionState::HOMING;
             }
@@ -147,7 +141,7 @@ static void stepperTask(void*) {
         else if (state == MotionState::PAUSED) {
             if (resumeFlag) {
                 resumeFlag = false;
-                totalSteps = stepsRem;  // Rampe neu starten
+                totalSteps = stepsRem;
                 digitalWrite(DIR_R, savedDirR);
                 digitalWrite(DIR_L, savedDirL);
                 state = MotionState::MOVING;
@@ -252,7 +246,7 @@ void setup() {
     pinMode(EN_L,   OUTPUT);
     pinMode(EN_R,   OUTPUT);
 
-    digitalWrite(EN_L, HIGH);  // deaktiviert bis ME-Befehl (nach Pullcord)
+    digitalWrite(EN_L, HIGH);  // deaktiviert bis ME (nach Pullcord)
     digitalWrite(EN_R, HIGH);
 
     pinMode(ENDSTOP_PIN, INPUT_PULLUP);
