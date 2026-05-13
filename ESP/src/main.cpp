@@ -10,6 +10,8 @@
  *   HE             Endstop-Homing: rückwärts bis GPIO5 LOW, dann OK
  *   ST             Sofort stoppen (interrupt, kein Queue)
  *   RS             Weiterfahren nach ST
+ *   MD             Motoren deaktivieren (EN HIGH) – vor Pullcord
+ *   ME             Motoren aktivieren   (EN LOW)  – nach Pullcord
  *   SP{x};{y};{t}  Odometrie setzen (kein Ack)
  *
  * ESP32 → Raspi:
@@ -26,6 +28,8 @@
 #define DIR_R        27
 #define DIR_L        25
 #define STEP_L       33
+#define EN_L         32
+#define EN_R         35
 #define ENDSTOP_PIN   5   // INPUT_PULLUP: HIGH = offen, LOW = gedrückt
 
 // ── Motor-Geometrie – AN HARDWARE ANPASSEN ───────────────────────────────
@@ -184,6 +188,15 @@ static void uartTask(void*) {
                         stopFlag = true;
                     } else if (buf == "RS") {
                         resumeFlag = true;
+                    } else if (buf == "MD") {
+                        stopFlag = true;
+                        digitalWrite(EN_L, HIGH);
+                        digitalWrite(EN_R, HIGH);
+                        serialPrintln("OK");
+                    } else if (buf == "ME") {
+                        digitalWrite(EN_L, LOW);
+                        digitalWrite(EN_R, LOW);
+                        serialPrintln("OK");
                     } else if (buf == "ES") {
                         // Debug: Endstop-Status zurückmelden
                         serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ENDSTOP:LOW" : "ENDSTOP:HIGH");
@@ -221,6 +234,11 @@ static void uartTask(void*) {
 void setup() {
     Serial.begin(115200);
     disableCore0WDT();
+
+    pinMode(EN_L, OUTPUT);
+    pinMode(EN_R, OUTPUT);
+    digitalWrite(EN_L, HIGH);  // deaktiviert bis ME-Befehl (nach Pullcord)
+    digitalWrite(EN_R, HIGH);
 
     pinMode(ENDSTOP_PIN, INPUT_PULLUP);
 
