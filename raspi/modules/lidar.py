@@ -123,7 +123,7 @@ class Lidar:
         self.logger.info("Lidar stopped")
         
     # Erkennungsparameter
-    STOP_DIST          = 430   # mm  Stoppschwelle (43cm)
+    STOP_DIST          = 200   # mm  Stoppschwelle (20cm)
     STOP_DIST_ARMS_UP  = 630   # mm  Stoppschwelle vorwärts wenn Arme oben (+20cm)
     CONE_DEG  = 60.0  # °   halber Kegelwinkel voraus/rückwärts (±60° = 120° gesamt)
     MIN_DIST  = 70    # mm  Eigenkörper ignorieren
