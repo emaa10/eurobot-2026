@@ -24,15 +24,15 @@
 
 // ── Pins ──────────────────────────────────────────────────────────────────
 #define STEP_R       33   // physisch rechts
-#define DIR_R        27
+#define DIR_R        25
 #define EN_R         32
 #define STEP_L       26   // physisch links
-#define DIR_L        25
+#define DIR_L        27
 #define EN_L         35
 #define ENDSTOP_PIN   5
 
 // Motor-Invertierung: true wenn Kabel am Treiber vertauscht
-static constexpr bool  INVERT_R        = true;
+static constexpr bool  INVERT_R        = false;
 static constexpr bool  INVERT_L        = false;
 
 // ── Motor-Geometrie ────────────────────────────────────────────────────────

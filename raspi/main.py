@@ -366,10 +366,12 @@ class Robot:
         await self._ok(f"winker test fertig ({n}x)")
 
     async def _test_drive(self, mm: int):
+        await self.esp32.motor_enable()
         await self.esp32.drive_distance(mm, self.lidar)
         await self._ok(f"drive {mm} mm fertig")
 
     async def _test_turn(self, deg: float):
+        await self.esp32.motor_enable()
         await self.esp32.turn_angle(deg, self.lidar)
         await self._ok(f"turn {deg}° fertig")
 

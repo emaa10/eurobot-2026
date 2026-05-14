@@ -128,7 +128,7 @@ class Lidar:
     CONE_DEG   = 60.0  # °   halber Kegelwinkel voraus/rückwärts (±60° = 120° gesamt)
     MIN_DIST   = 70    # mm  Eigenkörper ignorieren
     MIN_HITS   = 3     # Punkte für sicheren Treffer
-    ANGLE_OFFSET = 90   # °   Montage-Rotation des Lidars (0°=rechts → vorne=90°)
+    ANGLE_OFFSET = 270  # °   Montage-Rotation des Lidars (Lidar 180° gedreht → vorne=270°)
 
     @staticmethod
     def _in_cone(angle, center_deg, half_deg):
