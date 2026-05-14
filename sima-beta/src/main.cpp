@@ -6,6 +6,7 @@
 
 // ── Pins ─────────────────────────────────────────────────────────
 #define PIN_PULLCORD  21
+#define PIN_TEAMSWITCH 22
 #define PIN_SERVO     28
 #define PIN_XSHUT1    20
 #define PIN_XSHUT2    19
@@ -63,6 +64,8 @@ static inline bool timeUp() {
 volatile bool opponent_detected = false;
 volatile uint16_t tof_left      = 9999;
 volatile uint16_t tof_right     = 9999;
+// Teamstatus
+volatile bool teamBlau = false;
 
 // ═════════════════════════════════════════════════════════════════
 //  ToF (läuft auf Core1)
@@ -165,6 +168,20 @@ static void waitForPullcord() {
         }
         sleep_ms(150);
     }
+}
+
+static void readTeamSwitch() {
+    gpio_init(PIN_TEAMSWITCH);
+    gpio_set_dir(PIN_TEAMSWITCH, GPIO_IN);
+
+    // interner Pulldown
+    gpio_pull_down(PIN_TEAMSWITCH);
+
+    sleep_ms(10);
+
+    teamBlau = gpio_get(PIN_TEAMSWITCH);
+
+    Serial.printf("[TEAM] %s\n", teamBlau ? "BLAU" : "GELB");
 }
 
 // ═════════════════════════════════════════════════════════════════
@@ -360,14 +377,20 @@ void setup() {
 
     Serial.println("[CORE0] bereit — warte auf Core1 ToF-Init...");
     sleep_ms(2500);
-
+    readTeamSwitch();
     waitForPullcord();
-    driveForward(430,false);
-    driveForward(200,true);
-    delay(60000);
-    turn(130, false);
-    driveForward(500,false);
-    turn(300, true);
+    if(!teamBlau) {
+        driveForward(430,false); //yellow
+        driveForward(200,true);
+        delay(60000);
+        turn(130, false);
+        driveForward(500,false);
+        turn(300, true);
+    }
+    else{
+        
+    }
+    
     servoSpin();
 }
 
