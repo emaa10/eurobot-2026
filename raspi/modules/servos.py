@@ -130,7 +130,7 @@ class Servos:
     WINKER_RECHTS_OBEN   = 2173
     WINKER_RECHTS_UNTEN  = 3473
     WINKER_LINKS_OBEN    = 1365
-    WINKER_LINKS_UNTEN   = 158
+    WINKER_LINKS_UNTEN   = 0
 
     def winker_rechts_runter(self):
         self.write_servo(7, self.WINKER_RECHTS_UNTEN)
