@@ -18,8 +18,14 @@
 #define R_DIR   9
 #define R_EN    15
 
+// Sofort keine Steps mehr, EN nach 2s aus
+#define MOTORS_OFF() do { \
+    digitalWrite(L_STEP, 0); digitalWrite(R_STEP, 0); \
+    delay(2000); \
+    gpio_put(L_EN, 1); gpio_put(R_EN, 1); \
+} while(0)
+
 #define MOTORS_ON()  do { gpio_put(L_EN, 0); gpio_put(R_EN, 0); } while(0)
-#define MOTORS_OFF() do { gpio_put(L_EN, 1); gpio_put(R_EN, 1); } while(0)
 
 // ── Kalibrierung ──────────────────────────────────────────────────
 static constexpr float STEPS_PER_MM   = 980.0f / 1000.0f;
@@ -34,10 +40,10 @@ static constexpr float RAMP_US        = 150.0f;
 #define ADDR_DEFAULT  0x29
 #define ADDR_LEFT     0x30
 #define ADDR_RIGHT    0x29
-#define STOP_MM       80
+#define STOP_MM       200
 
 // ── Fahrziel ──────────────────────────────────────────────────────
-#define TARGET_MM     1500
+#define TARGET_MM     1100
 
 // ── Zeitlimit ─────────────────────────────────────────────────────
 #define MATCH_DURATION_MS  98000UL
@@ -171,6 +177,16 @@ static inline void pulse() {
     digitalWrite(L_STEP, 0); digitalWrite(R_STEP, 0);
 }
 
+// Hält sofort (keine Steps), EN erst nach 2s aus
+static void motorsStop() {
+    for (int i = 0; i < 10000; i++) {       
+        digitalWrite(L_STEP, 0); digitalWrite(R_STEP, 0);
+        delayMicroseconds(200);
+    }
+    delay(2000);
+    gpio_put(L_EN, 1); gpio_put(R_EN, 1);
+}
+
 static void driveForward(uint32_t target_mm) {
     uint32_t total_steps = (uint32_t)(target_mm * STEPS_PER_MM);
     float    delay_us    = DELAY_START_US;
@@ -184,25 +200,30 @@ static void driveForward(uint32_t target_mm) {
     for (uint32_t i = 0; i < total_steps; ) {
 
         if (timeUp()) {
-            MOTORS_OFF();
-            Serial.println("[DRIVE] Zeit abgelaufen — Motoren aus");
+            Serial.println("[DRIVE] Zeit abgelaufen — stoppe");
+            motorsStop();
             return;
         }
 
         if (opponent_detected) {
-            MOTORS_OFF();
+            // Sofort Steps stoppen, EN nach 2s aus
+            digitalWrite(L_STEP, 0); digitalWrite(R_STEP, 0);
             Serial.printf("[CORE0] Gegner! L=%d R=%d mm — warte...\n", tof_left, tof_right);
-            uint32_t waited = 0;
+            delay(2000);
+            gpio_put(L_EN, 1); gpio_put(R_EN, 1);
+
+            uint32_t waited = 2000;
             while (opponent_detected) {
                 if (timeUp()) {
-                    MOTORS_OFF();
-                    Serial.println("[DRIVE] Zeit abgelaufen — Motoren aus");
+                    Serial.println("[DRIVE] Zeit abgelaufen — stoppe");
+                    motorsStop();
                     return;
                 }
                 sleep_ms(20);
                 waited += 20;
                 if (waited >= 10000) {
                     Serial.println("[CORE0] 10s Timeout — abgebrochen");
+                    motorsStop();
                     return;
                 }
             }
@@ -225,14 +246,12 @@ static void driveForward(uint32_t target_mm) {
         i++;
     }
 
-    MOTORS_OFF();
+    motorsStop();
     Serial.println("[DRIVE] Ziel erreicht");
 }
 
 // ═════════════════════════════════════════════════════════════════
 //  Servo (Core0)
-//  Dreht endlos weiter — auch nach 100s.
-//  Motoren bleiben durch MOTORS_OFF() gesperrt.
 // ═════════════════════════════════════════════════════════════════
 
 static Servo g_servo;
@@ -241,7 +260,7 @@ static void servoSpin() {
     Serial.println("[SERVO] dreht");
     g_servo.attach(PIN_SERVO);
     while (true) {
-        if (timeUp()) MOTORS_OFF();  // Sicherheitsnetz: Motoren bleiben aus
+        if (timeUp()) MOTORS_OFF();  // Sicherheitsnetz
         g_servo.write(90);
         delay(500);
         if (timeUp()) MOTORS_OFF();
@@ -260,7 +279,7 @@ void setup() {
 
     const uint motor_pins[] = { L_STEP, L_DIR, L_EN, R_STEP, R_DIR, R_EN };
     for (uint p : motor_pins) { gpio_init(p); gpio_set_dir(p, GPIO_OUT); }
-    MOTORS_OFF();
+    gpio_put(L_EN, 1); gpio_put(R_EN, 1);  // EN aus beim Start
 
     Serial.println("[CORE0] bereit — warte auf Core1 ToF-Init...");
     sleep_ms(2500);
