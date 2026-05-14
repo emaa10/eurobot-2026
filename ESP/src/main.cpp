@@ -25,8 +25,8 @@ void setup() {
   digitalWrite(EN_R, LOW);
 
   // Richtung fest
-  digitalWrite(DIR_R, HIGH);
-  digitalWrite(DIR_L, HIGH);
+  digitalWrite(DIR_R, HIGH);// der tut nix
+  digitalWrite(DIR_L, LOW);
   pinMode(led, OUTPUT);
   digitalWrite(led, HIGH);
 }
