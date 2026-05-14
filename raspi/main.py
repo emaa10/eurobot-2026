@@ -41,7 +41,7 @@ TACTICS = {
          'w2r', 'dd-700', 'w2h', 'ta90', 'dd1000', 'ta90', 'dd500', 'ta-90', 'dd800']],
     8: [['hg', 'dd1000', 'ta90', 'dd800', 'ta-90', 'dd500', 'co', 'dd200', 'cg', 'dd-500',
          'ta90', 'dd300', 'go', 'dd-300', 'ta180', 'dd1000', 'ta-90', 'dd1000']],
-    9: [['ta360']],
+    9: [['dd1300', 'dd-1300']],
 }
 
 TACTIC_NAMES = {
@@ -278,7 +278,7 @@ class Robot:
         self.state = State.HOMING
         self.log("Homing gestartet …")
         await self.esp32.motor_enable()
-        await self._do_homing()
+        #await self._do_homing() ==> HOMING COMPLETELY DISABLED CURRENTLY
         await self.esp32.motor_disable()
         self.state = State.IDLE
         self.log("Homing fertig")
@@ -287,7 +287,7 @@ class Robot:
     async def _flow_ready(self):
         try:
             # 1. Homing (übersprungen bei Taktik 9)
-            if self.tactic_num != 9:
+            if self.tactic_num != 9 or self.tactic_num != 5:
                 self.state = State.HOMING
                 self.log(f"Homing gestartet (team={self.team} tactic={self.tactic_num})")
                 await self.esp32.motor_enable()
