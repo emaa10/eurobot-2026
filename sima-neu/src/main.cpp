@@ -24,7 +24,7 @@
 // ── Kalibrierung ──────────────────────────────────────────────────
 static constexpr float STEPS_PER_MM   = 980.0f / 1000.0f;
 static constexpr float DELAY_START_US = 6000.0f;
-static constexpr float DELAY_MIN_US   = 2500.0f;
+static constexpr float DELAY_MIN_US   = 2000.0f;
 static constexpr float RAMP_US        = 150.0f;
 
 // ── ToF ───────────────────────────────────────────────────────────
@@ -50,26 +50,23 @@ volatile uint16_t tof_right     = 9999;
 //  ToF (läuft auf Core1)
 // ═════════════════════════════════════════════════════════════════
 
-// Median-Filter: nur echte Werte im Buffer, erst ab 3 Samples gültig
 struct MedianFilter {
-    static constexpr uint8_t N     = 7;   // größerer Buffer = robuster
-    static constexpr uint8_t READY = 3;   // min. Samples bevor Ergebnis gültig
+    static constexpr uint8_t N     = 7;
+    static constexpr uint8_t READY = 3;
     uint16_t buf[N];
     uint8_t  idx   = 0;
     uint8_t  count = 0;
 
     MedianFilter() { for (auto &v : buf) v = 9999; }
 
-    // Nur echte Messwerte pushen (kein 9999, keine Ausreißer unter 30mm oder über 2000mm)
     void push(uint16_t v) {
-        if (v == 9999 || v > 2000) return;   // komplett ungültig — verwerfen
-        if (v < 30)                return;   // Sensoreigenrauschen — verwerfen
+        if (v == 9999 || v > 2000) return;
+        if (v < 30)                return;
         buf[idx] = v;
         idx = (idx + 1) % N;
         if (count < N) count++;
     }
 
-    // Gibt 9999 zurück wenn noch zu wenige echte Samples vorhanden
     uint16_t median() const {
         if (count < READY) return 9999;
         uint16_t tmp[N];
@@ -77,7 +74,7 @@ struct MedianFilter {
         for (uint8_t i = 0; i < N-1; i++)
             for (uint8_t j = 0; j < N-1-i; j++)
                 if (tmp[j] > tmp[j+1]) { uint16_t t=tmp[j]; tmp[j]=tmp[j+1]; tmp[j+1]=t; }
-        return tmp[count / 2];  // Median über tatsächlich gefüllte Slots
+        return tmp[count / 2];
     }
 };
 
@@ -153,9 +150,9 @@ static void waitForPullcord() {
 // ═════════════════════════════════════════════════════════════════
 
 static inline void pulse() {
-    gpio_put(L_STEP, 1); gpio_put(R_STEP, 1);
-    sleep_us(500);
-    gpio_put(L_STEP, 0); gpio_put(R_STEP, 0);
+    digitalWrite(L_STEP, 1); digitalWrite(R_STEP, 1);
+    delayMicroseconds(750);
+    digitalWrite(L_STEP, 0); digitalWrite(R_STEP, 0);
 }
 
 static void driveForward(uint32_t target_mm) {
@@ -185,7 +182,7 @@ static void driveForward(uint32_t target_mm) {
             }
             Serial.println("[CORE0] Weg frei — weiter");
             MOTORS_ON();
-            continue;   // i nicht erhöhen
+            continue;
         }
 
         // ── Rampe ─────────────────────────────────────────────────
@@ -195,7 +192,8 @@ static void driveForward(uint32_t target_mm) {
             delay_us = fminf(delay_us + RAMP_US, DELAY_START_US);
 
         pulse();
-        sleep_us((uint32_t)delay_us);
+        uint32_t effective = (uint32_t)delay_us > 750 ? (uint32_t)delay_us - 750 : 0;
+        delayMicroseconds(effective);
 
         if (i % 300 == 0)
             Serial.printf("[DRIVE] %u/%u  L=%d R=%d mm\n", i, total_steps, tof_left, tof_right);
@@ -235,7 +233,7 @@ void setup() {
     MOTORS_OFF();
 
     Serial.println("[CORE0] bereit — warte auf Core1 ToF-Init...");
-    sleep_ms(2500);  // Core1 Zeit zum Initialisieren
+    sleep_ms(2500);
 
     waitForPullcord();
     delay(86000);
@@ -252,7 +250,6 @@ void loop() {}
 void setup1() {
     sleep_ms(500);
 
-    // I2C + XSHUT
     i2c_init(I2C_PORT, 100000);
     gpio_set_function(PIN_SDA, GPIO_FUNC_I2C); gpio_pull_up(PIN_SDA);
     gpio_set_function(PIN_SCL, GPIO_FUNC_I2C); gpio_pull_up(PIN_SCL);
@@ -264,7 +261,6 @@ void setup1() {
 }
 
 void loop1() {
-    // push() filtert intern: ungültige Werte, <30mm, >2000mm werden verworfen
     mf_left.push(tof_read_raw(ADDR_LEFT));
     mf_right.push(tof_read_raw(ADDR_RIGHT));
 
@@ -273,7 +269,6 @@ void loop1() {
     tof_left  = l;
     tof_right = r;
 
-    // Gegner nur erkannt wenn Median gültig (>=3 echte Samples) UND unter Schwelle
     bool obs = (l != 9999 && l < STOP_MM) || (r != 9999 && r < STOP_MM);
 
     if (obs != opponent_detected) {
@@ -284,5 +279,5 @@ void loop1() {
         Serial.printf("[CORE1] L=%d mm  R=%d mm\n", l, r);
     }
 
-    sleep_ms(20);  // 50 Hz
+    sleep_ms(20);
 }
