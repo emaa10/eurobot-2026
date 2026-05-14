@@ -34,6 +34,7 @@ static uint16_t tof_read(uint8_t addr) {
 
 void setup() {
     Serial.begin(115200);
+    Serial.println("Sensor start");
     sleep_ms(500);
 
     i2c_init(I2C_PORT, 100000);

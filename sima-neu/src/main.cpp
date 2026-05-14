@@ -37,10 +37,22 @@ static constexpr float RAMP_US        = 150.0f;
 #define STOP_MM       80
 
 // ── Fahrziel ──────────────────────────────────────────────────────
-#define TARGET_MM     500
+#define TARGET_MM     1500
+
+// ── Zeitlimit ─────────────────────────────────────────────────────
+#define MATCH_DURATION_MS  98000UL
 
 // ═════════════════════════════════════════════════════════════════
-//  Interrupt-Flag (Core1 schreibt, Core0 liest)    
+//  Globale Zeitbasis (gesetzt beim Pullcord-Ziehen)
+// ═════════════════════════════════════════════════════════════════
+volatile uint32_t match_start_ms = 0;
+
+static inline bool timeUp() {
+    return (millis() - match_start_ms) >= MATCH_DURATION_MS;
+}
+
+// ═════════════════════════════════════════════════════════════════
+//  Interrupt-Flag (Core1 schreibt, Core0 liest)
 // ═════════════════════════════════════════════════════════════════
 volatile bool opponent_detected = false;
 volatile uint16_t tof_left      = 9999;
@@ -140,7 +152,11 @@ static void waitForPullcord() {
             stable = new_state;
             Serial.printf("[PULLCORD] → %s\n", stable ? "HIGH - eingesteckt" : "LOW  - gezogen");
         }
-        if (stable == 0) { Serial.println("[PULLCORD] gezogen — los!"); return; }
+        if (stable == 0) {
+            match_start_ms = millis();
+            Serial.println("[PULLCORD] gezogen — los!");
+            return;
+        }
         sleep_ms(150);
     }
 }
@@ -167,12 +183,22 @@ static void driveForward(uint32_t target_mm) {
 
     for (uint32_t i = 0; i < total_steps; ) {
 
-        // ── Interrupt-Flag prüfen ─────────────────────────────────
+        if (timeUp()) {
+            MOTORS_OFF();
+            Serial.println("[DRIVE] Zeit abgelaufen — Motoren aus");
+            return;
+        }
+
         if (opponent_detected) {
             MOTORS_OFF();
             Serial.printf("[CORE0] Gegner! L=%d R=%d mm — warte...\n", tof_left, tof_right);
             uint32_t waited = 0;
             while (opponent_detected) {
+                if (timeUp()) {
+                    MOTORS_OFF();
+                    Serial.println("[DRIVE] Zeit abgelaufen — Motoren aus");
+                    return;
+                }
                 sleep_ms(20);
                 waited += 20;
                 if (waited >= 10000) {
@@ -185,7 +211,6 @@ static void driveForward(uint32_t target_mm) {
             continue;
         }
 
-        // ── Rampe ─────────────────────────────────────────────────
         if (i < total_steps / 2 && delay_us > DELAY_MIN_US)
             delay_us = fmaxf(delay_us - RAMP_US, DELAY_MIN_US);
         if (i >= decel_start && delay_us < DELAY_START_US)
@@ -206,6 +231,8 @@ static void driveForward(uint32_t target_mm) {
 
 // ═════════════════════════════════════════════════════════════════
 //  Servo (Core0)
+//  Dreht endlos weiter — auch nach 100s.
+//  Motoren bleiben durch MOTORS_OFF() gesperrt.
 // ═════════════════════════════════════════════════════════════════
 
 static Servo g_servo;
@@ -214,8 +241,12 @@ static void servoSpin() {
     Serial.println("[SERVO] dreht");
     g_servo.attach(PIN_SERVO);
     while (true) {
-        g_servo.write(90); delay(500);
-        g_servo.write(0);  delay(500);
+        if (timeUp()) MOTORS_OFF();  // Sicherheitsnetz: Motoren bleiben aus
+        g_servo.write(90);
+        delay(500);
+        if (timeUp()) MOTORS_OFF();
+        g_servo.write(0);
+        delay(500);
     }
 }
 
@@ -227,7 +258,6 @@ void setup() {
     Serial.begin(115200);
     sleep_ms(500);
 
-    // Motor-GPIOs
     const uint motor_pins[] = { L_STEP, L_DIR, L_EN, R_STEP, R_DIR, R_EN };
     for (uint p : motor_pins) { gpio_init(p); gpio_set_dir(p, GPIO_OUT); }
     MOTORS_OFF();
