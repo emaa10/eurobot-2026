@@ -126,7 +126,7 @@ class Lidar:
     STOP_DIST          = 250   # mm  Stoppschwelle (25cm)
     STOP_DIST_ARMS_UP  = 630   # mm  Stoppschwelle vorwärts wenn Arme oben (+20cm)
     CONE_DEG   = 60.0  # °   halber Kegelwinkel voraus/rückwärts (±60° = 120° gesamt)
-    MIN_DIST   = 70    # mm  Eigenkörper ignorieren
+    MIN_DIST   = 85    # mm  Eigenkörper ignorieren (alles < 8.5cm)
     MIN_HITS   = 3     # Punkte für sicheren Treffer
     ANGLE_OFFSET = 270  # °   Montage-Rotation des Lidars (Lidar 180° gedreht → vorne=270°)
 
