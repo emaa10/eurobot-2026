@@ -21,6 +21,7 @@ class Lidar:
         self.thread = None
         self.stop_motor = False
         self.arms_up = False
+        self.detection_enabled = True   # 'lo'/'la' Befehle schalten Gegnererkennung
         self._last_live_log = 0.0
     
     def connect(self):
@@ -137,6 +138,12 @@ class Lidar:
 
     def get_stop(self, x, y, theta, direction) -> bool:
         """direction: +1 vorwärts, -1 rückwärts, 0 drehen → Vollkreis-Check."""
+        if not self.detection_enabled:
+            if self.stop_motor:
+                self.logger.info('Lidar-Gegnererkennung deaktiviert – Weg frei gesetzt')
+            self.stop_motor = False
+            return False
+
         if self.latest_scan_time + 0.02 > time():
             return self.stop_motor
 

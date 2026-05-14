@@ -35,7 +35,7 @@ TACTICS = {
     3: [['hg', 'lh', 'dd100', 'ta-10', 'dd800', 'ta10', 'dd950', 'dd-210', 'ta90', 'dd300', 'gr', 'ta90', 'dd-240', 'ta-90', 'dd320', 'dd-1250', 'w2r', 'dd600', 'w2h', 'dd400', 'ta90', 'go', 'dd1900', 'ta90']],
     4: [['hg', 'lh', 'dd100', 'ta-18', 'dd800', 'ta10', 'dd950', 'dd-220', 'ta90', 'dd220', 'gr', 'ta-90', 'dd240', 'dd-150', 'ta90', 'dd-320', 'dd1250', 'w1r', 'dd-600', 'w1h', 'dd-400', 'ta-90', 'go', 'dd1900', 'ta90']],
     5: [['ta-15', 'dd100', 'ta15', 'dd1000', 'ta90', 'dd250', 'ta90', 'dd250', 'dd-600', 'dd150', 'ta-90', 'dd1000', 'dd-200']],
-    6: [['dd200', 'ta-25', 'dd320', 'ta25', 'dd1025', 'ta90', 'dd250', 'dd-40', 'ta90', 'dd200', 'dd-630', 'dd120', 'ta90', 'dd-250', 'dd1300', 'w2r', 'dd-200']],
+    6: [['dd200', 'ta-25', 'dd320', 'ta25', 'dd1025', 'ta90', 'dd250', 'dd-40', 'ta90', 'dd200', 'dd-630', 'dd120', 'ta90', 'dd-250', 'dd1250', 'w2r', 'dd-500']],
     #6: [['st0', 'hg', 'lh', 'dd100', 'ta-12', 'dd1900', 'dd-250', 'ta90', 'dd470', 'ta90', 'dd200', 'dd-700', 'dd185', 'ta90', 'dd-400', 'dd1350', 'go', 'w1r', 'dd-700', 'w1h', 'go', 'dd-470', 'ta-95', 'wt88', 'dd500', 'gd', 'dd1000', 'ta55', 'dd350']],
     7: [['hg', 'dd1000', 'ta90', 'dd300', 'ta-90', 'dd800', 'dd-300', 'ta-90', 'dd800', 'dd-300',
          'ta-90', 'dd2000', 'dd-300', 'ta180', 'dd2000', 'dd-300', 'ta-90', 'dd1200',
@@ -149,7 +149,7 @@ class Robot:
             f"team     {self.team}",
             f"tactic   {self.tactic_num}",
             f"pos      x={self.esp32.x:.0f} y={self.esp32.y:.0f} θ={self.esp32.theta:.1f}°",
-            f"lidar    {'ok' if self.lidar.is_running() else 'FEHLT'}",
+            f"lidar    {'ok' if self.lidar.is_running() else 'FEHLT'} (Erkennung {'AN' if self.lidar.detection_enabled else 'AUS'})",
             f"servos   {'ok' if self.servos.available else 'FEHLT'}",
             f"pullcord {'gezogen' if GPIO.input(PIN_PULLCORD) == GPIO.HIGH else 'drin'}",
         ]
@@ -237,6 +237,16 @@ class Robot:
                 n = int(args[0]) if args and args[0].isdigit() else 5
                 asyncio.create_task(self._test_winker(n))
 
+            case 'lo':
+                self.lidar.detection_enabled = False
+                self.log("Lidar-Gegnererkennung AUS")
+                await self._ok("lidar detection off")
+
+            case 'la':
+                self.lidar.detection_enabled = True
+                self.log("Lidar-Gegnererkennung AN")
+                await self._ok("lidar detection on")
+
             case 'gripper' | 'g':
                 sub = args[0].lower() if args else ''
                 match sub:
@@ -268,6 +278,8 @@ class Robot:
             "  servo <id> <pos>        Test: Servo direkt setzen",
             "  winker [n]              Test: Servo 8 n×hin+her (default 5)",
             "  gripper open|close|home / g o|c|h",
+            "  lo                      Lidar-Gegnererkennung AUS",
+            "  la                      Lidar-Gegnererkennung AN",
             "─" * 41,
         ]
         for l in lines:
