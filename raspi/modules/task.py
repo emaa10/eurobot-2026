@@ -217,6 +217,16 @@ class Task:
                 vals = msg[2:].split(';')
                 self.gripper.servos.write_servo(int(vals[0]), int(vals[1]))
 
+            case 'lo':  # lidar opponent detection OFF
+                if self.lidar:
+                    self.lidar.detection_enabled = False
+                    self.logger.info("Lidar-Gegnererkennung AUS")
+
+            case 'la':  # lidar opponent detection ON
+                if self.lidar:
+                    self.lidar.detection_enabled = True
+                    self.logger.info("Lidar-Gegnererkennung AN")
+
             case 'ip':  # increase points by fixed amount
                 self.points += int(msg[2:])
 
