@@ -32,8 +32,7 @@ static constexpr float STEPS_PER_MM = 1.040f;
 static constexpr float DELAY_START_US = 6000.0f;
 static constexpr float DELAY_MIN_US   = 2000.0f;
 static constexpr float RAMP_US = 100.0f;
-static constexpr float ANGle_KOEFFINZIENT   = 20;
-
+static constexpr float ANGLE_KOEFFIZIENT = 0.53f;
 // ── ToF ───────────────────────────────────────────────────────────
 #define I2C_PORT      i2c1
 #define PIN_SDA       2
@@ -252,17 +251,17 @@ static void driveForward(uint32_t target_mm) {
 }
 
 static void turn(uint32_t angle, bool dir) {
-    uint32_t total_steps = (uint32_t)(angle * STEPS_PER_MM * ANGle_KOEFFINZIENT);
-    float    delay_us    = DELAY_START_US;
+    uint32_t total_steps = (uint32_t)(angle * ANGLE_KOEFFIZIENT);
+    float delay_us = DELAY_START_US;
     uint32_t decel_start = total_steps > 80 ? total_steps - 80 : 0;
     if (dir)
     {
-        gpio_put(L_DIR, 1); //rechts
-        gpio_put(R_DIR, 1);
+        gpio_put(L_DIR, 0); //rechts
+        gpio_put(R_DIR, 0);
     }
     else {
-        gpio_put(L_DIR, 0);//links
-        gpio_put(R_DIR, 0);
+        gpio_put(L_DIR, 1);//links
+        gpio_put(R_DIR, 1);
     }
     
 
@@ -358,7 +357,8 @@ void setup() {
 
     waitForPullcord();
     //delay(86000);
-    driveForward(500);
+    //driveForward(500);
+    turn(180, true);
     servoSpin();
 }
 
