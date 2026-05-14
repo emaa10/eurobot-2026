@@ -35,7 +35,10 @@ class Task:
         self.points = 0
         self.logger = logging.getLogger(__name__)
         self._cam_positions: list[int] = []
-        self._t0: float | None = None
+        # Spielstart = Task-Erzeugung (passiert direkt nach Pullcord in _run_tactic).
+        # st-Kommando kann das überschreiben, wenn man relativ zu einem späteren
+        # Zeitpunkt warten will.
+        self._t0: float = time()
 
     def next_task(self):
         self.initial_actions = self.action_set[0]
@@ -183,19 +186,15 @@ class Task:
                 self._t0 = time()
                 self.logger.info(f"Timer gesetzt: t0={self._t0:.1f}")
 
-            case 'wt':  # wait until N seconds since last st  wtN
+            case 'wt':  # wait until N seconds since game start (oder seit letztem st)
                 secs = float(msg[2:])
-                if self._t0 is None:
-                    self.logger.warning("wt: kein t0 gesetzt (st fehlt), warte trotzdem")
-                    await asyncio.sleep(secs)
+                elapsed = time() - self._t0
+                remaining = secs - elapsed
+                if remaining > 0:
+                    self.logger.info(f"wt{secs:.0f}: warte noch {remaining:.1f}s (elapsed={elapsed:.1f}s)")
+                    await asyncio.sleep(remaining)
                 else:
-                    elapsed = time() - self._t0
-                    remaining = secs - elapsed
-                    if remaining > 0:
-                        self.logger.info(f"wt{secs:.0f}: warte noch {remaining:.1f}s")
-                        await asyncio.sleep(remaining)
-                    else:
-                        self.logger.info(f"wt{secs:.0f}: bereits {elapsed:.1f}s vergangen, kein Warten")
+                    self.logger.info(f"wt{secs:.0f}: bereits {elapsed:.1f}s vergangen, kein Warten")
 
             case 'lh':  # lift hoch
                 self.gripper.lift_hoch()
