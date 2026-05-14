@@ -6,7 +6,7 @@
 
 // ── Pins ─────────────────────────────────────────────────────────
 #define PIN_PULLCORD  21
-#define PIN_TEAMSWITCH 22
+#define PIN_TEAMSWITCH 16
 #define PIN_SERVO     28
 #define PIN_XSHUT1    20
 #define PIN_XSHUT2    19
@@ -377,18 +377,23 @@ void setup() {
 
     Serial.println("[CORE0] bereit — warte auf Core1 ToF-Init...");
     sleep_ms(2500);
-    readTeamSwitch();
+    //readTeamSwitch(); //kaputt
     waitForPullcord();
     if(!teamBlau) {
+        driveForward(430,false); //yellow
+        driveForward(200,true);
+        /*delay(60000);
+        turn(130, false);
+        driveForward(500,false);
+        turn(300, true);*/
+    }
+    else{
         driveForward(430,false); //yellow
         driveForward(200,true);
         delay(60000);
         turn(130, false);
         driveForward(500,false);
         turn(300, true);
-    }
-    else{
-        
     }
     
     servoSpin();
