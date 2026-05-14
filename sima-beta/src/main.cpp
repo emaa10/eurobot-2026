@@ -32,6 +32,7 @@ static constexpr float STEPS_PER_MM   = 980.0f / 1000.0f;
 static constexpr float DELAY_START_US = 6000.0f;
 static constexpr float DELAY_MIN_US   = 2000.0f;
 static constexpr float RAMP_US        = 150.0f;
+static constexpr float ANGle_KOEFFINZIENT   = 20
 
 // ── ToF ───────────────────────────────────────────────────────────
 #define I2C_PORT      i2c1
@@ -194,6 +195,77 @@ static void driveForward(uint32_t target_mm) {
 
     gpio_put(L_DIR, 1);
     gpio_put(R_DIR, 0);
+    MOTORS_ON();
+    Serial.printf("[DRIVE] Start: %u mm → %u steps\n", target_mm, total_steps);
+
+    for (uint32_t i = 0; i < total_steps; ) {
+
+        if (timeUp()) {
+            Serial.println("[DRIVE] Zeit abgelaufen — stoppe");
+            motorsStop();
+            return;
+        }
+
+        if (opponent_detected) {
+            // Sofort Steps stoppen, EN nach 2s aus
+            digitalWrite(L_STEP, 0); digitalWrite(R_STEP, 0);
+            Serial.printf("[CORE0] Gegner! L=%d R=%d mm — warte...\n", tof_left, tof_right);
+            delay(2000);
+            gpio_put(L_EN, 1); gpio_put(R_EN, 1);
+
+            uint32_t waited = 2000;
+            while (opponent_detected) {
+                if (timeUp()) {
+                    Serial.println("[DRIVE] Zeit abgelaufen — stoppe");
+                    motorsStop();
+                    return;
+                }
+                sleep_ms(20);
+                waited += 20;
+                if (waited >= 10000) {
+                    Serial.println("[CORE0] 10s Timeout — abgebrochen");
+                    motorsStop();
+                    return;
+                }
+            }
+            Serial.println("[CORE0] Weg frei — weiter");
+            MOTORS_ON();
+            continue;
+        }
+
+        if (i < total_steps / 2 && delay_us > DELAY_MIN_US)
+            delay_us = fmaxf(delay_us - RAMP_US, DELAY_MIN_US);
+        if (i >= decel_start && delay_us < DELAY_START_US)
+            delay_us = fminf(delay_us + RAMP_US, DELAY_START_US);
+
+        pulse();
+        uint32_t effective = (uint32_t)delay_us > 750 ? (uint32_t)delay_us - 750 : 0;
+        delayMicroseconds(effective);
+
+        if (i % 300 == 0)
+            Serial.printf("[DRIVE] %u/%u  L=%d R=%d mm\n", i, total_steps, tof_left, tof_right);
+        i++;
+    }
+
+    motorsStop();
+    Serial.println("[DRIVE] Ziel erreicht");
+}
+
+static void turn(uint32_t angle, bool dir) {
+    uint32_t total_steps = (uint32_t)(angle * STEPS_PER_MM * ANGle_KOEFFINZIENT);
+    float    delay_us    = DELAY_START_US;
+    uint32_t decel_start = total_steps > 80 ? total_steps - 80 : 0;
+    if (dir)
+    {
+        gpio_put(L_DIR, 1); //rechts
+        gpio_put(R_DIR, 1);
+    }
+    else {
+        gpio_put(L_DIR, 0);//links
+        gpio_put(R_DIR, 0);
+    }
+    
+
     MOTORS_ON();
     Serial.printf("[DRIVE] Start: %u mm → %u steps\n", target_mm, total_steps);
 
