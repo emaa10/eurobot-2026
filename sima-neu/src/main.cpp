@@ -37,10 +37,10 @@ static constexpr float RAMP_US        = 150.0f;
 #define STOP_MM       80
 
 // ── Fahrziel ──────────────────────────────────────────────────────
-#define TARGET_MM     1500
+#define TARGET_MM     500
 
 // ═════════════════════════════════════════════════════════════════
-//  Interrupt-Flag (Core1 schreibt, Core0 liest)
+//  Interrupt-Flag (Core1 schreibt, Core0 liest)    
 // ═════════════════════════════════════════════════════════════════
 volatile bool opponent_detected = false;
 volatile uint16_t tof_left      = 9999;
