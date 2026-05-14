@@ -31,7 +31,7 @@
 static constexpr float STEPS_PER_MM = 1.040f;
 static constexpr float DELAY_START_US = 6000.0f;
 static constexpr float DELAY_MIN_US   = 2000.0f;
-static constexpr float RAMP_US = 100.0f;
+static constexpr float RAMP_US = 10.0f;
 static constexpr float ANGLE_KOEFFIZIENT = 0.53f;
 // ── ToF ───────────────────────────────────────────────────────────
 #define I2C_PORT      i2c1
@@ -187,13 +187,19 @@ static void motorsStop() {
     gpio_put(L_EN, 1); gpio_put(R_EN, 1);
 }
 
-static void driveForward(uint32_t target_mm) {
+static void driveForward(uint32_t target_mm, bool dir) {
     uint32_t total_steps = (uint32_t)(target_mm * STEPS_PER_MM);
     float    delay_us    = DELAY_START_US;
     uint32_t decel_start = total_steps > 80 ? total_steps - 80 : 0;
+    if(dir) {
+        gpio_put(L_DIR, 1);//gerade
+        gpio_put(R_DIR, 0);
+    }
+    else {
+        gpio_put(L_DIR, 0); //rück
+        gpio_put(R_DIR, 1);
+    }
 
-    gpio_put(L_DIR, 1);
-    gpio_put(R_DIR, 0);
     MOTORS_ON();
     Serial.printf("[DRIVE] Start: %u mm → %u steps\n", target_mm, total_steps);
 
@@ -205,7 +211,7 @@ static void driveForward(uint32_t target_mm) {
             return;
         }
 
-        if (opponent_detected) {
+        /*if (opponent_detected) {
             // Sofort Steps stoppen, EN nach 2s aus
             digitalWrite(L_STEP, 0); digitalWrite(R_STEP, 0);
             Serial.printf("[CORE0] Gegner! L=%d R=%d mm — warte...\n", tof_left, tof_right);
@@ -230,7 +236,7 @@ static void driveForward(uint32_t target_mm) {
             Serial.println("[CORE0] Weg frei — weiter");
             MOTORS_ON();
             continue;
-        }
+        }*/
 
         if (i < total_steps / 2 && delay_us > DELAY_MIN_US)
             delay_us = fmaxf(delay_us - RAMP_US, DELAY_MIN_US);
@@ -356,9 +362,12 @@ void setup() {
     sleep_ms(2500);
 
     waitForPullcord();
-    //delay(86000);
-    //driveForward(500);
-    turn(180, true);
+    driveForward(430,false);
+    driveForward(200,true);
+    delay(60000);
+    turn(130, false);
+    driveForward(500,false);
+    turn(300, true);
     servoSpin();
 }
 
