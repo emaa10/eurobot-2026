@@ -38,9 +38,9 @@ class Gripper:
 
     # ── Winker ────────────────────────────────────────────────────────────
 
-    def winker(self, n: int, hoch: bool):
-        """n=1 oder n=2, hoch=True/False."""
-        if n == 1:
-            self.servos.winker1_hoch() if hoch else self.servos.winker1_runter()
+    def winker(self, side: str, hoch: bool):
+        """side='r' (rechts, ID 7) oder 'l' (links, ID 8), hoch=True/False."""
+        if side == 'r':
+            self.servos.winker_rechts_hoch() if hoch else self.servos.winker_rechts_runter()
         else:
-            self.servos.winker2_hoch() if hoch else self.servos.winker2_runter()
+            self.servos.winker_links_hoch()  if hoch else self.servos.winker_links_runter()

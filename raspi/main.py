@@ -359,9 +359,9 @@ class Robot:
         from modules.STservo_sdk.sts import STS_TORQUE_ENABLE
         self.servos.packet_handler.write1ByteTxRx(8, STS_TORQUE_ENABLE, 1)
         for i in range(n):
-            self.servos.winker2_runter()
+            self.servos.winker_links_runter()
             await asyncio.sleep(1.5)
-            self.servos.winker2_hoch()
+            self.servos.winker_links_hoch()
             await asyncio.sleep(1.5)
         await self._ok(f"winker test fertig ({n}x)")
 

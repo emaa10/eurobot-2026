@@ -125,28 +125,28 @@ class Servos:
         self.write_servo(self.LIFT_B, self.LIFT_B_RUNTER)
 
     # ── Winker (2 unabhängige Servos) ─────────────────────────────────────
-    # Winker 1 = ID 7 = linker Winker
-    # Winker 2 = ID 8 = rechter Winker
-    WINKER1_OBEN   = 2012
-    WINKER1_UNTEN  = 3473
-    WINKER2_OBEN   = 980
-    WINKER2_UNTEN  = 1958
+    # ID 7 = rechter Winker
+    # ID 8 = linker  Winker
+    WINKER_RECHTS_OBEN   = 2173
+    WINKER_RECHTS_UNTEN  = 3473
+    WINKER_LINKS_OBEN    = 1365
+    WINKER_LINKS_UNTEN   = 158
 
-    def winker1_runter(self):
-        self.write_servo(7, self.WINKER1_UNTEN)
+    def winker_rechts_runter(self):
+        self.write_servo(7, self.WINKER_RECHTS_UNTEN)
 
-    def winker1_hoch(self):
-        self.write_servo(7, self.WINKER1_OBEN)
+    def winker_rechts_hoch(self):
+        self.write_servo(7, self.WINKER_RECHTS_OBEN)
 
-    def winker2_runter(self):
-        self.write_servo(8, self.WINKER2_UNTEN)
+    def winker_links_runter(self):
+        self.write_servo(8, self.WINKER_LINKS_UNTEN)
 
-    def winker2_hoch(self):
-        self.write_servo(8, self.WINKER2_OBEN)
+    def winker_links_hoch(self):
+        self.write_servo(8, self.WINKER_LINKS_OBEN)
 
     # ── Home-Position ──────────────────────────────────────────────────────
 
     def home(self):
         self.alle_auf()
         self.lift_runter()
-        self.winker2_hoch()
+        self.winker_links_hoch()
