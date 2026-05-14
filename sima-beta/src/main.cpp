@@ -28,11 +28,11 @@
 #define MOTORS_ON()  do { gpio_put(L_EN, 0); gpio_put(R_EN, 0); } while(0)
 
 // ── Kalibrierung ──────────────────────────────────────────────────
-static constexpr float STEPS_PER_MM   = 980.0f / 1000.0f;
+static constexpr float STEPS_PER_MM = 1.040f;
 static constexpr float DELAY_START_US = 6000.0f;
 static constexpr float DELAY_MIN_US   = 2000.0f;
-static constexpr float RAMP_US        = 150.0f;
-static constexpr float ANGle_KOEFFINZIENT   = 20
+static constexpr float RAMP_US = 100.0f;
+static constexpr float ANGle_KOEFFINZIENT   = 20;
 
 // ── ToF ───────────────────────────────────────────────────────────
 #define I2C_PORT      i2c1
@@ -267,7 +267,7 @@ static void turn(uint32_t angle, bool dir) {
     
 
     MOTORS_ON();
-    Serial.printf("[DRIVE] Start: %u mm → %u steps\n", target_mm, total_steps);
+    Serial.printf("[DRIVE] Start: %u mm → %u steps\n", total_steps);
 
     for (uint32_t i = 0; i < total_steps; ) {
 
@@ -357,8 +357,8 @@ void setup() {
     sleep_ms(2500);
 
     waitForPullcord();
-    delay(86000);
-    driveForward(TARGET_MM);
+    //delay(86000);
+    driveForward(500);
     servoSpin();
 }
 
