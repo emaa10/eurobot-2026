@@ -36,14 +36,16 @@ void setup() {
     Serial.begin(115200);
     Serial.println("Sensor start");
     sleep_ms(500);
+    delay(5000);
+    Serial.println("Sensor starte");
 
     i2c_init(I2C_PORT, 100000);
     gpio_set_function(PIN_SDA, GPIO_FUNC_I2C); gpio_pull_up(PIN_SDA);
     gpio_set_function(PIN_SCL, GPIO_FUNC_I2C); gpio_pull_up(PIN_SCL);
-
+    Serial.println("before init");
     gpio_init(PIN_XSHUT1); gpio_set_dir(PIN_XSHUT1, GPIO_OUT);
     gpio_init(PIN_XSHUT2); gpio_set_dir(PIN_XSHUT2, GPIO_OUT);
-
+    Serial.println("after init");
     // Sensor 1 (Links) auf neue Adresse setzen
     gpio_put(PIN_XSHUT1, 0); gpio_put(PIN_XSHUT2, 0);
     sleep_ms(10);
