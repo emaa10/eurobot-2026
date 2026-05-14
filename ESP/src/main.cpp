@@ -36,8 +36,8 @@ static constexpr bool  INVERT_R        = false;
 static constexpr bool  INVERT_L        = false;
 
 // ── Motor-Geometrie ────────────────────────────────────────────────────────
-static constexpr float STEPS_PER_REV   = 1600.0f;
-static constexpr float WHEEL_DIAM_MM   = 48.0f;
+static constexpr float STEPS_PER_REV   = 1600.0f;   // empirisch: 1000mm-Cmd ergab 2100mm bei 1600 → 1600*1000/2100
+static constexpr float WHEEL_DIAM_MM   = 100.0f;
 static constexpr float WHEELBASE_MM    = 226.0f;
 static constexpr float STEPS_PER_MM    = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);
 static constexpr float STEPS_PER_DEG   = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
