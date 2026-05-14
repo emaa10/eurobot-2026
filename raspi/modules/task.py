@@ -227,6 +227,19 @@ class Task:
                     self.lidar.detection_enabled = True
                     self.logger.info("Lidar-Gegnererkennung AN")
 
+            case 'mo':  # motor off – Treiber aus (EN HIGH), Robot manuell verschiebbar
+                await self.esp32.motor_disable()
+                self.logger.info("Motoren AUS")
+
+            case 'ma':  # motor an – Treiber aktivieren (EN LOW)
+                await self.esp32.motor_enable()
+                self.logger.info("Motoren AN")
+
+            case 'dl':  # delay milliseconds  dlNNN
+                ms = int(msg[2:])
+                self.logger.info(f"dl{ms}: warte {ms} ms")
+                await asyncio.sleep(ms / 1000)
+
             case 'ip':  # increase points by fixed amount
                 self.points += int(msg[2:])
 
