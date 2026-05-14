@@ -1,0 +1,25 @@
+[Unit]
+Description=Eurobot 2026 Tele-Op Server (WASD / Pfeil-Steuerung, Port 8000)
+After=local-fs.target sysinit.target network.target
+# Co-Existenz mit eurobot.service: der Server hält den Serial-Port nur,
+# wenn der Benutzer im Web-UI „Activate“ drückt; dann wird eurobot.service
+# über `sudo systemctl stop` temporär runtergefahren.
+
+[Service]
+Type=simple
+User=eurobot
+WorkingDirectory=/home/eurobot/eurobot-2026/raspi
+
+# 3 s warten, damit /dev/serial/by-id/... nach Boot bereit ist
+ExecStartPre=/bin/sleep 3
+ExecStart=/usr/bin/python3 -u teleop_server.py
+
+Restart=always
+RestartSec=3s
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=teleop
+
+[Install]
+WantedBy=multi-user.target

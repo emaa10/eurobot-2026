@@ -24,10 +24,16 @@ echo ""
 echo "  Team:  $TEAM"
 echo ""
 
-# ── Laufenden Service stoppen ─────────────────────────────────────────────
+# ── Laufende Services stoppen ─────────────────────────────────────────────
 if systemctl is-active --quiet eurobot.service 2>/dev/null; then
     echo "  Stoppe laufenden eurobot.service …"
     sudo systemctl stop eurobot.service
+fi
+# Tele-Op-Server hält den ESP32-Serial-Port → vor dem Game stoppen.
+# Wird beim nächsten Boot automatisch wieder gestartet (enabled).
+if systemctl is-active --quiet teleop.service 2>/dev/null; then
+    echo "  Stoppe laufenden teleop.service …"
+    sudo systemctl stop teleop.service
 fi
 
 echo "  Starte Eurobot …"
