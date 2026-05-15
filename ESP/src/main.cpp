@@ -42,8 +42,8 @@ static constexpr float WHEEL_DIAM_MM   = 100.0f;
 static constexpr float WHEELBASE_MM    = 256.5f;
 static constexpr float STEPS_PER_MM    = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);
 static constexpr float STEPS_PER_DEG   = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
-static constexpr int   STEP_DELAY_MIN  = 80; //350
-static constexpr int   STEP_DELAY_MAX  = 500; //1500
+static constexpr int   STEP_DELAY_MIN  = 350; //350 / 80
+static constexpr int   STEP_DELAY_MAX  = 1500; //1500 / 500
 static constexpr long  ACCEL_STEPS     = 1500;   // sanftere Beschleunigung (vorher 600)
 static constexpr long  MIN_HOMING_STEPS = 100;
 

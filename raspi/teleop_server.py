@@ -31,9 +31,16 @@ EUROBOT_UNIT = 'eurobot.service'
 
 # Fahrt-Häppchen pro Refire: kurz genug, dass „release" innerhalb < 1 Häppchen
 # zum Ziel führt, lang genug, dass der ESP nicht andauernd neue Cmds einfasst.
-DRIVE_MM       = 2000      # 2 m je DD-Häppchen
-TURN_DEG       = 360       # 1 volle Umdrehung je TA-Häppchen
-HOLD_TIMEOUT_S = 0.35      # > 0.35 s kein Heartbeat → ST
+DRIVE_MM       = 50000     # 50 m je DD-Häppchen.  ST stoppt sofort,
+                           # also keinen Grund kurze Chunks zu fahren –
+                           # jeder Chunk-Wechsel ist ein sichtbarer Decel/
+                           # Accel-Ramp in der Firmware.
+TURN_DEG       = 7200      # 20 Umdrehungen je TA-Häppchen (selbe Logik)
+HOLD_TIMEOUT_S = 1.0       # > 1.0 s kein Heartbeat → ST.  Heartbeat-Rate
+                           # im Browser ist 100ms → ~10 pro Sekunde, damit
+                           # WLAN-Aussetzer bis ~1s problemlos überbrückt
+                           # werden ohne dass der Robot mitten in der Fahrt
+                           # stoppt.
 
 PIN_PULLCORD   = 22        # Pull-Up: LOW=Schnur drin, HIGH-Flanke=Start
 RECORD_DIR     = Path('/home/eurobot/eurobot-2026/raspi/recordings')
