@@ -380,7 +380,7 @@ void setup() {
     //readTeamSwitch(); //kaputt
     waitForPullcord();
     if(!teamBlau) {
-        driveForward(430,false); //yellow
+        driveForward(500,false); //yellow
         driveForward(200,true);
         /*delay(60000);
         turn(130, false);
