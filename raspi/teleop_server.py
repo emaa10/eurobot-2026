@@ -271,6 +271,9 @@ ACTION_CMD = {
     'right':    lambda: f'TA{TURN_DEG}',
 }
 
+# Kreis-Mode: laeuft endlos auf der ESP, kein Refire / Watchdog noetig
+circle_state = {'running': False}
+
 
 def hard_stop():
     """ESP-Firmware: `MOVING + ST → PAUSED`, NICHT IDLE. Damit der nächste
@@ -301,10 +304,11 @@ def do_action(action: str, seq: int = 0) -> tuple[bool, str]:
             state['last_seq'] = seq
 
         if action == 'stop':
-            if state['active'] is not None:
+            if state['active'] is not None or circle_state['running']:
                 hard_stop()
                 rec_log_event('drive', 'stop')
             state['active'] = None
+            circle_state['running'] = False
             return True, 'ok'
 
         if action not in ACTION_CMD:
@@ -317,14 +321,43 @@ def do_action(action: str, seq: int = 0) -> tuple[bool, str]:
 
         # Wechsel: erst sauber stoppen (ST,ST), damit ESP in IDLE ist,
         # bevor das neue DD/TA in die Queue geht.
-        if state['active'] is not None:
+        if state['active'] is not None or circle_state['running']:
             hard_stop()
+            circle_state['running'] = False
 
         esp.send(ACTION_CMD[action]())
         state['active']    = action
         state['last_tick'] = time.monotonic()
         rec_log_event('drive', action)
         return True, 'start'
+
+
+def circle_start() -> tuple[bool, str]:
+    """Startet den hardcodeten Kreis-Mode auf der ESP (CC-Befehl)."""
+    with state_lock:
+        if not state['activated']:
+            return False, 'not activated'
+        if circle_state['running']:
+            return True, 'already running'
+        # Falls noch eine Fahrt-Aktion laeuft: erst sauber stoppen
+        if state['active'] is not None:
+            hard_stop()
+            state['active'] = None
+        esp.send('CC')
+        circle_state['running'] = True
+    rec_log_event('drive', 'circle_start')
+    return True, 'ok'
+
+
+def circle_stop() -> tuple[bool, str]:
+    """Stoppt den Kreis-Mode (ST,ST damit ESP wieder im IDLE landet)."""
+    with state_lock:
+        if not circle_state['running']:
+            return True, 'not running'
+        hard_stop()
+        circle_state['running'] = False
+    rec_log_event('drive', 'circle_stop')
+    return True, 'ok'
 
 
 def do_gripper(action: str) -> tuple[bool, str]:
@@ -905,6 +938,16 @@ INDEX_HTML = r"""<!doctype html>
   </div>
 
   <div class="panel">
+    <h3>🌀 Kreis-Modus
+      <span id="circle-state" style="margin-left:auto;font-family:ui-monospace,monospace;color:var(--muted);text-transform:none;letter-spacing:0;">idle</span>
+    </h3>
+    <div class="rec-controls">
+      <button class="rec-btn" id="circle-start">▶ Kreis Start</button>
+      <button class="rec-btn" id="circle-stop">■ Kreis Stop</button>
+    </div>
+  </div>
+
+  <div class="panel">
     <h3>🦾 Greifer</h3>
     <div class="grip">
       <button class="gbtn" data-grip="hg"><span class="ico">🏠</span>Home</button>
@@ -1083,6 +1126,37 @@ document.querySelectorAll('.gbtn').forEach(b => {
   });
 });
 
+// ── Kreis-Mode ─────────────────────────────────────────────────────────
+const circleStartBtn = $('circle-start');
+const circleStopBtn  = $('circle-stop');
+const circleStateEl  = $('circle-state');
+let circleRunning = false;
+
+function applyCircleState(on){
+  circleRunning = on;
+  circleStateEl.textContent = on ? 'fährt…' : 'idle';
+  circleStartBtn.classList.toggle('recording', on);
+}
+
+circleStartBtn.addEventListener('click', async () => {
+  if (!activated){ alert('Erst ▶ ACTIVATE drücken'); return; }
+  try {
+    const r = await fetch('/circle/start', { method:'POST' });
+    const j = await r.json();
+    if (!j.ok){ alert('Kreis: ' + (j.message||r.status)); return; }
+    applyCircleState(true);
+  } catch(e){ alert('Kreis: ' + e.message); }
+});
+
+circleStopBtn.addEventListener('click', async () => {
+  try {
+    const r = await fetch('/circle/stop', { method:'POST' });
+    const j = await r.json();
+    applyCircleState(false);
+    if (!j.ok){ alert('Kreis stop: ' + (j.message||r.status)); }
+  } catch(e){ alert('Kreis: ' + e.message); }
+});
+
 // ── Recording ──────────────────────────────────────────────────────────
 const recToggle = $('rec-toggle');
 const recState  = $('rec-state');
@@ -1104,6 +1178,12 @@ async function pollStatus(){
     armBanner.classList.toggle('on', !!armedName);
     if (armedName) armBanner.textContent = `🎯 Pull-Cord scharf für „${armedName}" – ziehen startet Playback`;
     renderList(j.recordings);
+  } catch(e){}
+  // Kreis-Status pollen (separater Endpoint /status)
+  try {
+    const r2 = await fetch('/status');
+    const j2 = await r2.json();
+    applyCircleState(!!j2.circle);
   } catch(e){}
 }
 setInterval(pollStatus, 1500);
@@ -1207,6 +1287,18 @@ def http_deactivate():
     return jsonify(ok=ok, message=msg, activated=state['activated']), (200 if ok else 500)
 
 
+@app.post('/circle/start')
+def http_circle_start():
+    ok, msg = circle_start()
+    return jsonify(ok=ok, message=msg, running=circle_state['running']), (200 if ok else 409)
+
+
+@app.post('/circle/stop')
+def http_circle_stop():
+    ok, msg = circle_stop()
+    return jsonify(ok=ok, message=msg, running=circle_state['running']), (200 if ok else 409)
+
+
 @app.post('/gripper/<action>')
 def http_gripper(action):
     ok, msg = do_gripper(action)
@@ -1290,6 +1382,7 @@ def status():
         playing=rec_state['playing'],
         play_name=rec_state['play_name'],
         armed=rec_state['armed'],
+        circle=circle_state['running'],
     )
 
 

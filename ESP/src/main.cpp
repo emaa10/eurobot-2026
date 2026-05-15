@@ -12,6 +12,7 @@
  *   RS             Weiterfahren nach ST
  *   MD             Motoren deaktivieren (EN HIGH) – vor Pullcord
  *   ME             Motoren aktivieren   (EN LOW)  – nach Pullcord
+ *   CC             Kreis fahren (R-Motor schnell=80µs, L-Motor langsam=500µs); bis ST
  *   SP{x};{y};{t}  Odometrie setzen (kein Ack)
  *
  * ESP32 → Raspi:
@@ -41,10 +42,15 @@ static constexpr float WHEEL_DIAM_MM   = 100.0f;
 static constexpr float WHEELBASE_MM    = 256.5f;
 static constexpr float STEPS_PER_MM    = STEPS_PER_REV / (WHEEL_DIAM_MM * PI);
 static constexpr float STEPS_PER_DEG   = WHEELBASE_MM * PI / 360.0f * STEPS_PER_MM;
-static constexpr int   STEP_DELAY_MIN  = 350;
-static constexpr int   STEP_DELAY_MAX  = 1500;
-static constexpr long  ACCEL_STEPS     = 600;
+static constexpr int   STEP_DELAY_MIN  = 80; //350
+static constexpr int   STEP_DELAY_MAX  = 500; //1500
+static constexpr long  ACCEL_STEPS     = 1500;   // sanftere Beschleunigung (vorher 600)
 static constexpr long  MIN_HOMING_STEPS = 100;
+
+// ── Kreis-Fahrt (CC-Befehl) – hardcoded ───────────────────────────────────
+static constexpr int   CIRCLE_DELAY_R   = 80;    // µs Halbperiode rechter Motor (schnell)
+static constexpr int   CIRCLE_DELAY_L   = 500;   // µs Halbperiode linker Motor (langsam)
+static constexpr int   CIRCLE_RAMP_MS   = 800;   // Anlaufzeit zur Vermeidung von Stallen
 
 // ── Command queue ─────────────────────────────────────────────────────────
 struct Cmd { char type; int32_t val; };
@@ -67,13 +73,21 @@ static void serialPrintln(const char* msg) {
 static inline uint8_t dirR(uint8_t d) { return INVERT_R ? (d == HIGH ? LOW : HIGH) : d; }
 static inline uint8_t dirL(uint8_t d) { return INVERT_L ? (d == HIGH ? LOW : HIGH) : d; }
 
+// Konstante Beschleunigung (Geschwindigkeit ∝ √n) statt linearem Delay-Ramp.
+// Linear-im-Delay startet sehr langsam und reißt am Ende stark an – gefühlt ein Sprung.
+// √n-Schedule wächst die Geschwindigkeit gleichmäßig in der Zeit (≈ konstante Beschleunigung).
 static inline int accel_delay(long done, long rem) {
     long ramp = min(done, min(rem, ACCEL_STEPS));
-    return STEP_DELAY_MAX - (int)((STEP_DELAY_MAX - STEP_DELAY_MIN) * ramp / ACCEL_STEPS);
+    if (ramp >= ACCEL_STEPS) return STEP_DELAY_MIN;
+    constexpr float K = (float)STEP_DELAY_MAX / (float)STEP_DELAY_MIN;   // 500/80 = 6.25
+    float frac = (float)ramp / (float)ACCEL_STEPS;
+    float d = (float)STEP_DELAY_MAX / sqrtf(1.0f + frac * (K * K - 1.0f));
+    if (d < (float)STEP_DELAY_MIN) d = (float)STEP_DELAY_MIN;
+    return (int)d;
 }
 
 // ── Core 0: Stepper-Task ──────────────────────────────────────────────────
-enum class MotionState { IDLE, MOVING, PAUSED, HOMING };
+enum class MotionState { IDLE, MOVING, PAUSED, HOMING, CIRCLING };
 
 static void stepperTask(void*) {
     MotionState state = MotionState::IDLE;
@@ -81,6 +95,9 @@ static void stepperTask(void*) {
     long  totalSteps  = 0;
     long  homingSteps = 0;
     uint8_t savedDirR = LOW, savedDirL = LOW;
+    uint32_t circleStartUs = 0;
+    uint32_t lastStepRUs   = 0;
+    uint32_t lastStepLUs   = 0;
     Cmd cmd = {};
 
     while (true) {
@@ -114,6 +131,15 @@ static void stepperTask(void*) {
                 digitalWrite(DIR_L, dirL(HIGH));  // L rückwärts
                 homingSteps = 0;
                 state = MotionState::HOMING;
+
+            } else if (cmd.type == 'C') {
+                // Kreisfahrt: beide Räder vorwärts, R schnell / L langsam → Linkskurve
+                digitalWrite(DIR_R, dirR(HIGH));
+                digitalWrite(DIR_L, dirL(LOW));
+                circleStartUs = micros();
+                lastStepRUs   = circleStartUs;
+                lastStepLUs   = circleStartUs;
+                state = MotionState::CIRCLING;
             }
         }
 
@@ -152,6 +178,46 @@ static void stepperTask(void*) {
                 serialPrintln("INTERRUPTED");
             } else {
                 vTaskDelay(pdMS_TO_TICKS(1));
+            }
+        }
+
+        // ── CIRCLING ──────────────────────────────────────────────────
+        // Beide Motoren laufen mit fixen Halbperioden weiter (R=80µs, L=500µs).
+        // Sanfter Anlauf über CIRCLE_RAMP_MS damit nichts stallt.
+        else if (state == MotionState::CIRCLING) {
+            if (stopFlag) {
+                stopFlag = false;
+                state = MotionState::IDLE;
+                serialPrintln("INTERRUPTED");
+            } else {
+                uint32_t now = micros();
+                uint32_t elapsedMs = (now - circleStartUs) / 1000;
+                float frac = (elapsedMs >= (uint32_t)CIRCLE_RAMP_MS)
+                                ? 1.0f
+                                : (float)elapsedMs / (float)CIRCLE_RAMP_MS;
+                float speedFrac = sqrtf(frac);
+                if (speedFrac < 0.08f) speedFrac = 0.08f;   // Mindestgeschwindigkeit zum Anlaufen
+
+                // Anlauf-Halbperiode (langsam) → Ziel-Halbperiode (schnell)
+                constexpr int START_DELAY = 1500;
+                uint32_t halfR = (uint32_t)(START_DELAY - speedFrac * (START_DELAY - CIRCLE_DELAY_R));
+                uint32_t halfL = (uint32_t)(START_DELAY - speedFrac * (START_DELAY - CIRCLE_DELAY_L));
+                uint32_t periodR = halfR * 2;
+                uint32_t periodL = halfL * 2;
+
+                if ((now - lastStepRUs) >= periodR) {
+                    digitalWrite(STEP_R, HIGH);
+                    delayMicroseconds(3);
+                    digitalWrite(STEP_R, LOW);
+                    lastStepRUs = now;
+                }
+                if ((now - lastStepLUs) >= periodL) {
+                    digitalWrite(STEP_L, HIGH);
+                    delayMicroseconds(3);
+                    digitalWrite(STEP_L, LOW);
+                    lastStepLUs = now;
+                }
+                // Kein vTaskDelay – tight loop für genaues Timing.
             }
         }
 
@@ -206,6 +272,10 @@ static void uartTask(void*) {
                         serialPrintln(digitalRead(ENDSTOP_PIN) == LOW ? "ENDSTOP:LOW" : "ENDSTOP:HIGH");
                     } else if (buf == "HE") {
                         cmd.type = 'H';
+                        stopFlag = false;
+                        xQueueSend(cmdQueue, &cmd, pdMS_TO_TICKS(200));
+                    } else if (buf == "CC") {
+                        cmd.type = 'C';
                         stopFlag = false;
                         xQueueSend(cmdQueue, &cmd, pdMS_TO_TICKS(200));
                     } else if (buf.startsWith("DD")) {

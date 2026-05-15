@@ -36,7 +36,7 @@ TACTICS = {
     4: [['hg', 'lh', 'dd100', 'ta-18', 'dd800', 'ta10', 'dd950', 'dd-220', 'ta90', 'dd220', 'gr', 'ta-90', 'dd240', 'dd-150', 'ta90', 'dd-320', 'dd1250', 'w1r', 'dd-600', 'w1h', 'dd-400', 'ta-90', 'go', 'dd1900', 'ta90']],
     #5: [['ta-15', 'dd100', 'ta15', 'dd1000', 'ta90', 'dd250', 'ta90', 'dd250', 'dd-600', 'dd150', 'ta-90', 'dd1000', 'dd-200']],
     5: [['lo', 'w1h', 'w2h', 'dd330', 'ta-90', 'la', 'dd630', 'dd-570', 'ta90', 'dd990', 'ta90', 'dd250', 'dd-40', 'ta90', 'dd140', 'dd-300', 'ta90', 'dd-200', 'dd1220', 'w1r', 'dd-565', 'w1h', 'lo', 'dd-670', 'mo', 'dl500', 'la', 'ma', 'dd120', 'ta-90', 'wt88', 'dd1800']],
-    6: [['lo', 'w1h', 'w2h', 'dd330', 'ta-90', 'la', 'dd630', 'dd-570', 'ta90', 'dd990', 'ta90', 'dd250', 'dd-40', 'ta90', 'dd140', 'dd-300', 'ta90', 'dd-200', 'dd1220', 'w2r', 'dd-595', 'w2h', 'lo', 'dd-670', 'mo', 'dl500', 'la', 'ma', 'dd120', 'ta-90', 'wt88', 'dd1800']],
+    6: [['lo', 'w1h', 'w2h', 'dd330', 'ta-90', 'la', 'dd630', 'dd-570', 'ta90', 'dd990', 'ta90', 'dd250', 'dd-40', 'ta90', 'dd140', 'dd-300', 'ta90', 'dd-200', 'dd1220', 'w2r', 'dd-585', 'w2h', 'lo', 'dd-670', 'mo', 'dl500', 'la', 'ma', 'dd120', 'ta-90', 'wt88', 'dd1800']],
     #6: [['lo', 'w1h', 'w2h', 'dd200', 'la', 'ta-27', 'dd320', 'ta27', 'dd1025', 'ta90', 'dd270', 'dd-40', 'ta90', 'dd200', 'dd-400', 'ta90', 'dd1050', 'w2r', 'dd-580', 'w2h', 'lo', 'dd-670', 'dl500', 'dd120', 'la', 'ta-90', 'wt88', 'dd1800']], ==> 6 PRE SIMA
     #6: [['st0', 'hg', 'lh', 'dd100', 'ta-12', 'dd1900', 'dd-250', 'ta90', 'dd470', 'ta90', 'dd200', 'dd-700', 'dd185', 'ta90', 'dd-400', 'dd1350', 'go', 'w1r', 'dd-700', 'w1h', 'go', 'dd-470', 'ta-95', 'wt88', 'dd500', 'gd', 'dd1000', 'ta55', 'dd350']], ===> 6 ganz alt
     7: [['hg', 'dd1000', 'ta90', 'dd300', 'ta-90', 'dd800', 'dd-300', 'ta-90', 'dd800', 'dd-300',
@@ -44,7 +44,7 @@ TACTICS = {
          'w2r', 'dd-700', 'w2h', 'ta90', 'dd1000', 'ta90', 'dd500', 'ta-90', 'dd800']],
     8: [['hg', 'dd1000', 'ta90', 'dd800', 'ta-90', 'dd500', 'co', 'dd200', 'cg', 'dd-500',
          'ta90', 'dd300', 'go', 'dd-300', 'ta180', 'dd1000', 'ta-90', 'dd1000']],
-    9: [['dd1300', 'dd-1300']],
+    9: [['lo', 'dd1500', 'la']],
 }
 
 TACTIC_NAMES = {
@@ -113,13 +113,17 @@ class Robot:
         self.servos  = Servos()
         self.gripper = Gripper(self.servos)
         self.lidar   = Lidar()
-        self.camera  = Camera()
+        try:
+            self.camera = Camera()
+            self.camera.start()
+        except Exception as e:
+            self.log(f"Warning: Kamera nicht verfügbar ({e}) – läuft ohne Kamera")
+            self.camera = None
 
         if not self.servos.available:
             self.log("Warning: Servo-Board nicht verbunden – Servos deaktiviert")
         if not self.lidar.start_scanning():
             self.log("Warning: Lidar nicht gestartet")
-        self.camera.start()
 
         self.log(f"Bereit. Team: {self.team}")
 
@@ -437,7 +441,8 @@ class Robot:
         server = await asyncio.start_server(self.handle_client, HOST, PORT)
         self.log(f"Server bereit auf {HOST}:{PORT}")
         asyncio.create_task(self._log_stream_loop())
-        asyncio.create_task(self._camera_loop())
+        if self.camera is not None:
+            asyncio.create_task(self._camera_loop())
         asyncio.create_task(self._lidar_loop())
         async with server:
             await server.serve_forever()
